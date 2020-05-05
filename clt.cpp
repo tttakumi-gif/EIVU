@@ -1,8 +1,6 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-//void recv_packet(ring*, packet*);
-void recv_packet();
 bool check_verification(packet*);
 
 int main() {
@@ -18,24 +16,6 @@ int main() {
 
 	std::string base_text = "take";
 	std::string text;
-	//std::thread th(recv_packet, std::ref(scring), std::ref(pool));
-	//std::thread th(recv_packet);
-	std::thread th([&scring, &pool] {
-		for(int i = 0; i < NUM_PACKET;) {
-			packet p = scring->pull(pool);
-			if(0 < p.len) {
-				if(i % 100 == 0) {
-					if(check_verification(&p)) {
-						p.print();
-					}
-					else {
-						puts("asdfa");
-					}
-				}
-				i++;
-			}
-		}
-	});
 
 	for(int i = 0; i < NUM_PACKET;) {
 		if(csring->dinit()) {
@@ -46,7 +26,7 @@ int main() {
 				}
 			}
 
-			/*while(true) {
+			while(true) {
 				packet p = scring->pull(pool);
 				if(0 < p.len) {
 					if(i % 500000 == 0) {
@@ -59,12 +39,11 @@ int main() {
 					}
 					break;
 				}
-			}*/
+			}
 
 			i++;
 		}
 	}
-	th.join();
 
 	/*int fd = open_shmfile("shared_memory", sizeof(int), false);
 	int *num = (int*)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -84,21 +63,4 @@ int main() {
 
 bool check_verification(packet *p) {
 	return p->verification ^ 0xffffffff == p->id;
-}
-
-void recv_packet(ring *scring, packet *pool) {
-	for(int i = 0; i < NUM_PACKET;) {
-		packet p = scring->pull(pool);
-		if(0 < p.len) {
-			if(i % 100 == 0) {
-				if(check_verification(&p)) {
-					p.print();
-				}
-				else {
-					puts("asdfa");
-				}
-			}
-			i++;
-		}
-	}
 }
