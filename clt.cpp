@@ -1,8 +1,7 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-//void recv_packet(ring*, packet*);
-void recv_packet();
+void recv_packet(ring*, packet*);
 bool check_verification(packet*);
 
 int main() {
@@ -18,24 +17,7 @@ int main() {
 
 	std::string base_text = "take";
 	std::string text;
-	//std::thread th(recv_packet, std::ref(scring), std::ref(pool));
-	//std::thread th(recv_packet);
-	std::thread th([&scring, &pool] {
-		for(int i = 0; i < NUM_PACKET;) {
-			packet p = scring->pull(pool);
-			if(0 < p.len) {
-				if(i % 100 == 0) {
-					if(check_verification(&p)) {
-						p.print();
-					}
-					else {
-						puts("asdfa");
-					}
-				}
-				i++;
-			}
-		}
-	});
+	std::thread th(recv_packet, std::ref(scring), std::ref(pool));
 
 	for(int i = 0; i < NUM_PACKET;) {
 		if(csring->dinit()) {
@@ -45,21 +27,6 @@ int main() {
 					break;
 				}
 			}
-
-			/*while(true) {
-				packet p = scring->pull(pool);
-				if(0 < p.len) {
-					if(i % 500000 == 0) {
-						if(check_verification(&p)) {
-							p.print();
-						}
-						else {
-							puts("asdfa");
-						}
-					}
-					break;
-				}
-			}*/
 
 			i++;
 		}
@@ -90,7 +57,7 @@ void recv_packet(ring *scring, packet *pool) {
 	for(int i = 0; i < NUM_PACKET;) {
 		packet p = scring->pull(pool);
 		if(0 < p.len) {
-			if(i % 100 == 0) {
+			if(i % 500000 == 0) {
 				if(check_verification(&p)) {
 					p.print();
 				}

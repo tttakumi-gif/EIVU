@@ -1,9 +1,13 @@
-#include <iostream>
-#include <string>
-#include <thread>
-#include <atomic>
+#include "a.hpp"
+
+q::q() {
+	std::cout << "construct" << std::endl;
+}
 
 int main() {
+	q *test;
+	test = (q*)malloc(sizeof(q));
+	*test = q();
 	std::atomic<uint16_t> count{0};
 	std::thread th1([&count] {
 		for(int i = 0; i < 100000; i++) {

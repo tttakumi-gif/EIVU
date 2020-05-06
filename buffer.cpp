@@ -15,6 +15,24 @@ ring::ring() {
 	size = SIZE_RING;
 }
 
+ring::ring(const ring& r) : rsrv_idx(r.rsrv_idx.load()), recv_idx(r.recv_idx.load()), proc_idx(r.proc_idx.load()) {
+}
+
+ring::ring(ring&& r) : rsrv_idx(r.rsrv_idx.load()), recv_idx(r.recv_idx.load()), proc_idx(r.proc_idx.load()) {
+}
+
+ring& ring::operator=(const ring& r) {
+	rsrv_idx = r.rsrv_idx.load();
+	recv_idx = r.recv_idx.load();
+	proc_idx = r.proc_idx.load();
+}
+
+ring&& ring::operator=(ring&& r) {
+	rsrv_idx = r.rsrv_idx.load();
+	recv_idx = r.recv_idx.load();
+	proc_idx = r.proc_idx.load();
+}
+
 uint16_t ring::get_index(packet *pool, int qw) {
 	for(int i = qw; i < SIZE_POOL * 2; i += 2) {
 		if(pool[i].len == 0) {
