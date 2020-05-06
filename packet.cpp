@@ -11,7 +11,7 @@ packet::packet(uint32_t this_id, const char* this_dummy) {
 }
 
 void packet::print() {
-	std::cout << "id: " << id << ", len: " << len << ", dummy: "<< dummy << ", verification: 0x" << std::hex << verification << std::endl;
+	std::cout << "id: " << std::dec << id << ", len: " << std::dec << len << ", dummy: "<< dummy << ", verification: 0x" << std::hex << verification << std::endl;
 }
 
 void packet::set_verification() {

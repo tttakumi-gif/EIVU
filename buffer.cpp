@@ -40,6 +40,7 @@ uint16_t ring::get_index(packet *pool, int qw) {
 		}
 	}
 	//puts("くぁｗせｄｒｆｔｇｙふじこｌｐ；＠：「」");
+	std::cout << "recv: " << recv_idx << "\nrsrv: " << rsrv_idx << "\nproc: " << proc_idx << std::endl;
 	return SIZE_POOL * 2;
 }
 
