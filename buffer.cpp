@@ -42,11 +42,8 @@ bool ring::push(packet p, packet *pool, int qw) {
 	std::cout << pool[index].len << std::endl;
 	puts("a");*/
 	descs[recv_idx].set_param(pool[index], index);
-	recv_idx++;
+	recv_idx = (recv_idx + 1) & NUM_MOD;
 
-	if(size <= recv_idx) {
-		recv_idx = 0;
-	}
 	if(recv_idx == rsrv_idx) {
 		pfull = true;
 	}
@@ -63,11 +60,8 @@ bool ring::dinit() {
 	}
 
 	descs[rsrv_idx] = desc();
-	rsrv_idx++;
+	rsrv_idx = (rsrv_idx + 1) & NUM_MOD;
 
-	if(size <= rsrv_idx) {
-		rsrv_idx = 0;
-	}
 	if(proc_idx == rsrv_idx) {
 		ifull = true;
 	}
@@ -86,11 +80,8 @@ packet ring::pull(packet *pool) {
 	descs[proc_idx].entry = pool + descs[proc_idx].id;
 	packet ret = *(descs[proc_idx].entry);
 	descs[proc_idx].entry->len = 0;
-	proc_idx++;
+	proc_idx = (proc_idx + 1) & NUM_MOD;
 
-	if(size <= proc_idx) {
-		proc_idx = 0;
-	}
 	if(proc_idx == recv_idx) {
 		dfull = true;
 	}
