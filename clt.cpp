@@ -7,7 +7,7 @@ bool check_verification(packet*);
 int main() {
 	puts("begin");
 
-	int bfd = open_shmfile("shm_buf", 4096, false);
+	int bfd = open_shmfile("shm_buf", 4096, true);
 	ring *csring = (ring*)mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 	*csring = ring();
 	ring *scring = (ring*)(csring + 1);
