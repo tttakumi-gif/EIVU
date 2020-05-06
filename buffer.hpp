@@ -4,6 +4,7 @@
 #include "packet.hpp"
 
 #define SIZE_RING 16
+#define NUM_MOD (SIZE_RING - 1)
 #define SIZE_POOL 32
 
 class desc {

@@ -57,7 +57,7 @@ void recv_packet(ring *scring, packet *pool) {
 	for(int i = 0; i < NUM_PACKET;) {
 		packet p = scring->pull(pool);
 		if(0 < p.len) {
-			if(i % 500000 == 0) {
+			if(i % 100 == 0) {
 				if(check_verification(&p)) {
 					p.print();
 				}
