@@ -11,6 +11,7 @@ class desc {
 public:
 	uint16_t id;
 	uint16_t len;
+	bool is_used;
 	packet *entry;
 
 	void set_param(packet, uint16_t);
@@ -18,12 +19,6 @@ public:
 
 class ring {
 private:
-	//std::atomic<bool> ifull;
-	//std::atomic<bool> pfull;
-	//std::atomic<bool> dfull;
-	bool ifull;
-	bool pfull;
-	bool dfull;
 public:
 	uint16_t size;
 	std::atomic<uint16_t> rsrv_idx;

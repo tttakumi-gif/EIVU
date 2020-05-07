@@ -14,6 +14,12 @@ int main() {
 	*scring = ring();
 	packet *pool = (packet*)(scring + 1);
 	memset(pool, 0, sizeof(packet) * 2 * SIZE_POOL);
+	bool *flag = (bool*)(pool + 2 * SIZE_POOL);
+	*flag = false;
+
+	while(!*flag) {
+		;
+	}
 
 	std::string base_text = "take";
 	std::string text;
@@ -57,7 +63,7 @@ void recv_packet(ring *scring, packet *pool) {
 	for(int i = 0; i < NUM_PACKET;) {
 		packet p = scring->pull(pool);
 		if(0 < p.len) {
-			if(i % 100 == 0) {
+			if(i % 500000 == 0) {
 				if(check_verification(&p)) {
 					p.print();
 				}

@@ -8,6 +8,9 @@ int main() {
 	ring *csring = (ring*)mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 	ring *scring = (ring*)(csring + 1);
 	packet *pool = (packet*)(scring + 1);
+	bool *flag = (bool*)(pool + 2 * SIZE_POOL);
+
+	*flag = true;
 
 	/*int fd = open_shmfile("shared_memory", sizeof(int), true);
 	int *num = (int*)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
