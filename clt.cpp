@@ -1,12 +1,12 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
+void recv_packet(ring*, packet*);
 bool check_verification(packet*);
 
 int main() {
 	puts("begin");
 
-	//int bfd = open_shmfile("shm_buf", 4096, false);
 	int bfd = open_shmfile("shm_buf", 4096, true);
 	ring *csring = (ring*)mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 	*csring = ring();
@@ -14,9 +14,16 @@ int main() {
 	*scring = ring();
 	packet *pool = (packet*)(scring + 1);
 	memset(pool, 0, sizeof(packet) * 2 * SIZE_POOL);
+	bool *flag = (bool*)(pool + 2 * SIZE_POOL);
+	*flag = false;
+
+	while(!*flag) {
+		;
+	}
 
 	std::string base_text = "take";
 	std::string text;
+	std::thread th(recv_packet, std::ref(scring), std::ref(pool));
 
 	for(int i = 0; i < NUM_PACKET;) {
 		if(csring->dinit()) {
@@ -27,24 +34,10 @@ int main() {
 				}
 			}
 
-			while(true) {
-				packet p = scring->pull(pool);
-				if(0 < p.len) {
-					if(i % 500000 == 0) {
-						if(check_verification(&p)) {
-							p.print();
-						}
-						else {
-							puts("asdfa");
-						}
-					}
-					break;
-				}
-			}
-
 			i++;
 		}
 	}
+	th.join();
 
 	/*int fd = open_shmfile("shared_memory", sizeof(int), false);
 	int *num = (int*)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -64,4 +57,21 @@ int main() {
 
 bool check_verification(packet *p) {
 	return p->verification ^ 0xffffffff == p->id;
+}
+
+void recv_packet(ring *scring, packet *pool) {
+	for(int i = 0; i < NUM_PACKET;) {
+		packet p = scring->pull(pool);
+		if(0 < p.len) {
+			if(i % 500000 == 0) {
+				if(check_verification(&p)) {
+					p.print();
+				}
+				else {
+					puts("asdfa");
+				}
+			}
+			i++;
+		}
+	}
 }

@@ -9,10 +9,16 @@ ring::ring() {
 	rsrv_idx = 0;
 	recv_idx = 0;
 	proc_idx = 0;
-	ifull = false;
-	pfull = true;
-	dfull = true;
 	size = SIZE_RING;
+	memset(descs, 0, sizeof(desc) * SIZE_RING);
+}
+
+ring&& ring::operator=(ring&& r) {
+	rsrv_idx = r.rsrv_idx.load();
+	recv_idx = r.recv_idx.load();
+	proc_idx = r.proc_idx.load();
+	size = r.size;
+	memcpy(descs, r.descs, sizeof(desc) * SIZE_RING);
 }
 
 uint16_t ring::get_index(packet *pool, int qw) {
@@ -21,13 +27,17 @@ uint16_t ring::get_index(packet *pool, int qw) {
 			return i;
 		}
 	}
-	puts("くぁｗせｄｒｆｔｇｙふじこｌｐ；＠：「」");
+	//puts("くぁｗせｄｒｆｔｇｙふじこｌｐ；＠：「」");
+	std::cout << "recv: " << recv_idx << "\nrsrv: " << rsrv_idx << "\nproc: " << proc_idx << std::endl;
+	exit(1);
 	return SIZE_POOL * 2;
 }
 
 bool ring::push(packet p, packet *pool, int qw) {
-	if(pfull) {
-		return false;
+	if(0 < descs[recv_idx].len) {
+		//if(recv_idx == rsrv_idx) {
+			return false;
+		//}
 	}
 
 	int index = get_index(pool, qw);
@@ -35,58 +45,42 @@ bool ring::push(packet p, packet *pool, int qw) {
 		return false;
 	}
 
+	uint16_t prev_idx = recv_idx;
+	recv_idx = (prev_idx + 1) & NUM_MOD;
 	pool[index] = p;
-	descs[recv_idx].entry = pool + index;
-	/*descs[recv_idx].entry->len = 1212;
-	puts("a");
-	std::cout << pool[index].len << std::endl;
-	puts("a");*/
-	descs[recv_idx].set_param(pool[index], index);
-	recv_idx = (recv_idx + 1) & NUM_MOD;
-
-	if(recv_idx == rsrv_idx) {
-		pfull = true;
-	}
-	if(dfull) {
-		dfull = false;
-	}
+	descs[prev_idx].entry = pool + index;
+	descs[prev_idx].set_param(pool[index], index);
 
 	return true;
 }
 
 bool ring::dinit() {
-	if(ifull) {
-		return false;
+	if(0 < descs[rsrv_idx].len) {
+		//if(proc_idx == rsrv_idx) {
+			return false;
+		//}
 	}
 
-	descs[rsrv_idx] = desc();
-	rsrv_idx = (rsrv_idx + 1) & NUM_MOD;
-
-	if(proc_idx == rsrv_idx) {
-		ifull = true;
-	}
-	if(pfull) {
-		pfull = false;
-	}
+	uint16_t prev_idx = rsrv_idx;
+	rsrv_idx = (prev_idx + 1) & NUM_MOD;
+	descs[prev_idx] = desc();
 
 	return true;
 }
 
 packet ring::pull(packet *pool) {
-	if(dfull) {
-		return packet();
+	if(0 == descs[proc_idx].len) {
+		//if(proc_idx == recv_idx) {
+			return packet();
+		//}
 	}
 
-	descs[proc_idx].entry = pool + descs[proc_idx].id;
-	packet ret = *(descs[proc_idx].entry);
-	descs[proc_idx].entry->len = 0;
-	proc_idx = (proc_idx + 1) & NUM_MOD;
+	uint16_t prev_idx = proc_idx;
+	proc_idx = (prev_idx + 1) & NUM_MOD;
+	descs[prev_idx].entry = pool + descs[prev_idx].id;
+	packet ret = *(descs[prev_idx].entry);
+	descs[prev_idx].entry->len = 0;
+	descs[prev_idx].len = 0;
 
-	if(proc_idx == recv_idx) {
-		dfull = true;
-	}
-	if(ifull) {
-		ifull = false;
-	}
 	return ret;
 }
