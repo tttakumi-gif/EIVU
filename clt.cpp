@@ -1,8 +1,11 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
+void send_packet(ring*, packet*, int);
 void recv_packet(ring*, packet*);
 bool check_verification(packet*);
+
+const std::string base_text = "take";
 
 int main() {
 	puts("begin");
@@ -21,11 +24,23 @@ int main() {
 		;
 	}
 
-	std::string base_text = "take";
-	std::string text;
-	std::thread th(recv_packet, std::ref(scring), std::ref(pool));
+	std::thread thread_send(send_packet, std::ref(csring), std::ref(pool), 0);
+	std::thread thread_send2(send_packet, std::ref(csring), std::ref(pool), NUM_PACKET / 2);
+	//std::thread thread_recv(recv_packet, std::ref(scring), std::ref(pool));
 
-	for(int i = 0; i < NUM_PACKET;) {
+	recv_packet(scring, pool);
+	thread_send.join();
+	thread_send2.join();
+	//thread_recv.join();
+	shm_unlink("shm_buf");
+
+	return 0;
+}
+
+void send_packet(ring *csring, packet *pool, int index_begin) {
+	std::string text;
+	int index_end = index_begin + NUM_PACKET / 2;
+	for(int i = index_begin; i < index_end;) {
 		if(csring->dinit()) {
 			text = base_text + std::to_string(i);
 			while(true) {
@@ -37,41 +52,25 @@ int main() {
 			i++;
 		}
 	}
-	th.join();
-
-	/*int fd = open_shmfile("shared_memory", sizeof(int), false);
-	int *num = (int*)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	*num = 811;
-	shm_unlink("shared_memory");*/
-
-	std::cout << sizeof(ring) << std::endl;
-	std::cout << sizeof(packet) << std::endl;
-
-	std::cout << pool << std::endl;
-	std::cout << pool + 1 << std::endl;
-
-	shm_unlink("shm_buf");
-
-	return 0;
-}
-
-bool check_verification(packet *p) {
-	return p->verification ^ 0xffffffff == p->id;
 }
 
 void recv_packet(ring *scring, packet *pool) {
 	for(int i = 0; i < NUM_PACKET;) {
 		packet p = scring->pull(pool);
 		if(0 < p.len) {
-			if(i % 500000 == 0) {
+			//if(i % 500000 == 0) {
 				if(check_verification(&p)) {
 					p.print();
 				}
 				else {
 					puts("asdfa");
 				}
-			}
+			//}
 			i++;
 		}
 	}
+}
+
+bool check_verification(packet *p) {
+	return p->verification ^ 0xffffffff == p->id;
 }

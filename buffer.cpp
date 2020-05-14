@@ -28,16 +28,17 @@ uint16_t ring::get_index(packet *pool, int qw) {
 		}
 	}
 	//puts("くぁｗせｄｒｆｔｇｙふじこｌｐ；＠：「」");
-	std::cout << "recv: " << recv_idx << "\nrsrv: " << rsrv_idx << "\nproc: " << proc_idx << std::endl;
-	exit(1);
+	//std::cout << "recv: " << recv_idx << "\nrsrv: " << rsrv_idx << "\nproc: " << proc_idx << std::endl;
+	//exit(1);
+
 	return SIZE_POOL * 2;
 }
 
 bool ring::push(packet p, packet *pool, int qw) {
-	if(0 < descs[recv_idx].len) {
-		//if(recv_idx == rsrv_idx) {
-			return false;
-		//}
+	uint16_t prev_idx = recv_idx;
+
+	if(0 < descs[prev_idx].len) {
+		return false;
 	}
 
 	int index = get_index(pool, qw);
@@ -45,7 +46,6 @@ bool ring::push(packet p, packet *pool, int qw) {
 		return false;
 	}
 
-	uint16_t prev_idx = recv_idx;
 	recv_idx = (prev_idx + 1) & NUM_MOD;
 	pool[index] = p;
 	descs[prev_idx].entry = pool + index;
@@ -55,13 +55,18 @@ bool ring::push(packet p, packet *pool, int qw) {
 }
 
 bool ring::dinit() {
-	if(0 < descs[rsrv_idx].len) {
-		//if(proc_idx == rsrv_idx) {
-			return false;
-		//}
+	uint16_t prev_idx = rsrv_idx;
+
+	if(0 < descs[prev_idx].len) {
+#if 0
+		for(desc d : descs) {
+			std::cout << d.len << ", ";
+		}
+		std::cout << std::endl;
+#endif
+		return false;
 	}
 
-	uint16_t prev_idx = rsrv_idx;
 	rsrv_idx = (prev_idx + 1) & NUM_MOD;
 	descs[prev_idx] = desc();
 
@@ -69,13 +74,12 @@ bool ring::dinit() {
 }
 
 packet ring::pull(packet *pool) {
-	if(0 == descs[proc_idx].len) {
-		//if(proc_idx == recv_idx) {
-			return packet();
-		//}
+	uint16_t prev_idx = proc_idx;
+
+	if(descs[prev_idx].len == 0) {
+		return packet();
 	}
 
-	uint16_t prev_idx = proc_idx;
 	proc_idx = (prev_idx + 1) & NUM_MOD;
 	descs[prev_idx].entry = pool + descs[prev_idx].id;
 	packet ret = *(descs[prev_idx].entry);

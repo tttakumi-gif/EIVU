@@ -21,7 +21,7 @@ int main() {
 		packet p = csring->pull(pool);
 		if(0 < p.len) {
 			p.set_verification();
-			if(i % 500000 == 0)
+			//if(i % 500000 == 0)
 				p.print();
 			while(!scring->dinit()) {
 				;
