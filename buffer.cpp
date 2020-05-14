@@ -28,25 +28,32 @@ uint16_t ring::get_index(packet *pool, int qw) {
 		}
 	}
 	//puts("くぁｗせｄｒｆｔｇｙふじこｌｐ；＠：「」");
-	//std::cout << "recv: " << recv_idx << "\nrsrv: " << rsrv_idx << "\nproc: " << proc_idx << std::endl;
+	std::cout << "recv: " << recv_idx << "\nrsrv: " << rsrv_idx << "\nproc: " << proc_idx << std::endl;
 	//exit(1);
 
 	return SIZE_POOL * 2;
 }
 
 bool ring::push(packet p, packet *pool, int qw) {
-	uint16_t prev_idx = recv_idx;
+	uint16_t prev_idx;
+	int index;
+	std::mutex mtx;
+	{
+		std::lock_guard<std::mutex> lock(mtx);
+		prev_idx = recv_idx;
 
-	if(0 < descs[prev_idx].len) {
-		return false;
+		if(0 < descs[prev_idx].len) {
+			return false;
+		}
+
+		index = get_index(pool, qw);
+		if(SIZE_POOL * 2 <= index) {
+			return false;
+		}
+
+		recv_idx = (prev_idx + 1) & NUM_MOD;
 	}
 
-	int index = get_index(pool, qw);
-	if(SIZE_POOL * 2 <= index) {
-		return false;
-	}
-
-	recv_idx = (prev_idx + 1) & NUM_MOD;
 	pool[index] = p;
 	descs[prev_idx].entry = pool + index;
 	descs[prev_idx].set_param(pool[index], index);
@@ -55,19 +62,24 @@ bool ring::push(packet p, packet *pool, int qw) {
 }
 
 bool ring::dinit() {
-	uint16_t prev_idx = rsrv_idx;
+	uint16_t prev_idx;
+	std::mutex mtx;
+	{
+		std::lock_guard<std::mutex> lock(mtx);
+		prev_idx = rsrv_idx;
 
-	if(0 < descs[prev_idx].len) {
+		if(0 < descs[prev_idx].len) {
 #if 0
-		for(desc d : descs) {
-			std::cout << d.len << ", ";
-		}
-		std::cout << std::endl;
+			for(desc d : descs) {
+				std::cout << d.len << ", ";
+			}
+			std::cout << std::endl;
 #endif
-		return false;
-	}
+			return false;
+		}
 
-	rsrv_idx = (prev_idx + 1) & NUM_MOD;
+		rsrv_idx = (prev_idx + 1) & NUM_MOD;
+	}
 	descs[prev_idx] = desc();
 
 	return true;
