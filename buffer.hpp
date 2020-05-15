@@ -19,12 +19,21 @@ public:
 
 class ring {
 private:
+	std::mutex rsrv_mtx;
+	std::mutex recv_mtx;
+	std::mutex proc_mtx;
+public:
+#if 0
 	std::atomic<uint16_t> rsrv_idx;
 	std::atomic<uint16_t> recv_idx;
 	std::atomic<uint16_t> proc_idx;
+#else
+	uint16_t rsrv_idx;
+	uint16_t recv_idx;
+	uint16_t proc_idx;
+#endif
 	uint16_t size;
 	desc descs[SIZE_RING];
-public:
 	ring();
 	ring(const ring&);
 	ring(ring&&);

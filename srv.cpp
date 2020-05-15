@@ -21,7 +21,7 @@ int main() {
 		packet p = csring->pull(pool);
 		if(0 < p.len) {
 			p.set_verification();
-			//if(i % 500000 == 0)
+			//if(p.id % 500000 == 0)
 				p.print();
 			while(!scring->dinit()) {
 				;
@@ -32,6 +32,14 @@ int main() {
 				}
 			}
 			i++;
+		}
+		else {
+			//printf("1");
+			std::cout << "p: " << csring->proc_idx << ", recv: " << csring->recv_idx << ", rsrv: " << csring->rsrv_idx << std::endl;
+			for(desc d : csring->descs) {
+				std::cout << d.len << ", ";
+			}
+			std::cout << std::endl;
 		}
 	}
 
