@@ -2,11 +2,10 @@
 #include "shm.hpp"
 
 void send_packet(ring*, packet*, int);
-void recv_packet(ring*, packet*);
+void recv_packet(ring*, packet*, int);
 bool check_verification(packet*);
 
 const std::string base_text = "take";
-uint32_t nums[NUM_THREAD + 1];
 
 int main() {
 	puts("begin");
@@ -30,15 +29,19 @@ int main() {
 		;
 	}
 
-	std::thread threads[NUM_THREAD];
+	std::thread threads[NUM_THREAD * 2];
 	for(int i = 0; i < NUM_THREAD; i++) {
 		threads[i] = std::thread(send_packet, std::ref(csring), std::ref(pool), i);
 	}
+	for(int i = NUM_THREAD; i < NUM_THREAD * 2; i++) {
+		threads[i] = std::thread(recv_packet, std::ref(scring), std::ref(pool), i - NUM_THREAD);
+	}
 	//std::thread thread_recv(recv_packet, std::ref(scring), std::ref(pool));
 
-	recv_packet(scring, pool);
-	for(int i = 0; i < NUM_THREAD; i++) {
+	//recv_packet(scring, pool);
+	for(int i = 0; i < NUM_THREAD * 2; i++) {
 		threads[i].join();
+		std::cout<<i<<", fin"<<std::endl;
 	}
 	//thread_recv.join();
 	shm_unlink("shm_buf");
@@ -64,8 +67,11 @@ void send_packet(ring *csring, packet *pool, int id) {
 	}
 }
 
-void recv_packet(ring *scring, packet *pool) {
-	for(int i = 0; i < NUM_PACKET;) {
+void recv_packet(ring *scring, packet *pool, int id) {
+	int index_begin = nums[id];
+	int index_end = nums[id + 1];
+	std::cout << id << ", " << index_begin << ", " << index_end << std::endl;
+	for(int i = index_begin; i < index_end;) {
 		packet p = scring->pull(pool);
 		if(0 < p.len) {
 			if(p.id % 500000 == 0) {
@@ -79,6 +85,7 @@ void recv_packet(ring *scring, packet *pool) {
 			i++;
 		}
 	}
+	std::cout<<"fin, "<<id<<std::endl;
 }
 
 bool check_verification(packet *p) {

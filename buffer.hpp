@@ -8,6 +8,8 @@
 #define NUM_MOD (SIZE_RING - 1)
 #define SIZE_POOL 32
 
+static uint32_t nums[NUM_THREAD + 1];
+
 enum dstatus {
 	INIT,
 	PUSH,
@@ -35,17 +37,12 @@ private:
 	std::mutex recv_mtx;
 	std::mutex proc_mtx;
 public:
-#if 0
-	std::atomic<uint16_t> rsrv_idx;
-	std::atomic<uint16_t> recv_idx;
-	std::atomic<uint16_t> proc_idx;
-#else
 	uint16_t rsrv_idx;
 	uint16_t recv_idx;
 	uint16_t proc_idx;
-#endif
 	uint16_t size;
 	desc descs[SIZE_RING];
+
 	ring();
 	ring(const ring&);
 	ring(ring&&);

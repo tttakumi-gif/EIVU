@@ -5,9 +5,9 @@ buffer.o: buffer.cpp buffer.hpp packet.o
 shm.o: shm.cpp shm.hpp
 	g++ -o obj/shm.o -c shm.cpp -lrt -std=c++11
 clt: buffer.o shm.o clt.cpp
-	g++ -o clt.out clt.cpp obj/packet.o obj/buffer.o obj/shm.o -lrt -std=c++11 -pthread
+	g++ -o clt.out clt.cpp obj/packet.o obj/buffer.o obj/shm.o -lrt -std=c++11 -pthread -g
 srv: buffer.o shm.o srv.cpp
-	g++ -o srv.out srv.cpp obj/packet.o obj/buffer.o obj/shm.o -lrt -std=c++11 -pthread
+	g++ -o srv.out srv.cpp obj/packet.o obj/buffer.o obj/shm.o -lrt -std=c++11 -pthread -g
 all: clt srv
 test: main
 	./clt.out
