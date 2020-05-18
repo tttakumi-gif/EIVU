@@ -33,14 +33,17 @@ int main() {
 			}
 			i++;
 		}
-		else {
+#if 1
+		//else {
 			//printf("1");
 			std::cout << "p: " << csring->proc_idx << ", recv: " << csring->recv_idx << ", rsrv: " << csring->rsrv_idx << std::endl;
 			for(desc d : csring->descs) {
-				std::cout << d.len << ", ";
+				printf("%2d, ", d.len);
+				//std::cout << d.len << ", ";
 			}
 			std::cout << std::endl;
-		}
+		//}
+#endif
 	}
 
 	shm_unlink("shm_buf");

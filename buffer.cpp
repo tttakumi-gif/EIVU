@@ -1,5 +1,9 @@
 #include "buffer.hpp"
 
+desc::desc() {
+	len = 0;
+}
+
 void desc::set_param(packet p, uint16_t this_id) {
 	id = this_id;
 	len = sizeof(p);
@@ -41,14 +45,14 @@ uint16_t ring::get_index(packet *pool, int qw) {
 }
 
 bool ring::push(packet p, packet *pool, int qw) {
-	if(0 < descs[recv_idx].len) {
-		return false;
-	}
-
 	uint16_t prev_idx;
 	int index;
 	{
 		std::lock_guard<std::mutex> lock(recv_mtx);
+
+		if(0 < descs[recv_idx].len) {
+			return false;
+		}
 
 		index = get_index(pool, qw);
 		if(SIZE_POOL * 2 <= index) {
@@ -67,13 +71,13 @@ bool ring::push(packet p, packet *pool, int qw) {
 }
 
 bool ring::dinit() {
-	if(0 < descs[rsrv_idx].len) {
-		return false;
-	}
-
 	uint16_t prev_idx;
 	{
 		std::lock_guard<std::mutex> lock(rsrv_mtx);
+
+		if(0 < descs[rsrv_idx].len) {
+			return false;
+		}
 
 		prev_idx = rsrv_idx;
 		rsrv_idx = (rsrv_idx + 1) & NUM_MOD;
@@ -84,13 +88,13 @@ bool ring::dinit() {
 }
 
 packet ring::pull(packet *pool) {
-	if(descs[proc_idx].len == 0) {
-		return packet();
-	}
-
 	uint16_t prev_idx;
 	{
 		std::lock_guard<std::mutex> lock(proc_mtx);
+
+		if(descs[proc_idx].len == 0) {
+			return packet();
+		}
 
 		prev_idx = proc_idx;
 		proc_idx = (proc_idx + 1) & NUM_MOD;

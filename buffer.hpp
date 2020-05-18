@@ -14,6 +14,8 @@ public:
 	bool is_used;
 	packet *entry;
 
+	desc();
+
 	void set_param(packet, uint16_t);
 };
 
