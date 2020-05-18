@@ -1,7 +1,21 @@
 #include "buffer.hpp"
 
 desc::desc() {
-	len = 0;
+	status = PULL;
+}
+
+desc::desc(dstatus _status) {
+	status = _status;
+}
+
+void ring::init_descs() {
+	for(int i = 0; i < SIZE_RING; i++) {
+		descs[i].status = PULL;
+	}
+}
+
+void desc::delete_info() {
+	;
 }
 
 void desc::set_param(packet p, uint16_t this_id) {
@@ -15,6 +29,7 @@ ring::ring() {
 	proc_idx = 0;
 	size = SIZE_RING;
 	memset(descs, 0, sizeof(desc) * SIZE_RING);
+	init_descs();
 }
 
 ring&& ring::operator=(ring&& r) {
@@ -50,7 +65,7 @@ bool ring::push(packet p, packet *pool, int qw) {
 	{
 		std::lock_guard<std::mutex> lock(recv_mtx);
 
-		if(0 < descs[recv_idx].len) {
+		if(descs[recv_idx].status != INIT) {
 			return false;
 		}
 
@@ -66,6 +81,7 @@ bool ring::push(packet p, packet *pool, int qw) {
 
 	descs[prev_idx].entry = pool + index;
 	descs[prev_idx].set_param(pool[index], index);
+	descs[prev_idx].status = PUSH;
 
 	return true;
 }
@@ -75,14 +91,14 @@ bool ring::dinit() {
 	{
 		std::lock_guard<std::mutex> lock(rsrv_mtx);
 
-		if(0 < descs[rsrv_idx].len) {
+		if(descs[rsrv_idx].status != PULL) {
 			return false;
 		}
 
 		prev_idx = rsrv_idx;
 		rsrv_idx = (rsrv_idx + 1) & NUM_MOD;
 	}
-	descs[prev_idx] = desc();
+	descs[prev_idx] = desc(INIT);
 
 	return true;
 }
@@ -92,7 +108,7 @@ packet ring::pull(packet *pool) {
 	{
 		std::lock_guard<std::mutex> lock(proc_mtx);
 
-		if(descs[proc_idx].len == 0) {
+		if(descs[proc_idx].status != PUSH) {
 			return packet();
 		}
 
@@ -103,6 +119,7 @@ packet ring::pull(packet *pool) {
 	packet ret = *(descs[prev_idx].entry);
 	descs[prev_idx].entry->len = 0;
 	descs[prev_idx].len = 0;
+	descs[prev_idx].status = PULL;
 
 	return ret;
 }

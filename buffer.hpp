@@ -7,16 +7,25 @@
 #define NUM_MOD (SIZE_RING - 1)
 #define SIZE_POOL 32
 
+enum dstatus {
+	INIT,
+	PUSH,
+	PULL,
+};
+
 class desc {
 public:
+	dstatus status;
 	uint16_t id;
 	uint16_t len;
 	bool is_used;
 	packet *entry;
 
 	desc();
+	desc(dstatus);
 
 	void set_param(packet, uint16_t);
+	void delete_info();
 };
 
 class ring {
@@ -46,4 +55,5 @@ public:
 	bool push(packet, packet*, int);
 	bool dinit();
 	packet pull(packet*);
+	void init_descs();
 };
