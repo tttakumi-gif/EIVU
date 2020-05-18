@@ -12,11 +12,6 @@ int main() {
 
 	*flag = true;
 
-	/*int fd = open_shmfile("shared_memory", sizeof(int), true);
-	int *num = (int*)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	*num = 0;
-	shm_unlink("shared_memory");*/
-
 	for(int i = 0; i < NUM_PACKET;) {
 		packet p = csring->pull(pool);
 		if(0 < p.len) {

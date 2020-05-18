@@ -3,6 +3,7 @@
 
 #include "packet.hpp"
 
+#define NUM_THREAD 2
 #define SIZE_RING 16
 #define NUM_MOD (SIZE_RING - 1)
 #define SIZE_POOL 32
@@ -24,8 +25,8 @@ public:
 	desc();
 	desc(dstatus);
 
-	void set_param(packet, uint16_t);
-	void delete_info();
+	void set_param(packet, uint16_t, dstatus);
+	void delete_info(dstatus);
 };
 
 class ring {
@@ -57,3 +58,5 @@ public:
 	packet pull(packet*);
 	void init_descs();
 };
+
+void set_packet_nums(uint32_t*);

@@ -6,6 +6,7 @@ void recv_packet(ring*, packet*);
 bool check_verification(packet*);
 
 const std::string base_text = "take";
+uint32_t nums[NUM_THREAD + 1];
 
 int main() {
 	puts("begin");
@@ -20,26 +21,35 @@ int main() {
 	bool *flag = (bool*)(pool + 2 * SIZE_POOL);
 	*flag = false;
 
+	set_packet_nums(nums);
+	for(uint32_t n : nums) {
+		std::cout<<n<<std::endl;
+	}
+
 	while(!*flag) {
 		;
 	}
 
-	std::thread thread_send(send_packet, std::ref(csring), std::ref(pool), 0);
-	std::thread thread_send2(send_packet, std::ref(csring), std::ref(pool), NUM_PACKET / 2);
+	std::thread threads[NUM_THREAD];
+	for(int i = 0; i < NUM_THREAD; i++) {
+		threads[i] = std::thread(send_packet, std::ref(csring), std::ref(pool), i);
+	}
 	//std::thread thread_recv(recv_packet, std::ref(scring), std::ref(pool));
 
 	recv_packet(scring, pool);
-	thread_send.join();
-	thread_send2.join();
+	for(int i = 0; i < NUM_THREAD; i++) {
+		threads[i].join();
+	}
 	//thread_recv.join();
 	shm_unlink("shm_buf");
 
 	return 0;
 }
 
-void send_packet(ring *csring, packet *pool, int index_begin) {
+void send_packet(ring *csring, packet *pool, int id) {
 	std::string text;
-	int index_end = index_begin + NUM_PACKET / 2;
+	int index_begin = nums[id];
+	int index_end = nums[id + 1];
 	for(int i = index_begin; i < index_end;) {
 		if(csring->dinit()) {
 			text = base_text + std::to_string(i);

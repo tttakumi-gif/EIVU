@@ -1,26 +1,22 @@
 #include "buffer.hpp"
 
 desc::desc() {
-	status = PULL;
 }
 
 desc::desc(dstatus _status) {
 	status = _status;
 }
 
-void ring::init_descs() {
-	for(int i = 0; i < SIZE_RING; i++) {
-		descs[i].status = PULL;
-	}
+void desc::delete_info(dstatus _status) {
+	entry->len = 0;
+	len = 0;
+	status = _status;
 }
 
-void desc::delete_info() {
-	;
-}
-
-void desc::set_param(packet p, uint16_t this_id) {
+void desc::set_param(packet p, uint16_t this_id, dstatus _status) {
 	id = this_id;
 	len = sizeof(p);
+	status = _status;
 }
 
 ring::ring() {
@@ -33,21 +29,21 @@ ring::ring() {
 }
 
 ring&& ring::operator=(ring&& r) {
-#if 0
-	rsrv_idx = r.rsrv_idx.load();
-	recv_idx = r.recv_idx.load();
-	proc_idx = r.proc_idx.load();
-#else
 	rsrv_idx = r.rsrv_idx;
 	recv_idx = r.recv_idx;
 	proc_idx = r.proc_idx;
-#endif
 	size = r.size;
 	memcpy(descs, r.descs, sizeof(desc) * SIZE_RING);
 }
 
+void ring::init_descs() {
+	for(int i = 0; i < SIZE_RING; i++) {
+		descs[i].status = PULL;
+	}
+}
+
 uint16_t ring::get_index(packet *pool, int qw) {
-	for(int i = qw; i < SIZE_POOL * 2; i += 2) {
+	for(uint16_t i = qw; i < SIZE_POOL * 2; i += 2) {
 		if(pool[i].len == 0) {
 			return i;
 		}
@@ -61,7 +57,7 @@ uint16_t ring::get_index(packet *pool, int qw) {
 
 bool ring::push(packet p, packet *pool, int qw) {
 	uint16_t prev_idx;
-	int index;
+	uint16_t index;
 	{
 		std::lock_guard<std::mutex> lock(recv_mtx);
 
@@ -80,8 +76,7 @@ bool ring::push(packet p, packet *pool, int qw) {
 	}
 
 	descs[prev_idx].entry = pool + index;
-	descs[prev_idx].set_param(pool[index], index);
-	descs[prev_idx].status = PUSH;
+	descs[prev_idx].set_param(pool[index], index, PUSH);
 
 	return true;
 }
@@ -98,6 +93,7 @@ bool ring::dinit() {
 		prev_idx = rsrv_idx;
 		rsrv_idx = (rsrv_idx + 1) & NUM_MOD;
 	}
+
 	descs[prev_idx] = desc(INIT);
 
 	return true;
@@ -115,11 +111,25 @@ packet ring::pull(packet *pool) {
 		prev_idx = proc_idx;
 		proc_idx = (proc_idx + 1) & NUM_MOD;
 	}
+
 	descs[prev_idx].entry = pool + descs[prev_idx].id;
 	packet ret = *(descs[prev_idx].entry);
-	descs[prev_idx].entry->len = 0;
-	descs[prev_idx].len = 0;
-	descs[prev_idx].status = PULL;
+	descs[prev_idx].delete_info(PULL);
 
 	return ret;
+}
+
+void set_packet_nums(uint32_t *nums) {
+	int mod = NUM_PACKET % NUM_THREAD;
+	int result = NUM_PACKET / NUM_THREAD;
+	int temp = result;
+
+	nums[0] = 0;
+	for(int i = 0; i < NUM_THREAD; i++) {
+		if(i < mod) {
+			temp++;
+		}
+		nums[i + 1] = temp;
+		temp += result;
+	}
 }
