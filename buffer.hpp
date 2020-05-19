@@ -32,14 +32,16 @@ public:
 };
 
 class ring {
+#if 0
 private:
 	std::mutex rsrv_mtx;
 	std::mutex recv_mtx;
 	std::mutex proc_mtx;
+#endif
 public:
-	uint16_t rsrv_idx;
-	uint16_t recv_idx;
-	uint16_t proc_idx;
+	uint16_t rsrv_idx[NUM_THREAD];
+	uint16_t recv_idx[NUM_THREAD];
+	uint16_t proc_idx[NUM_THREAD];
 	uint16_t size;
 	desc descs[SIZE_RING];
 
@@ -50,9 +52,9 @@ public:
 	ring&& operator=(ring&&);
 
 	uint16_t get_index(packet*, int);
-	bool push(packet, packet*, int);
-	bool dinit();
-	packet pull(packet*);
+	bool push(packet, packet*, int, short);
+	bool dinit(short);
+	packet pull(packet*, short);
 	void init_descs();
 };
 

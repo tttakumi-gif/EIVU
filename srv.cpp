@@ -62,18 +62,21 @@ void rs_packet(ring *csring, ring *scring, packet *pool, int id) {
 	int index_end = nums[id + 1];
 
 	for(int i = index_begin; i < index_end;) {
-		packet p = csring->pull(pool);
+		packet p = csring->pull(pool, id);
 		if(0 < p.len) {
 			p.set_verification();
 			if(p.id % 500000 == 0)
 				p.print();
-			while(!scring->dinit()) {
+			while(!scring->dinit(id)) {
 				;
 			}
 			while(true) {
-				if(scring->push(p, pool, 1)) {
+				if(scring->push(p, pool, 1, id)) {
 					break;
 				}
+			}
+			if(4999000 < p.id) {
+				p.print();
 			}
 			i++;
 		}

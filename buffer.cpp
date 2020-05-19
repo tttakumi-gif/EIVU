@@ -20,19 +20,21 @@ void desc::set_param(packet p, uint16_t this_id, dstatus _status) {
 }
 
 ring::ring() {
-	rsrv_idx = 0;
-	recv_idx = 0;
-	proc_idx = 0;
 	size = SIZE_RING;
+	for(int i = 0; i < NUM_THREAD; i++) {
+		rsrv_idx[i] = i;
+		recv_idx[i] = i;
+		proc_idx[i] = i;
+	}
 	memset(descs, 0, sizeof(desc) * SIZE_RING);
 	init_descs();
 }
 
 ring&& ring::operator=(ring&& r) {
-	rsrv_idx = r.rsrv_idx;
-	recv_idx = r.recv_idx;
-	proc_idx = r.proc_idx;
 	size = r.size;
+	memcpy(rsrv_idx, r.rsrv_idx, sizeof(uint16_t) * NUM_THREAD);
+	memcpy(recv_idx, r.recv_idx, sizeof(uint16_t) * NUM_THREAD);
+	memcpy(proc_idx, r.proc_idx, sizeof(uint16_t) * NUM_THREAD);
 	memcpy(descs, r.descs, sizeof(desc) * SIZE_RING);
 }
 
@@ -55,25 +57,19 @@ uint16_t ring::get_index(packet *pool, int qw) {
 	return SIZE_POOL * 2;
 }
 
-bool ring::push(packet p, packet *pool, int qw) {
-	uint16_t prev_idx;
-	uint16_t index;
-	{
-		std::lock_guard<std::mutex> lock(recv_mtx);
-
-		if(descs[recv_idx].status != INIT) {
-			return false;
-		}
-
-		index = get_index(pool, qw);
-		if(SIZE_POOL * 2 <= index) {
-			return false;
-		}
-		pool[index] = p;
-
-		prev_idx = recv_idx;
-		recv_idx = (recv_idx + 1) & NUM_MOD;
+bool ring::push(packet p, packet *pool, int qw, short id) {
+	if(descs[recv_idx[id]].status != INIT) {
+		return false;
 	}
+
+	uint16_t index = get_index(pool, qw);
+	if(SIZE_POOL * 2 <= index) {
+		return false;
+	}
+	pool[index] = p;
+
+	uint16_t prev_idx = recv_idx[id];
+	recv_idx[id] = (recv_idx[id] + NUM_THREAD) & NUM_MOD;
 
 	descs[prev_idx].entry = pool + index;
 	descs[prev_idx].set_param(pool[index], index, PUSH);
@@ -81,36 +77,26 @@ bool ring::push(packet p, packet *pool, int qw) {
 	return true;
 }
 
-bool ring::dinit() {
-	uint16_t prev_idx;
-	{
-		std::lock_guard<std::mutex> lock(rsrv_mtx);
-
-		if(descs[rsrv_idx].status != PULL) {
-			return false;
-		}
-
-		prev_idx = rsrv_idx;
-		rsrv_idx = (rsrv_idx + 1) & NUM_MOD;
+bool ring::dinit(short id) {
+	if(descs[rsrv_idx[id]].status != PULL) {
+		return false;
 	}
+
+	uint16_t prev_idx = rsrv_idx[id];
+	rsrv_idx[id] = (rsrv_idx[id] + NUM_THREAD) & NUM_MOD;
 
 	descs[prev_idx] = desc(INIT);
 
 	return true;
 }
 
-packet ring::pull(packet *pool) {
-	uint16_t prev_idx;
-	{
-		std::lock_guard<std::mutex> lock(proc_mtx);
-
-		if(descs[proc_idx].status != PUSH) {
-			return packet();
-		}
-
-		prev_idx = proc_idx;
-		proc_idx = (proc_idx + 1) & NUM_MOD;
+packet ring::pull(packet *pool, short id) {
+	if(descs[proc_idx[id]].status != PUSH) {
+		return packet();
 	}
+
+	uint16_t prev_idx = proc_idx[id];
+	proc_idx[id] = (proc_idx[id] + NUM_THREAD) & NUM_MOD;
 
 	descs[prev_idx].entry = pool + descs[prev_idx].id;
 	packet ret = *(descs[prev_idx].entry);

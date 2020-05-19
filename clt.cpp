@@ -54,11 +54,12 @@ void send_packet(ring *csring, packet *pool, int id) {
 	std::string text;
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
+
 	for(int i = index_begin; i < index_end;) {
-		if(csring->dinit()) {
+		if(csring->dinit(id)) {
 			text = base_text + std::to_string(i);
 			while(true) {
-				if(csring->push(packet(i, text.c_str()), pool, 0)) {
+				if(csring->push(packet(i, text.c_str()), pool, 0, id)) {
 					break;
 				}
 			}
@@ -71,9 +72,10 @@ void send_packet(ring *csring, packet *pool, int id) {
 void recv_packet(ring *scring, packet *pool, int id) {
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
-	std::cout << id << ", " << index_begin << ", " << index_end << std::endl;
+	//std::cout << id << ", " << index_begin << ", " << index_end << std::endl;
+
 	for(int i = index_begin; i < index_end;) {
-		packet p = scring->pull(pool);
+		packet p = scring->pull(pool, id);
 		if(0 < p.len) {
 			if(p.id % 500000 == 0) {
 				if(check_verification(&p)) {
@@ -82,6 +84,9 @@ void recv_packet(ring *scring, packet *pool, int id) {
 				else {
 					puts("asdfa");
 				}
+			}
+			if(4999000 < p.id) {
+				p.print();
 			}
 			i++;
 		}
