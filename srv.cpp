@@ -6,8 +6,8 @@ void rs_packet(ring*, ring*, packet*, int);
 int main() {
 	puts("begin");
 
-	int bfd = open_shmfile("shm_buf", 4096, false);
-	ring *csring = (ring*)mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+	int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
+	ring *csring = (ring*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 	ring *scring = (ring*)(csring + 1);
 	packet *pool = (packet*)(scring + 1);
 	bool *flag = (bool*)(pool + 2 * SIZE_POOL);
@@ -18,7 +18,7 @@ int main() {
 		std::cout<<n<<std::endl;
 	}
 
-#if 0
+#if 1
 	std::thread threads[NUM_THREAD - 1];
 	for(int i = 0; i < NUM_THREAD - 1; i++) {
 		threads[i] = std::thread(rs_packet, std::ref(csring), std::ref(scring), std::ref(pool), i);

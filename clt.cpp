@@ -10,8 +10,8 @@ const std::string base_text = "take";
 int main() {
 	puts("begin");
 
-	int bfd = open_shmfile("shm_buf", 4096, true);
-	ring *csring = (ring*)mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+	int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
+	ring *csring = (ring*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 	*csring = ring();
 	ring *scring = (ring*)(csring + 1);
 	*scring = ring();
@@ -24,6 +24,7 @@ int main() {
 	for(uint32_t n : nums) {
 		std::cout<<n<<std::endl;
 	}
+	std::cout << "size: " << sizeof(ring) << std::endl;
 
 	while(!*flag) {
 		;
