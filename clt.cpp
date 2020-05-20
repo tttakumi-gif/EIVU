@@ -16,12 +16,12 @@ int main() {
 	ring *scring = (ring*)(csring + 1);
 	*scring = ring();
 	packet *pool = (packet*)(scring + 1);
-	memset(pool, 0, sizeof(packet) * 2 * SIZE_POOL);
-	bool *flag = (bool*)(pool + 2 * SIZE_POOL);
+	memset(pool, 0, sizeof(packet) * SIZE_POOL);
+	bool *flag = (bool*)(pool + SIZE_POOL);
 	*flag = false;
 
 	set_packet_nums(nums);
-	std::cout << "size: " << sizeof(ring) << std::endl;
+	std::cout << "size: " << sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL << std::endl;
 
 	while(!*flag) {
 		;
@@ -54,7 +54,7 @@ void send_packet(ring *csring, packet *pool, int id) {
 		if(csring->dinit(id)) {
 			text = base_text + std::to_string(i);
 			while(true) {
-				if(csring->push(packet(i, text.c_str()), pool, 0, id)) {
+				if(csring->push(packet(i, text.c_str()), pool, CLT, id)) {
 					break;
 				}
 			}
@@ -71,13 +71,13 @@ void recv_packet(ring *scring, packet *pool, int id) {
 	for(int i = index_begin; i < index_end;) {
 		packet p = scring->pull(pool, id);
 		if(0 < p.len) {
+			if(!check_verification(&p)) {
+				puts("verification error");
+				exit(1);
+			}
+
 			if(p.id % 500000 == 0) {
-				if(check_verification(&p)) {
 					p.print();
-				}
-				else {
-					puts("asdfa");
-				}
 			}
 			i++;
 		}

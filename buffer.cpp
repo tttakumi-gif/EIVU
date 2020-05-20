@@ -44,32 +44,30 @@ void ring::init_descs() {
 	}
 }
 
-uint16_t ring::get_index(packet *pool, int qw) {
-	for(uint16_t i = qw; i < SIZE_POOL * 2; i += 2) {
+uint16_t ring::get_index(packet *pool, rsource source, short id) {
+	int num_add = NUM_THREAD * 2;
+	for(uint16_t i = source * NUM_THREAD + id; i < SIZE_POOL; i += num_add) {
 		if(pool[i].len == 0) {
 			return i;
 		}
 	}
 	std::cout << "recv: " << recv_idx << ", rsrv: " << rsrv_idx << ", proc: " << proc_idx << std::endl;
 
-	return SIZE_POOL * 2;
+	return SIZE_POOL;
 }
 
-bool ring::push(packet p, packet *pool, int qw, short id) {
+bool ring::push(packet p, packet *pool, rsource source, short id) {
 	if(descs[recv_idx[id]].status != INIT) {
 		return false;
 	}
 
 	uint16_t index;
-	{
-		std::lock_guard<std::mutex> lock(pool_mtx);
 
-		index = get_index(pool, qw);
-		if(SIZE_POOL * 2 <= index) {
+		index = get_index(pool, source, id);
+		if(SIZE_POOL <= index) {
 			return false;
 		}
 		pool[index] = p;
-	}
 
 	uint16_t prev_idx = recv_idx[id];
 	recv_idx[id] = (recv_idx[id] + NUM_THREAD) & NUM_MOD;

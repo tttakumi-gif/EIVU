@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <assert.h>
 
 #include <iostream>
 #include <cstring>

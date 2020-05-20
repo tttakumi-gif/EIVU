@@ -3,12 +3,17 @@
 
 #include "packet.hpp"
 
-#define NUM_THREAD 16
-#define SIZE_RING 16
+#define NUM_THREAD 64
+#define SIZE_RING NUM_THREAD * 2
 #define NUM_MOD (SIZE_RING - 1)
-#define SIZE_POOL 32
+#define SIZE_POOL SIZE_RING * 2
 
 static uint32_t nums[NUM_THREAD + 1];
+
+enum rsource {
+	CLT = 0,
+	SRV = 1,
+};
 
 enum dstatus {
 	INIT,
@@ -49,8 +54,8 @@ public:
 	ring& operator=(const ring&);
 	ring&& operator=(ring&&);
 
-	uint16_t get_index(packet*, int);
-	bool push(packet, packet*, int, short);
+	uint16_t get_index(packet*, rsource, short);
+	bool push(packet, packet*, rsource, short);
 	bool dinit(short);
 	packet pull(packet*, short);
 	void init_descs();

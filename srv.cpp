@@ -10,7 +10,7 @@ int main() {
 	ring *csring = (ring*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 	ring *scring = (ring*)(csring + 1);
 	packet *pool = (packet*)(scring + 1);
-	bool *flag = (bool*)(pool + 2 * SIZE_POOL);
+	bool *flag = (bool*)(pool + SIZE_POOL);
 
 	set_packet_nums(nums);
 	*flag = true;
@@ -44,7 +44,7 @@ void rs_packet(ring *csring, ring *scring, packet *pool, int id) {
 				;
 			}
 			while(true) {
-				if(scring->push(p, pool, 1, id)) {
+				if(scring->push(p, pool, SRV, id)) {
 					break;
 				}
 			}
