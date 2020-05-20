@@ -50,9 +50,7 @@ uint16_t ring::get_index(packet *pool, int qw) {
 			return i;
 		}
 	}
-	//puts("くぁｗせｄｒｆｔｇｙふじこｌｐ；＠：「」");
 	std::cout << "recv: " << recv_idx << ", rsrv: " << rsrv_idx << ", proc: " << proc_idx << std::endl;
-	//exit(1);
 
 	return SIZE_POOL * 2;
 }
@@ -62,11 +60,16 @@ bool ring::push(packet p, packet *pool, int qw, short id) {
 		return false;
 	}
 
-	uint16_t index = get_index(pool, qw);
-	if(SIZE_POOL * 2 <= index) {
-		return false;
+	uint16_t index;
+	{
+		std::lock_guard<std::mutex> lock(pool_mtx);
+
+		index = get_index(pool, qw);
+		if(SIZE_POOL * 2 <= index) {
+			return false;
+		}
+		pool[index] = p;
 	}
-	pool[index] = p;
 
 	uint16_t prev_idx = recv_idx[id];
 	recv_idx[id] = (recv_idx[id] + NUM_THREAD) & NUM_MOD;

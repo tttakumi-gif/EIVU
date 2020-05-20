@@ -14,11 +14,7 @@ int main() {
 
 	set_packet_nums(nums);
 	*flag = true;
-	for(int n : nums) {
-		std::cout<<n<<std::endl;
-	}
 
-#if 1
 	std::thread threads[NUM_THREAD - 1];
 	for(int i = 0; i < NUM_THREAD - 1; i++) {
 		threads[i] = std::thread(rs_packet, std::ref(csring), std::ref(scring), std::ref(pool), i);
@@ -28,29 +24,6 @@ int main() {
 	for(int i = 0; i < NUM_THREAD - 1; i++) {
 		threads[i].join();
 	}
-#else
-	for(int i = 0; i < NUM_PACKET;) {
-		packet p = csring->pull(pool);
-		if(0 < p.len) {
-			p.set_verification();
-			if(p.id % 500000 == 0)
-				p.print();
-			while(!scring->dinit()) {
-				;
-			}
-			while(true) {
-				if(scring->push(p, pool, 1)) {
-					break;
-				}
-			}
-		if(NUM_PACKET - 2 < i) {
-			std::cout << i << std::endl;
-		}
-			i++;
-		}
-	}
-	puts("fin");
-#endif
 
 	shm_unlink("shm_buf");
 
@@ -74,9 +47,6 @@ void rs_packet(ring *csring, ring *scring, packet *pool, int id) {
 				if(scring->push(p, pool, 1, id)) {
 					break;
 				}
-			}
-			if(4999000 < p.id) {
-				p.print();
 			}
 			i++;
 		}

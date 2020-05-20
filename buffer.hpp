@@ -3,7 +3,7 @@
 
 #include "packet.hpp"
 
-#define NUM_THREAD 2
+#define NUM_THREAD 16
 #define SIZE_RING 16
 #define NUM_MOD (SIZE_RING - 1)
 #define SIZE_POOL 32
@@ -32,11 +32,9 @@ public:
 };
 
 class ring {
-#if 0
+#if 1
 private:
-	std::mutex rsrv_mtx;
-	std::mutex recv_mtx;
-	std::mutex proc_mtx;
+	std::mutex pool_mtx;
 #endif
 public:
 	uint16_t rsrv_idx[NUM_THREAD];

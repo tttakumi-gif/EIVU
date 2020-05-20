@@ -21,30 +21,25 @@ int main() {
 	*flag = false;
 
 	set_packet_nums(nums);
-	for(uint32_t n : nums) {
-		std::cout<<n<<std::endl;
-	}
 	std::cout << "size: " << sizeof(ring) << std::endl;
 
 	while(!*flag) {
 		;
 	}
 
-	std::thread threads[NUM_THREAD * 2];
+	int nthread = NUM_THREAD * 2 - 1;
+	std::thread threads[nthread];
 	for(int i = 0; i < NUM_THREAD; i++) {
 		threads[i] = std::thread(send_packet, std::ref(csring), std::ref(pool), i);
 	}
-	for(int i = NUM_THREAD; i < NUM_THREAD * 2; i++) {
+	for(int i = NUM_THREAD; i < nthread; i++) {
 		threads[i] = std::thread(recv_packet, std::ref(scring), std::ref(pool), i - NUM_THREAD);
 	}
-	//std::thread thread_recv(recv_packet, std::ref(scring), std::ref(pool));
 
-	//recv_packet(scring, pool);
-	for(int i = 0; i < NUM_THREAD * 2; i++) {
+	recv_packet(scring, pool, NUM_THREAD - 1);
+	for(int i = 0; i < nthread; i++) {
 		threads[i].join();
-		std::cout<<i<<", fin"<<std::endl;
 	}
-	//thread_recv.join();
 	shm_unlink("shm_buf");
 
 	return 0;
@@ -72,7 +67,6 @@ void send_packet(ring *csring, packet *pool, int id) {
 void recv_packet(ring *scring, packet *pool, int id) {
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
-	//std::cout << id << ", " << index_begin << ", " << index_end << std::endl;
 
 	for(int i = index_begin; i < index_end;) {
 		packet p = scring->pull(pool, id);
@@ -85,13 +79,9 @@ void recv_packet(ring *scring, packet *pool, int id) {
 					puts("asdfa");
 				}
 			}
-			if(4999000 < p.id) {
-				p.print();
-			}
 			i++;
 		}
 	}
-	std::cout<<"fin, "<<id<<std::endl;
 }
 
 bool check_verification(packet *p) {
