@@ -17,7 +17,7 @@ int main() {
 	*scring = ring();
 	packet *pool = (packet*)(scring + 1);
 	memset(pool, 0, sizeof(packet) * SIZE_POOL);
-	bool *flag = (bool*)(pool + SIZE_POOL);
+	volatile bool *flag = (volatile bool*)(pool + SIZE_POOL);
 	*flag = false;
 
 	set_packet_nums(nums);
