@@ -3,7 +3,7 @@
 
 #include "packet.hpp"
 
-#define NUM_THREAD 64
+#define NUM_THREAD 105
 
 static uint32_t nums[NUM_THREAD + 1];
 static const uint16_t SIZE_RING = NUM_THREAD * 2;

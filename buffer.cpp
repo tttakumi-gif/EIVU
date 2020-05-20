@@ -73,7 +73,10 @@ bool ring::push(packet p, packet *pool, rsource source, short id) {
 		pool[index] = p;
 
 	uint16_t prev_idx = recv_idx[id];
-	recv_idx[id] = (recv_idx[id] + NUM_THREAD) & NUM_MOD;
+	recv_idx[id] = recv_idx[id] + NUM_THREAD;
+	if(SIZE_RING <= recv_idx[id]) {
+		recv_idx[id] = id;
+	}
 
 	descs[prev_idx].entry = pool + index;
 	descs[prev_idx].set_param(pool[index], index, PUSH);
@@ -87,7 +90,10 @@ bool ring::dinit(short id) {
 	}
 
 	uint16_t prev_idx = rsrv_idx[id];
-	rsrv_idx[id] = (rsrv_idx[id] + NUM_THREAD) & NUM_MOD;
+	rsrv_idx[id] = rsrv_idx[id] + NUM_THREAD;
+	if(SIZE_RING <= rsrv_idx[id]) {
+		rsrv_idx[id] = id;
+	}
 
 	descs[prev_idx] = desc(INIT);
 
@@ -100,7 +106,10 @@ packet ring::pull(packet *pool, short id) {
 	}
 
 	uint16_t prev_idx = proc_idx[id];
-	proc_idx[id] = (proc_idx[id] + NUM_THREAD) & NUM_MOD;
+	proc_idx[id] = proc_idx[id] + NUM_THREAD;
+	if(SIZE_RING <= proc_idx[id]) {
+		proc_idx[id] = id;
+	}
 
 	descs[prev_idx].entry = pool + descs[prev_idx].id;
 	packet ret = *(descs[prev_idx].entry);

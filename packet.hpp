@@ -8,8 +8,9 @@
 #include <mutex>
 
 #define DUMMY_SIZE 22
-//#define NUM_PACKET 10000000
-#define NUM_PACKET 100000000
+//#define NUM_PACKET 5000000
+#define NUM_PACKET 15000000
+//#define NUM_PACKET 100000000
 
 class packet {
 public:
