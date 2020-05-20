@@ -38,8 +38,10 @@ void rs_packet(ring *csring, ring *scring, packet *pool, int id) {
 		packet p = csring->pull(pool, id);
 		if(0 < p.len) {
 			p.set_verification();
+#if 0
 			if(p.id % 500000 == 0)
 				p.print();
+#endif
 			while(!scring->dinit(id)) {
 				;
 			}

@@ -1,5 +1,8 @@
 #include "buffer.hpp"
 
+static const short POOL_ADD = NUM_THREAD * 2;
+static const uint16_t NUM_MOD = SIZE_RING - 1;
+
 desc::desc() {
 }
 
@@ -45,8 +48,8 @@ void ring::init_descs() {
 }
 
 uint16_t ring::get_index(packet *pool, rsource source, short id) {
-	int num_add = NUM_THREAD * 2;
-	for(uint16_t i = source * NUM_THREAD + id; i < SIZE_POOL; i += num_add) {
+	short index_begin = ((source == CLT) ? 0 : NUM_THREAD) + id;
+	for(uint16_t i = index_begin; i < SIZE_POOL; i += POOL_ADD) {
 		if(pool[i].len == 0) {
 			return i;
 		}

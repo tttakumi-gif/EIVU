@@ -5,7 +5,7 @@ void send_packet(ring*, packet*, int);
 void recv_packet(ring*, packet*, int);
 bool check_verification(packet*);
 
-const std::string base_text = "take";
+static const std::string base_text = "take";
 
 int main() {
 	puts("begin");
@@ -76,9 +76,11 @@ void recv_packet(ring *scring, packet *pool, int id) {
 				exit(1);
 			}
 
-			if(p.id % 500000 == 0) {
+#if 1
+			if(p.id % 5000000 == 0) {
 					p.print();
 			}
+#endif
 			i++;
 		}
 	}
