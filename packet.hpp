@@ -7,9 +7,11 @@
 #include <atomic>
 #include <mutex>
 
+//#define DUMMY_SIZE 22
 #define DUMMY_SIZE 22
 //#define NUM_PACKET 5000000
-#define NUM_PACKET 15000000
+//#define NUM_PACKET 10000000
+#define NUM_PACKET 20000000
 //#define NUM_PACKET 100000000
 
 class packet {
@@ -20,6 +22,7 @@ public:
 	uint32_t verification;
 
 	packet();
+	packet(uint32_t);
 	packet(uint32_t, const char*);
 
 	void print();

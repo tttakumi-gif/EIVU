@@ -33,24 +33,26 @@ int main() {
 void rs_packet(ring *csring, ring *scring, packet *pool, int id) {
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
+	packet p;
 
-	for(int i = index_begin; i < index_end;) {
-		packet p = csring->pull(pool, id);
-		if(0 < p.len) {
-			p.set_verification();
+	for(int i = index_begin; i < index_end; i++) {
+		while(true) {
+			p = csring->pull(pool, id);
+			if(0 < p.len) {
+				p.set_verification();
+				break;
+			}
+		}
+
 #if 0
-			if(p.id % 500000 == 0)
-				p.print();
+		if(p.id % 500000 == 0)
+			p.print();
 #endif
-			while(!scring->dinit(id)) {
-				;
-			}
-			while(true) {
-				if(scring->push(p, pool, SRV, id)) {
-					break;
-				}
-			}
-			i++;
+		while(!scring->dinit(id)) {
+			;
+		}
+		while(!scring->push(p, pool, SRV, id)) {
+			;
 		}
 	}
 }

@@ -4,6 +4,11 @@ packet::packet() {
 	len = 0;
 }
 
+packet::packet(uint32_t this_id) {
+	id = this_id;
+	len = sizeof(packet);
+}
+
 packet::packet(uint32_t this_id, const char* this_dummy) {
 	id = this_id;
 	len = sizeof(packet);

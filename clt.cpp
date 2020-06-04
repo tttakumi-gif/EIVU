@@ -1,3 +1,4 @@
+#include <chrono>
 #include "buffer.hpp"
 #include "shm.hpp"
 
@@ -36,30 +37,46 @@ int main() {
 		threads[i] = std::thread(recv_packet, std::ref(scring), std::ref(pool), i - NUM_THREAD);
 	}
 
+	std::chrono::system_clock::time_point start, end;
+	start = std::chrono::system_clock::now();
 	recv_packet(scring, pool, NUM_THREAD - 1);
 	for(int i = 0; i < nthread; i++) {
 		threads[i].join();
 	}
+	end = std::chrono::system_clock::now();
+
 	shm_unlink("shm_buf");
+	double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << elapsed / 1000 << "sec" << std::endl;
 
 	return 0;
 }
 
 void send_packet(ring *csring, packet *pool, int id) {
-	std::string text;
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
+	std::string text;
+	packet parray[64];
 
-	for(int i = index_begin; i < index_end;) {
-		if(csring->dinit(id)) {
-			text = base_text + std::to_string(i);
-			while(true) {
-				if(csring->push(packet(i, text.c_str()), pool, CLT, id)) {
-					break;
+	for(int i = index_begin; i < index_end; i += 64) {
+		int idx = i + 64;
+		if(index_end < idx) {
+			idx = index_end;
+		}
+		for(int j = i; j < idx; j++) {
+			parray[j - i] = packet(j);
+		}
+
+		idx -= i;
+		for(int j = 0; j < idx;) {
+			if(csring->dinit(id)) {
+				while(true) {
+					if(csring->push(parray[j], pool, CLT, id)) {
+						j++;
+						break;
+					}
 				}
 			}
-
-			i++;
 		}
 	}
 }
