@@ -47,11 +47,16 @@ void ring::init_descs() {
 	}
 }
 
+const static short num_access = SIZE_RING / NUM_THREAD;
 uint16_t ring::get_index(packet *pool, rsource source, short id) {
-	short index_begin = ((source == CLT) ? 0 : NUM_THREAD) + id;
-	for(uint16_t i = index_begin; i < SIZE_POOL; i += POOL_ADD) {
-		if(pool[i].len == 0) {
-			return i;
+	for(uint16_t i = 0; i < num_access; i++) {
+		uint16_t index = id * num_access + i;
+		if(source == SRV) {
+			index += SIZE_RING;
+		}
+
+		if(pool[index].len == 0) {
+			return index;
 		}
 	}
 	std::cout << "recv: " << recv_idx << ", rsrv: " << rsrv_idx << ", proc: " << proc_idx << std::endl;
@@ -60,40 +65,32 @@ uint16_t ring::get_index(packet *pool, rsource source, short id) {
 }
 
 bool ring::push(packet p, packet *pool, rsource source, short id) {
-	if(descs[recv_idx[id]].status != INIT) {
+	uint16_t prev_idx = recv_idx[id];
+	if(descs[prev_idx].status != INIT) {
 		return false;
 	}
 
-	uint16_t index;
-
-		index = get_index(pool, source, id);
-		if(SIZE_POOL <= index) {
-			return false;
-		}
-		pool[index] = p;
-
-	uint16_t prev_idx = recv_idx[id];
-	recv_idx[id] = recv_idx[id] + NUM_THREAD;
-	if(SIZE_RING <= recv_idx[id]) {
-		recv_idx[id] = id;
+	uint16_t index = get_index(pool, source, id);
+	if(SIZE_POOL <= index) {
+		return false;
 	}
+	pool[index] = p;
+
+	recv_idx[id] = (NUM_THREAD + prev_idx) & 127;
 
 	descs[prev_idx].entry = pool + index;
-	descs[prev_idx].set_param(pool[index], index, PUSH);
+	descs[prev_idx].set_param(p, index, PUSH);
 
 	return true;
 }
 
 bool ring::dinit(short id) {
-	if(descs[rsrv_idx[id]].status != PULL) {
+	uint16_t prev_idx = rsrv_idx[id];
+	if(descs[prev_idx].status != PULL) {
 		return false;
 	}
 
-	uint16_t prev_idx = rsrv_idx[id];
-	rsrv_idx[id] = rsrv_idx[id] + NUM_THREAD;
-	if(SIZE_RING <= rsrv_idx[id]) {
-		rsrv_idx[id] = id;
-	}
+	rsrv_idx[id] = (NUM_THREAD + prev_idx) & 127;
 
 	descs[prev_idx] = desc(INIT);
 
@@ -101,15 +98,12 @@ bool ring::dinit(short id) {
 }
 
 packet ring::pull(packet *pool, short id) {
-	if(descs[proc_idx[id]].status != PUSH) {
+	uint16_t prev_idx = proc_idx[id];
+	if(descs[prev_idx].status != PUSH) {
 		return packet();
 	}
 
-	uint16_t prev_idx = proc_idx[id];
-	proc_idx[id] = proc_idx[id] + NUM_THREAD;
-	if(SIZE_RING <= proc_idx[id]) {
-		proc_idx[id] = id;
-	}
+	proc_idx[id] = (NUM_THREAD + prev_idx) & 127;
 
 	descs[prev_idx].entry = pool + descs[prev_idx].id;
 	packet ret = *(descs[prev_idx].entry);
