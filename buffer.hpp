@@ -3,7 +3,7 @@
 
 #include "packet.hpp"
 
-#define SIZE_BATCH 8
+#define SIZE_BATCH 16
 #define NUM_THREAD 64
 
 extern uint32_t nums[NUM_THREAD + 1];
@@ -14,16 +14,15 @@ constexpr uint16_t SIZE_POOL = SIZE_RING * 2;
 constexpr uint16_t POOL_ADD = NUM_THREAD * 2;
 constexpr uint16_t NUM_MOD = SIZE_RING - 1;
 
-constexpr uint16_t NUM_ACCESS = SIZE_RING / NUM_THREAD;
-constexpr uint16_t MOD_ACCESS = NUM_ACCESS - 1;
+constexpr uint8_t NUM_ACCESS = SIZE_RING / NUM_THREAD;
+constexpr uint8_t MOD_ACCESS = NUM_ACCESS - 1;
 
-enum rsource {
-	CLT = false,
-	SRV = true,
+enum rsource : uint8_t {
+	CLT,
+	SRV,
 };
 
-enum dstatus {
-	INIT,
+enum dstatus : uint8_t {
 	PUSH,
 	PULL,
 };
@@ -32,8 +31,8 @@ class desc {
 public:
 	dstatus status;
 	uint16_t id;
-	uint16_t len;
-	bool is_used;
+	uint8_t len;
+	//bool is_used;
 	packet *entry;
 
 	desc();

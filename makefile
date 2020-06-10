@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++11 -pthread -O2 -mtune=native -march=native -mfpmath=both 
+CXXFLAGS = -std=c++11 -pthread -O3 -mtune=native -march=native -mfpmath=both -m32
 
 packet.o: packet.cpp packet.hpp
 	g++ -o obj/packet.o -c packet.cpp $(CXXFLAGS)

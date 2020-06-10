@@ -31,24 +31,32 @@ int main() {
 }
 
 void rs_packet(ring *csring, ring *scring, packet *pool, int id) {
+	int j, idx;
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
 	packet p;
+	packet parray[SIZE_BATCH];
 
-	for(int i = index_begin; i < index_end; i++) {
-		do {
-			p = csring->pull(pool, id);
-		} while(p.len <= 0);
-
-		p.set_verification();
-
-#if 0
-		if(p.id % 500000 == 0)
-			p.print();
-#endif
-		while(!scring->dinit(id)) {
+	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
+		idx = i + SIZE_BATCH;
+		if(index_end < idx) {
+			idx = index_end;
 		}
-		while(!scring->push(p, pool, SRV, id)) {
+
+		for(j = i; j < idx; j++) {
+			do {
+				p = csring->pull(pool, id);
+			} while(p.len <= 0);
+			p.set_verification();
+			parray[j - i] = p;
+		}
+
+		idx -= i;
+		for(j = 0; j < idx; j++) {
+			while(!scring->dinit(id)) {
+			}
+			while(!scring->push(parray[j], pool, SRV, id)) {
+			}
 		}
 	}
 }

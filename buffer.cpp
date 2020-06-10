@@ -64,9 +64,6 @@ uint16_t ring::get_index(packet *pool, rsource source, short id) {
 
 bool ring::push(packet p, packet *pool, rsource source, short id) {
 	uint16_t prev_idx = recv_idx[id];
-	if(descs[prev_idx].status != INIT) {
-		return false;
-	}
 
 	uint16_t index = get_index(pool, source, id);
 	if(SIZE_POOL <= index) {
@@ -80,7 +77,6 @@ bool ring::push(packet p, packet *pool, rsource source, short id) {
 	else {
 		recv_idx[id]++;
 	}
-	//recv_idx[id] += ((prev_idx & 1) == 0) ? 1 : -1;
 
 	descs[prev_idx].entry = pool + index;
 	descs[prev_idx].set_param(p, index, PUSH);
@@ -100,9 +96,6 @@ bool ring::dinit(short id) {
 	else {
 		rsrv_idx[id]++;
 	}
-	//rsrv_idx[id] += ((prev_idx & 1) == 0) ? 1 : -1;
-
-	descs[prev_idx] = desc(INIT);
 
 	return true;
 }
@@ -119,7 +112,6 @@ packet ring::pull(packet *pool, short id) {
 	else {
 		proc_idx[id]++;
 	}
-	//proc_idx[id] += ((prev_idx & 1) == 0) ? 1 : -1;
 
 	descs[prev_idx].entry = pool + descs[prev_idx].id;
 	packet ret = *(descs[prev_idx].entry);

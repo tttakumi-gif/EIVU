@@ -51,21 +51,22 @@ int main() {
 }
 
 void send_packet(ring *csring, packet *pool, int id) {
+	int j, idx;
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
 	packet parray[SIZE_BATCH];
 
 	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
-		int idx = i + SIZE_BATCH;
+		idx = i + SIZE_BATCH;
 		if(index_end < idx) {
 			idx = index_end;
 		}
-		for(int j = i; j < idx; j++) {
+		for(j = i; j < idx; j++) {
 			parray[j - i] = packet(j);
 		}
 
 		idx -= i;
-		for(int j = 0; j < idx; j++) {
+		for(j = 0; j < idx; j++) {
 			while(!csring->dinit(id)) {
 			}
 			while(!csring->push(parray[j], pool, CLT, id)) {
@@ -75,6 +76,7 @@ void send_packet(ring *csring, packet *pool, int id) {
 }
 
 void recv_packet(ring *scring, packet *pool, int id) {
+#if 0
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
 	packet p;
@@ -93,6 +95,38 @@ void recv_packet(ring *scring, packet *pool, int id) {
 				p.print();
 		}
 	}
+#else
+	int j, idx;
+	int index_begin = nums[id];
+	int index_end = nums[id + 1];
+	packet p;
+	packet parray[SIZE_BATCH];
+
+	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
+		idx = i + SIZE_BATCH;
+		if(index_end < idx) {
+			idx = index_end;
+		}
+		for(j = i; j < idx; j++) {
+			do {
+				p = scring->pull(pool, id);
+			} while(p.len <= 0);
+
+			if(!check_verification(&p)) {
+				puts("verification error");
+				exit(1);
+			}
+			parray[j - i] = p;
+		}
+
+		idx -= i;
+		for(j = 0; j < idx; j++) {
+			if((parray[j].id & 8388607) == 0) {
+					parray[j].print();
+			}
+		}
+	}
+#endif
 }
 
 bool check_verification(packet *p) {
