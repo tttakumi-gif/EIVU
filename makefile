@@ -1,13 +1,15 @@
+CXXFLAGS = -std=c++11 -pthread -O2 -mtune=native -march=native -mfpmath=both 
+
 packet.o: packet.cpp packet.hpp
-	g++ -o obj/packet.o -c packet.cpp -std=c++11 -O3
+	g++ -o obj/packet.o -c packet.cpp $(CXXFLAGS)
 buffer.o: buffer.cpp buffer.hpp packet.o
-	g++ -o obj/buffer.o -c buffer.cpp -std=c++11 -O3
+	g++ -o obj/buffer.o -c buffer.cpp $(CXXFLAGS)
 shm.o: shm.cpp shm.hpp
-	g++ -o obj/shm.o -c shm.cpp -lrt -std=c++11 -O3
+	g++ -o obj/shm.o -c shm.cpp -lrt $(CXXFLAGS)
 clt: buffer.o shm.o clt.cpp
-	g++ -o clt.out clt.cpp obj/packet.o obj/buffer.o obj/shm.o -lrt -std=c++11 -pthread -O3
+	g++ -o clt.out clt.cpp obj/packet.o obj/buffer.o obj/shm.o -lrt $(CXXFLAGS)
 srv: buffer.o shm.o srv.cpp
-	g++ -o srv.out srv.cpp obj/packet.o obj/buffer.o obj/shm.o -lrt -std=c++11 -pthread -O3
+	g++ -o srv.out srv.cpp obj/packet.o obj/buffer.o obj/shm.o -lrt $(CXXFLAGS)
 all: clt srv
 test: main
 	./clt.out

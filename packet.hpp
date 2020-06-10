@@ -1,5 +1,3 @@
-#pragma once
-
 #include <string.h>
 #include <iostream>
 #include <bitset>
@@ -7,12 +5,13 @@
 #include <atomic>
 #include <mutex>
 
-//#define DUMMY_SIZE 22
-#define DUMMY_SIZE 22
 //#define NUM_PACKET 5000000
 //#define NUM_PACKET 10000000
-#define NUM_PACKET 20000000
-//#define NUM_PACKET 100000000
+//#define NUM_PACKET 20000000
+#define NUM_PACKET 100000000
+#define SIZE_PACKET 32
+
+constexpr uint16_t DUMMY_SIZE = SIZE_PACKET - sizeof(uint32_t) - sizeof(uint32_t) - sizeof(uint16_t);
 
 class packet {
 public:

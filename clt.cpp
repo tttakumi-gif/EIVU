@@ -6,10 +6,9 @@ void send_packet(ring*, packet*, int);
 void recv_packet(ring*, packet*, int);
 bool check_verification(packet*);
 
-static const std::string base_text = "take";
-
 int main() {
 	puts("begin");
+	std::cout << "size: " << sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL << std::endl;
 
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
 	ring *csring = (ring*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
@@ -22,10 +21,8 @@ int main() {
 	*flag = false;
 
 	set_packet_nums(nums);
-	std::cout << "size: " << sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL << std::endl;
 
 	while(!*flag) {
-		;
 	}
 
 	int nthread = NUM_THREAD * 2 - 1;
@@ -46,6 +43,7 @@ int main() {
 	end = std::chrono::system_clock::now();
 
 	shm_unlink("shm_buf");
+
 	double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	std::cout << elapsed / 1000 << "sec" << std::endl;
 
@@ -55,11 +53,10 @@ int main() {
 void send_packet(ring *csring, packet *pool, int id) {
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
-	std::string text;
-	packet parray[64];
+	packet parray[SIZE_BATCH];
 
-	for(int i = index_begin; i < index_end; i += 64) {
-		int idx = i + 64;
+	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
+		int idx = i + SIZE_BATCH;
 		if(index_end < idx) {
 			idx = index_end;
 		}
@@ -68,14 +65,10 @@ void send_packet(ring *csring, packet *pool, int id) {
 		}
 
 		idx -= i;
-		for(int j = 0; j < idx;) {
-			if(csring->dinit(id)) {
-				while(true) {
-					if(csring->push(parray[j], pool, CLT, id)) {
-						j++;
-						break;
-					}
-				}
+		for(int j = 0; j < idx; j++) {
+			while(!csring->dinit(id)) {
+			}
+			while(!csring->push(parray[j], pool, CLT, id)) {
 			}
 		}
 	}
@@ -84,21 +77,20 @@ void send_packet(ring *csring, packet *pool, int id) {
 void recv_packet(ring *scring, packet *pool, int id) {
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
+	packet p;
 
-	for(int i = index_begin; i < index_end;) {
-		packet p = scring->pull(pool, id);
-		if(0 < p.len) {
-			if(!check_verification(&p)) {
-				puts("verification error");
-				exit(1);
-			}
+	for(int i = index_begin; i < index_end; i++) {
+		do {
+			p = scring->pull(pool, id);
+		} while(p.len <= 0);
 
-#if 1
-			if(p.id % 5000000 == 0) {
-					p.print();
-			}
-#endif
-			i++;
+		if(!check_verification(&p)) {
+			puts("verification error");
+			exit(1);
+		}
+
+		if((p.id & 8388607) == 0) {
+				p.print();
 		}
 	}
 }

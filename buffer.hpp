@@ -3,15 +3,23 @@
 
 #include "packet.hpp"
 
+#define SIZE_BATCH 8
 #define NUM_THREAD 64
 
-static uint32_t nums[NUM_THREAD + 1];
-static const uint16_t SIZE_RING = NUM_THREAD * 2;
-static const uint16_t SIZE_POOL = SIZE_RING * 2;
+extern uint32_t nums[NUM_THREAD + 1];
+
+constexpr uint16_t SIZE_RING = NUM_THREAD * SIZE_BATCH;
+constexpr uint16_t SIZE_POOL = SIZE_RING * 2;
+
+constexpr uint16_t POOL_ADD = NUM_THREAD * 2;
+constexpr uint16_t NUM_MOD = SIZE_RING - 1;
+
+constexpr uint16_t NUM_ACCESS = SIZE_RING / NUM_THREAD;
+constexpr uint16_t MOD_ACCESS = NUM_ACCESS - 1;
 
 enum rsource {
-	CLT = 0,
-	SRV = 1,
+	CLT = false,
+	SRV = true,
 };
 
 enum dstatus {

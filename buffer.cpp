@@ -1,7 +1,6 @@
 #include "buffer.hpp"
 
-static const short POOL_ADD = NUM_THREAD * 2;
-static const uint16_t NUM_MOD = SIZE_RING - 1;
+uint32_t nums[NUM_THREAD + 1];
 
 desc::desc() {
 }
@@ -25,9 +24,9 @@ void desc::set_param(packet p, uint16_t this_id, dstatus _status) {
 ring::ring() {
 	size = SIZE_RING;
 	for(int i = 0; i < NUM_THREAD; i++) {
-		rsrv_idx[i] = i;
-		recv_idx[i] = i;
-		proc_idx[i] = i;
+		rsrv_idx[i] = i * NUM_ACCESS;
+		recv_idx[i] = i * NUM_ACCESS;
+		proc_idx[i] = i * NUM_ACCESS;
 	}
 	memset(descs, 0, sizeof(desc) * SIZE_RING);
 	init_descs();
@@ -47,10 +46,9 @@ void ring::init_descs() {
 	}
 }
 
-const static short num_access = SIZE_RING / NUM_THREAD;
 uint16_t ring::get_index(packet *pool, rsource source, short id) {
-	for(uint16_t i = 0; i < num_access; i++) {
-		uint16_t index = id * num_access + i;
+	for(uint16_t i = 0; i < NUM_ACCESS; i++) {
+		uint16_t index = id * NUM_ACCESS + i;
 		if(source == SRV) {
 			index += SIZE_RING;
 		}
@@ -76,7 +74,13 @@ bool ring::push(packet p, packet *pool, rsource source, short id) {
 	}
 	pool[index] = p;
 
-	recv_idx[id] = (NUM_THREAD + prev_idx) & 127;
+	if((prev_idx & MOD_ACCESS) == MOD_ACCESS) {
+		recv_idx[id] = id * NUM_ACCESS;
+	}
+	else {
+		recv_idx[id]++;
+	}
+	//recv_idx[id] += ((prev_idx & 1) == 0) ? 1 : -1;
 
 	descs[prev_idx].entry = pool + index;
 	descs[prev_idx].set_param(p, index, PUSH);
@@ -90,7 +94,13 @@ bool ring::dinit(short id) {
 		return false;
 	}
 
-	rsrv_idx[id] = (NUM_THREAD + prev_idx) & 127;
+	if((prev_idx & MOD_ACCESS) == MOD_ACCESS) {
+		rsrv_idx[id] = id * NUM_ACCESS;
+	}
+	else {
+		rsrv_idx[id]++;
+	}
+	//rsrv_idx[id] += ((prev_idx & 1) == 0) ? 1 : -1;
 
 	descs[prev_idx] = desc(INIT);
 
@@ -103,7 +113,13 @@ packet ring::pull(packet *pool, short id) {
 		return packet();
 	}
 
-	proc_idx[id] = (NUM_THREAD + prev_idx) & 127;
+	if((prev_idx & MOD_ACCESS) == MOD_ACCESS) {
+		proc_idx[id] = id * NUM_ACCESS;
+	}
+	else {
+		proc_idx[id]++;
+	}
+	//proc_idx[id] += ((prev_idx & 1) == 0) ? 1 : -1;
 
 	descs[prev_idx].entry = pool + descs[prev_idx].id;
 	packet ret = *(descs[prev_idx].entry);
