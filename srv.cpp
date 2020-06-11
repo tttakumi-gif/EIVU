@@ -44,19 +44,15 @@ void rs_packet(ring *csring, ring *scring, packet *pool, int id) {
 		}
 
 		for(j = i; j < idx; j++) {
-			do {
-				p = csring->pull(pool, id);
-			} while(p.len <= 0);
+			p = csring->pull(pool, id);
 			p.set_verification();
 			parray[j - i] = p;
 		}
 
 		idx -= i;
+		//for(j = idx; 0 <= j; j--) {
 		for(j = 0; j < idx; j++) {
-			while(!scring->dinit(id)) {
-			}
-			while(!scring->push(parray[j], pool, SRV, id)) {
-			}
+			scring->ipush(parray[j], pool, SRV, id);
 		}
 	}
 }

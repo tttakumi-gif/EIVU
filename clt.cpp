@@ -67,35 +67,12 @@ void send_packet(ring *csring, packet *pool, int id) {
 
 		idx -= i;
 		for(j = 0; j < idx; j++) {
-			while(!csring->dinit(id)) {
-			}
-			while(!csring->push(parray[j], pool, CLT, id)) {
-			}
+			csring->ipush(parray[j], pool, CLT, id);
 		}
 	}
 }
 
 void recv_packet(ring *scring, packet *pool, int id) {
-#if 0
-	int index_begin = nums[id];
-	int index_end = nums[id + 1];
-	packet p;
-
-	for(int i = index_begin; i < index_end; i++) {
-		do {
-			p = scring->pull(pool, id);
-		} while(p.len <= 0);
-
-		if(!check_verification(&p)) {
-			puts("verification error");
-			exit(1);
-		}
-
-		if((p.id & 8388607) == 0) {
-				p.print();
-		}
-	}
-#else
 	int j, idx;
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
@@ -108,9 +85,7 @@ void recv_packet(ring *scring, packet *pool, int id) {
 			idx = index_end;
 		}
 		for(j = i; j < idx; j++) {
-			do {
-				p = scring->pull(pool, id);
-			} while(p.len <= 0);
+			p = scring->pull(pool, id);
 
 			if(!check_verification(&p)) {
 				puts("verification error");
@@ -126,7 +101,6 @@ void recv_packet(ring *scring, packet *pool, int id) {
 			}
 		}
 	}
-#endif
 }
 
 bool check_verification(packet *p) {
