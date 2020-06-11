@@ -8,3 +8,5 @@ clt: clt.cpp $(RING_OBJS)
 srv: srv.cpp $(RING_OBJS)
 	g++ -o srv.out srv.cpp $(RING_OBJS) -lrt $(CXXFLAGS)
 all: clt srv
+clean:
+	$(RM) obj/* *.out

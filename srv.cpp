@@ -39,7 +39,7 @@ void rs_packet(ring *csring, ring *scring, packet *pool, int id) {
 
 	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
 		idx = i + SIZE_BATCH;
-		if(index_end < idx) {
+		if(unlikely(index_end < idx)) {
 			idx = index_end;
 		}
 

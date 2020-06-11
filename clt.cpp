@@ -58,7 +58,7 @@ void send_packet(ring *csring, packet *pool, int id) {
 
 	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
 		idx = i + SIZE_BATCH;
-		if(index_end < idx) {
+		if(unlikely(index_end < idx)) {
 			idx = index_end;
 		}
 		for(j = i; j < idx; j++) {
@@ -81,13 +81,13 @@ void recv_packet(ring *scring, packet *pool, int id) {
 
 	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
 		idx = i + SIZE_BATCH;
-		if(index_end < idx) {
+		if(unlikely(index_end < idx)) {
 			idx = index_end;
 		}
 		for(j = i; j < idx; j++) {
 			p = scring->pull(pool, id);
 
-			if(!check_verification(&p)) {
+			if(unlikely(!check_verification(&p))) {
 				puts("verification error");
 				exit(1);
 			}
@@ -96,7 +96,7 @@ void recv_packet(ring *scring, packet *pool, int id) {
 
 		idx -= i;
 		for(j = 0; j < idx; j++) {
-			if((parray[j].id & 8388607) == 0) {
+			if(unlikely((parray[j].id & 8388607) == 0)) {
 					parray[j].print();
 			}
 		}

@@ -79,7 +79,7 @@ inline bool ring::dinit(short id) {
 		prev_idx = rsrv_idx[id];
 	}
 
-	if((prev_idx & MOD_ACCESS) == MOD_ACCESS) {
+	if(unlikely((prev_idx & MOD_ACCESS) == MOD_ACCESS)) {
 		rsrv_idx[id] = id * SIZE_BATCH;
 	}
 	else {
@@ -97,7 +97,7 @@ inline bool ring::push(packet p, packet *pool, rsource source, short id) {
 	}
 	pool[index] = p;
 
-	if((prev_idx & MOD_ACCESS) == MOD_ACCESS) {
+	if(unlikely((prev_idx & MOD_ACCESS) == MOD_ACCESS)) {
 		recv_idx[id] = id * SIZE_BATCH;
 	}
 	else {
@@ -119,7 +119,7 @@ inline void ring::ipush(packet p, packet *pool, rsource source, short id) {
 	while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PULL) {
 	}
 
-	if((prev_idx & MOD_ACCESS) == MOD_ACCESS) {
+	if(unlikely((prev_idx & MOD_ACCESS) == MOD_ACCESS)) {
 		rsrv_idx[id] = id * SIZE_BATCH;
 	}
 	else {
@@ -133,7 +133,7 @@ inline void ring::ipush(packet p, packet *pool, rsource source, short id) {
 	}
 	pool[index] = p;
 
-	if((prev_idx & MOD_ACCESS) == MOD_ACCESS) {
+	if(unlikely((prev_idx & MOD_ACCESS) == MOD_ACCESS)) {
 		recv_idx[id] = id * SIZE_BATCH;
 	}
 	else {
@@ -153,7 +153,7 @@ inline packet ring::pull(packet *pool, short id) {
 	while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PUSH) {
 	}
 
-	if((prev_idx & MOD_ACCESS) == MOD_ACCESS) {
+	if(unlikely((prev_idx & MOD_ACCESS) == MOD_ACCESS)) {
 		proc_idx[id] = id * SIZE_BATCH;
 	}
 	else {

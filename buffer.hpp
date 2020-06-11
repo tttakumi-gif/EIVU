@@ -6,6 +6,9 @@
 #define SIZE_BATCH 16
 #define NUM_THREAD 64
 
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
 extern uint32_t nums[NUM_THREAD + 1];
 
 constexpr uint16_t SIZE_RING = NUM_THREAD * SIZE_BATCH;
