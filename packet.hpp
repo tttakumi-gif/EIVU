@@ -27,3 +27,4 @@ public:
 	void print();
 	void set_verification();
 };
+#include "cpacket.hpp"
