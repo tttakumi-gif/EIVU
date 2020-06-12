@@ -16,9 +16,9 @@ constexpr uint16_t DUMMY_SIZE = SIZE_PACKET - sizeof(uint32_t) - sizeof(uint32_t
 class packet {
 public:
 	uint32_t id;
-	uint16_t len;
+	uint8_t len;
 	char dummy[DUMMY_SIZE];
-	uint32_t verification;
+	uint_fast32_t verification;
 
 	packet();
 	packet(uint32_t);

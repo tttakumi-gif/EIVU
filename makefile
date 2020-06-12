@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++11 -pthread -m32 -march=native -mtune=native -fomit-frame-pointer -O3 -ffast-math -mfpmath=both -funroll-loops -flto
+CXXFLAGS = -std=c++11 -pthread -m32 -march=native -mtune=native -O3 -funroll-loops -mfpmath=both -ffast-math
 RING_OBJS = obj/shm.o #obj/packet.o obj/buffer.o
 
 obj/%.o: %.cpp

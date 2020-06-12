@@ -1,5 +1,4 @@
 #pragma once
-//#include "buffer.hpp"
 
 uint32_t nums[NUM_THREAD + 1];
 
@@ -13,7 +12,6 @@ inline desc::desc(dstatus _status) {
 inline void desc::delete_info(dstatus _status) {
 	entry->len = 0;
 	len = 0;
-	//status = _status;
 	__atomic_store_n(&status, _status, __ATOMIC_RELEASE);
 }
 
@@ -21,7 +19,6 @@ inline void desc::set_param(packet p, uint16_t this_id, dstatus _status) {
 	id = this_id;
 	len = sizeof(p);
 	__atomic_store_n(&status, _status, __ATOMIC_RELEASE);
-	//status = _status;
 }
 
 inline ring::ring() {
@@ -49,10 +46,10 @@ inline void ring::init_descs() {
 	}
 }
 
-inline uint16_t ring::get_index(packet *pool, rsource source, short id) {
+inline uint16_t ring::get_index(packet *pool, rsource source, uint_fast8_t id) {
 	if(source == SRV) {
-		for(uint16_t i = 0; i < SIZE_BATCH; i++) {
-			uint16_t index = id * SIZE_BATCH + i;
+		for(uint_fast16_t i = 0; i < SIZE_BATCH; i++) {
+			uint_fast16_t index = id * SIZE_BATCH + i;
 
 			if(pool[index].len == 0) {
 				return index;
@@ -60,8 +57,8 @@ inline uint16_t ring::get_index(packet *pool, rsource source, short id) {
 		}
 	}
 	else {
-		for(uint16_t i = 0; i < SIZE_BATCH; i++) {
-			uint16_t index = id * SIZE_BATCH + i + SIZE_RING;
+		for(uint_fast16_t i = 0; i < SIZE_BATCH; i++) {
+			uint_fast16_t index = id * SIZE_BATCH + i + SIZE_RING;
 
 			if(pool[index].len == 0) {
 				return index;
@@ -73,10 +70,9 @@ inline uint16_t ring::get_index(packet *pool, rsource source, short id) {
 	return SIZE_POOL;
 }
 
-inline bool ring::dinit(short id) {
-	uint16_t prev_idx = rsrv_idx[id];
+inline bool ring::dinit(uint_fast8_t id) {
+	uint_fast16_t prev_idx = rsrv_idx[id];
 	while(descs[prev_idx].status != PULL) {
-		prev_idx = rsrv_idx[id];
 	}
 
 	if(unlikely((prev_idx & MOD_ACCESS) == MOD_ACCESS)) {
@@ -89,8 +85,8 @@ inline bool ring::dinit(short id) {
 	return true;
 }
 
-inline bool ring::push(packet p, packet *pool, rsource source, short id) {
-	uint16_t prev_idx = recv_idx[id];
+inline bool ring::push(packet p, packet *pool, rsource source, uint_fast8_t id) {
+	uint_fast16_t prev_idx = recv_idx[id];
 
 	uint16_t index = get_index(pool, source, id);
 	while(SIZE_POOL <= index) {
@@ -110,12 +106,8 @@ inline bool ring::push(packet p, packet *pool, rsource source, short id) {
 	return true;
 }
 
-inline void ring::ipush(packet p, packet *pool, rsource source, short id) {
-	uint16_t prev_idx = rsrv_idx[id];
-	/*
-	volatile dstatus *st = &descs[prev_idx].status;
-	while(*st != PULL) {
-	}*/
+inline void ring::ipush(packet p, packet *pool, rsource source, uint_fast8_t id) {
+	uint_fast16_t prev_idx = rsrv_idx[id];
 	while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PULL) {
 	}
 
@@ -144,12 +136,8 @@ inline void ring::ipush(packet p, packet *pool, rsource source, short id) {
 	descs[prev_idx].set_param(p, index, PUSH);
 }
 
-inline packet ring::pull(packet *pool, short id) {
-	uint16_t prev_idx = proc_idx[id];
-	/*
-	volatile dstatus *st = &descs[prev_idx].status;
-	while(*st != PUSH) {
-	}*/
+inline packet ring::pull(packet *pool, uint_fast8_t id) {
+	uint_fast16_t prev_idx = proc_idx[id];
 	while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PUSH) {
 	}
 

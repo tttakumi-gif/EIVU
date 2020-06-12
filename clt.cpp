@@ -2,8 +2,8 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void send_packet(ring*, packet*, int);
-void recv_packet(ring*, packet*, int);
+void send_packet(ring*, packet*, uint_fast8_t);
+void recv_packet(ring*, packet*, uint_fast8_t);
 bool check_verification(packet*);
 
 int main() {
@@ -50,51 +50,52 @@ int main() {
 	return 0;
 }
 
-void send_packet(ring *csring, packet *pool, int id) {
-	int j, idx;
+void send_packet(ring *csring, packet *pool, uint_fast8_t id) {
+	int j;
+	int idx = SIZE_BATCH;
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
+	int num_fin = index_end - idx;
 	packet parray[SIZE_BATCH];
 
 	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
-		idx = i + SIZE_BATCH;
-		if(unlikely(index_end < idx)) {
-			idx = index_end;
+		if(unlikely(num_fin < i)) {
+			idx = index_end - i;
 		}
-		for(j = i; j < idx; j++) {
-			parray[j - i] = packet(j);
+		for(j = 0; j < idx; j++) {
+			parray[j] = packet(j + i);
 		}
 
-		idx -= i;
 		for(j = 0; j < idx; j++) {
 			csring->ipush(parray[j], pool, CLT, id);
 		}
 	}
 }
 
-void recv_packet(ring *scring, packet *pool, int id) {
-	int j, idx;
+void recv_packet(ring *scring, packet *pool, uint_fast8_t id) {
+	int j;
+	int idx = SIZE_BATCH;
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
+	int num_fin = index_end - idx;
 	packet p;
 	packet parray[SIZE_BATCH];
 
 	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
-		idx = i + SIZE_BATCH;
-		if(unlikely(index_end < idx)) {
-			idx = index_end;
+		if(unlikely(num_fin < i)) {
+			idx = index_end - i;
 		}
-		for(j = i; j < idx; j++) {
+
+		for(j = 0; j < idx; j++) {
 			p = scring->pull(pool, id);
 
 			if(unlikely(!check_verification(&p))) {
 				puts("verification error");
 				exit(1);
 			}
-			parray[j - i] = p;
+			parray[j] = p;
 		}
 
-		idx -= i;
 		for(j = 0; j < idx; j++) {
 			if(unlikely((parray[j].id & 8388607) == 0)) {
 					parray[j].print();
@@ -104,5 +105,5 @@ void recv_packet(ring *scring, packet *pool, int id) {
 }
 
 bool check_verification(packet *p) {
-	return p->verification ^ 0xffffffff == p->id;
+	return likely(p->verification ^ 0xffffffff == p->id);
 }

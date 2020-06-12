@@ -17,7 +17,8 @@ inline packet::packet(uint32_t this_id, const char* this_dummy) {
 }
 
 inline void packet::print() {
-	std::cout << "id: " << std::dec << id << ", len: " << std::dec << len << ", dummy: "<< dummy << ", verification: 0x" << std::hex << verification << std::endl;
+	printf("id: %d, len: %d, dummy: %s, verification: 0x%x\n", id, len, dummy, verification);
+	//std::cout << "id: " << std::dec << id << ", len: " << std::dec << len << ", dummy: "<< dummy << ", verification: 0x" << std::hex << verification << std::endl;
 }
 
 inline void packet::set_verification() {

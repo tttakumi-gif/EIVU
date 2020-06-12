@@ -17,12 +17,12 @@ constexpr uint16_t NUM_MOD = SIZE_RING - 1;
 
 constexpr uint8_t MOD_ACCESS = SIZE_BATCH - 1;
 
-enum rsource : uint8_t {
+enum rsource : uint_fast8_t {
 	CLT,
 	SRV,
 };
 
-enum dstatus : uint8_t {
+enum dstatus : uint_fast8_t {
 	PUSH,
 	PULL,
 };
@@ -56,11 +56,11 @@ public:
 	ring& operator=(const ring&);
 	ring&& operator=(ring&&);
 
-	uint16_t get_index(packet*, rsource, short);
-	bool dinit(short);
-	bool push(packet, packet*, rsource, short);
-	void ipush(packet, packet*, rsource, short);
-	packet pull(packet*, short);
+	uint16_t get_index(packet*, rsource, uint_fast8_t);
+	bool dinit(uint_fast8_t);
+	bool push(packet, packet*, rsource, uint_fast8_t);
+	void ipush(packet, packet*, rsource, uint_fast8_t);
+	packet pull(packet*, uint_fast8_t);
 	void init_descs();
 };
 

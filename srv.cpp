@@ -1,7 +1,7 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void rs_packet(ring*, ring*, packet*, int);
+void rs_packet(ring*, ring*, packet*, uint_fast8_t);
 
 int main() {
 	puts("begin");
@@ -30,26 +30,26 @@ int main() {
 	return 0;
 }
 
-void rs_packet(ring *csring, ring *scring, packet *pool, int id) {
-	int j, idx;
+void rs_packet(ring *csring, ring *scring, packet *pool, uint_fast8_t id) {
+	int j;
+	int idx = SIZE_BATCH;
 	int index_begin = nums[id];
 	int index_end = nums[id + 1];
+	int num_fin = index_end - idx;
 	packet p;
 	packet parray[SIZE_BATCH];
 
 	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
-		idx = i + SIZE_BATCH;
-		if(unlikely(index_end < idx)) {
-			idx = index_end;
+		if(unlikely(num_fin < i)) {
+			idx = index_end - i;
 		}
 
-		for(j = i; j < idx; j++) {
+		for(j = 0; j < idx; j++) {
 			p = csring->pull(pool, id);
 			p.set_verification();
-			parray[j - i] = p;
+			parray[j] = p;
 		}
 
-		idx -= i;
 		for(j = idx - 1; 0 <= j; j--) {
 			scring->ipush(parray[j], pool, SRV, id);
 		}
