@@ -50,8 +50,7 @@ void rs_packet(ring *csring, ring *scring, packet *pool, int id) {
 		}
 
 		idx -= i;
-		//for(j = idx; 0 <= j; j--) {
-		for(j = 0; j < idx; j++) {
+		for(j = idx - 1; 0 <= j; j--) {
 			scring->ipush(parray[j], pool, SRV, id);
 		}
 	}
