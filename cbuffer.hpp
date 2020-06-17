@@ -47,22 +47,13 @@ inline void ring::init_descs() {
 }
 
 inline uint16_t ring::get_index(packet *pool, rsource source, uint_fast8_t id) {
-	if(source == SRV) {
-		for(uint_fast16_t i = 0; i < SIZE_BATCH; i++) {
-			uint_fast16_t index = id * SIZE_BATCH + i;
+	int num = (source == CLT) ? 0 : SIZE_RING;
+	int root = id * SIZE_BATCH + num;
+	for(uint_fast16_t i = 0; i < SIZE_BATCH; i++) {
+		uint_fast16_t index = root + i;
 
-			if(pool[index].len == 0) {
-				return index;
-			}
-		}
-	}
-	else {
-		for(uint_fast16_t i = 0; i < SIZE_BATCH; i++) {
-			uint_fast16_t index = id * SIZE_BATCH + i + SIZE_RING;
-
-			if(pool[index].len == 0) {
-				return index;
-			}
+		if(pool[index].len == 0) {
+			return index;
 		}
 	}
 

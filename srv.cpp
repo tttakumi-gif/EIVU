@@ -40,7 +40,7 @@ void rs_packet(ring *csring, ring *scring, packet *pool, uint_fast8_t id) {
 	packet parray[SIZE_BATCH];
 
 	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
-		if(unlikely(num_fin < i)) {
+		if(num_fin < i) {
 			idx = index_end - i;
 		}
 
@@ -50,7 +50,7 @@ void rs_packet(ring *csring, ring *scring, packet *pool, uint_fast8_t id) {
 			parray[j] = p;
 		}
 
-		for(j = idx - 1; 0 <= j; j--) {
+		for(j--; 0 <= j; j--) {
 			scring->ipush(parray[j], pool, SRV, id);
 		}
 	}
