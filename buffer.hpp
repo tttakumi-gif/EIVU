@@ -3,7 +3,8 @@
 
 #include "packet.hpp"
 
-#define SIZE_BATCH 16
+#define INFO_CPU 2
+#define SIZE_BATCH 18
 #define NUM_THREAD 64
 
 #define likely(x) __builtin_expect(!!(x), 1)
@@ -11,11 +12,11 @@
 
 extern uint32_t nums[NUM_THREAD + 1];
 
-constexpr uint16_t SIZE_RING = NUM_THREAD * SIZE_BATCH;
-constexpr uint16_t SIZE_POOL = SIZE_RING * 2;
-constexpr uint16_t NUM_MOD = SIZE_RING - 1;
+constexpr int_fast32_t SIZE_RING = NUM_THREAD * SIZE_BATCH;
+constexpr int_fast32_t SIZE_POOL = SIZE_RING * 2;
+constexpr int_fast32_t NUM_MOD = SIZE_RING - 1;
 
-constexpr uint8_t MOD_ACCESS = SIZE_BATCH - 1;
+constexpr int_fast8_t MOD_ACCESS = SIZE_BATCH - 1;
 
 enum rsource : uint_fast8_t {
 	CLT,
@@ -23,6 +24,7 @@ enum rsource : uint_fast8_t {
 };
 
 enum dstatus : uint_fast8_t {
+	INIT,
 	PUSH,
 	PULL,
 };
@@ -56,11 +58,11 @@ public:
 	ring& operator=(const ring&);
 	ring&& operator=(ring&&);
 
-	uint16_t get_index(packet*, rsource, uint_fast8_t);
+	uint_fast32_t get_index(packet[NUM_THREAD], rsource, uint_fast8_t);
 	bool dinit(uint_fast8_t);
-	bool push(packet, packet*, rsource, uint_fast8_t);
-	void ipush(packet, packet*, rsource, uint_fast8_t);
-	packet pull(packet*, uint_fast8_t);
+	bool push(packet, packet[NUM_THREAD], rsource, uint_fast8_t);
+	void ipush(packet[SIZE_BATCH], packet[NUM_THREAD], rsource, uint_fast8_t);
+	void pull(packet[SIZE_BATCH], packet[NUM_THREAD], uint_fast8_t);
 	void init_descs();
 };
 

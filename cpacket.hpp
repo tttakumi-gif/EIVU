@@ -24,3 +24,6 @@ inline void packet::print() {
 inline void packet::set_verification() {
 	verification = id ^ 0xffffffff;
 }
+
+void do_none() {
+}

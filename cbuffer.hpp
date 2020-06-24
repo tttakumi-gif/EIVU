@@ -46,11 +46,11 @@ inline void ring::init_descs() {
 	}
 }
 
-inline uint16_t ring::get_index(packet *pool, rsource source, uint_fast8_t id) {
-	int num = (source == CLT) ? 0 : SIZE_RING;
-	int root = id * SIZE_BATCH + num;
-	for(uint_fast16_t i = 0; i < SIZE_BATCH; i++) {
-		uint_fast16_t index = root + i;
+inline uint_fast32_t ring::get_index(packet pool[SIZE_POOL], rsource source, uint_fast8_t id) {
+	int_fast32_t num = (source == CLT) ? 0 : SIZE_RING;
+	int_fast32_t root = num + id * SIZE_BATCH;
+	for(uint_fast32_t i = 0; i < SIZE_BATCH; i++) {
+		uint_fast32_t index = root + i;
 
 		if(pool[index].len == 0) {
 			return index;
@@ -63,43 +63,8 @@ inline uint16_t ring::get_index(packet *pool, rsource source, uint_fast8_t id) {
 
 inline bool ring::dinit(uint_fast8_t id) {
 	uint_fast16_t prev_idx = rsrv_idx[id];
-	while(descs[prev_idx].status != PULL) {
-	}
-
-	if(unlikely((prev_idx & MOD_ACCESS) == MOD_ACCESS)) {
-		rsrv_idx[id] = id * SIZE_BATCH;
-	}
-	else {
-		rsrv_idx[id]++;
-	}
-
-	return true;
-}
-
-inline bool ring::push(packet p, packet *pool, rsource source, uint_fast8_t id) {
-	uint_fast16_t prev_idx = recv_idx[id];
-
-	uint16_t index = get_index(pool, source, id);
-	while(SIZE_POOL <= index) {
-	}
-	pool[index] = p;
-
-	if(unlikely((prev_idx & MOD_ACCESS) == MOD_ACCESS)) {
-		recv_idx[id] = id * SIZE_BATCH;
-	}
-	else {
-		recv_idx[id]++;
-	}
-
-	descs[prev_idx].entry = pool + index;
-	descs[prev_idx].set_param(p, index, PUSH);
-
-	return true;
-}
-
-inline void ring::ipush(packet p, packet *pool, rsource source, uint_fast8_t id) {
-	uint_fast16_t prev_idx = rsrv_idx[id];
 	while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PULL) {
+		do_none();
 	}
 
 	if(unlikely((prev_idx & MOD_ACCESS) == MOD_ACCESS)) {
@@ -109,9 +74,19 @@ inline void ring::ipush(packet p, packet *pool, rsource source, uint_fast8_t id)
 		rsrv_idx[id]++;
 	}
 
-	prev_idx = recv_idx[id];
+	descs[prev_idx].status = INIT;
+	return true;
+}
+
+inline bool ring::push(packet p, packet pool[NUM_THREAD], rsource source, uint_fast8_t id) {
+	uint_fast16_t prev_idx = recv_idx[id];
+	while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != INIT) {
+		do_none();
+	}
+
 	uint16_t index = get_index(pool, source, id);
 	while(SIZE_POOL <= index) {
+		do_none();
 		index = get_index(pool, source, id);
 	}
 	pool[index] = p;
@@ -125,25 +100,53 @@ inline void ring::ipush(packet p, packet *pool, rsource source, uint_fast8_t id)
 
 	descs[prev_idx].entry = pool + index;
 	descs[prev_idx].set_param(p, index, PUSH);
+
+	return true;
 }
 
-inline packet ring::pull(packet *pool, uint_fast8_t id) {
+inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[NUM_THREAD], rsource source, uint_fast8_t id) {
+	uint16_t index;
+	uint16_t prev_idx;
+	uint16_t num = (source == CLT) ? 0 : SIZE_RING;
+	uint16_t root = num + id * SIZE_BATCH;
+
+	for(int i = 0; i < SIZE_BATCH; i++) {
+		prev_idx= rsrv_idx[id];
+		rsrv_idx[id]++;
+		while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PULL) {
+			do_none();
+		}
+
+		//prev_idx = recv_idx[id];
+		//recv_idx[id]++;
+		index = root + i;
+		while(0 < pool[index].len) {
+			do_none();
+		}
+		pool[index] = parray[i];
+
+		descs[prev_idx].entry = pool + index;
+		descs[prev_idx].set_param(parray[i], index, PUSH);
+	}
+
+	int a = id * SIZE_BATCH;
+	rsrv_idx[id] = a;
+	//recv_idx[id] = a;
+}
+
+inline void ring::pull(packet parray[SIZE_BATCH], packet pool[NUM_THREAD], uint_fast8_t id) {
 	uint_fast16_t prev_idx = proc_idx[id];
-	while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PUSH) {
-	}
 
-	if(unlikely((prev_idx & MOD_ACCESS) == MOD_ACCESS)) {
-		proc_idx[id] = id * SIZE_BATCH;
-	}
-	else {
-		proc_idx[id]++;
-	}
+	for(int i = 0; i < SIZE_BATCH; i++, prev_idx++) {
+		while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PUSH) {
+			do_none();
+		}
 
-	descs[prev_idx].entry = pool + descs[prev_idx].id;
-	packet ret = *(descs[prev_idx].entry);
-	descs[prev_idx].delete_info(PULL);
+		descs[prev_idx].entry = pool + descs[prev_idx].id;
+		parray[i] = *(descs[prev_idx].entry);
 
-	return ret;
+		descs[prev_idx].delete_info(PULL);
+	}
 }
 
 inline void set_packet_nums(uint32_t *nums) {

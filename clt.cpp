@@ -2,8 +2,8 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void send_packet(ring*, packet*, uint_fast8_t);
-void recv_packet(ring*, packet*, uint_fast8_t);
+void send_packet(ring&, packet[NUM_THREAD], uint_fast8_t);
+void recv_packet(ring&, packet[NUM_THREAD], uint_fast8_t);
 bool check_verification(packet*);
 
 int main() {
@@ -22,21 +22,28 @@ int main() {
 
 	set_packet_nums(nums);
 
+#if INFO_CPU == 0
+	init_p();
+#endif
+
 	while(!*flag) {
 	}
 
+	//packet *p = pool;
 	int nthread = NUM_THREAD * 2 - 1;
 	std::thread threads[nthread];
 	for(int i = 0; i < NUM_THREAD; i++) {
-		threads[i] = std::thread(send_packet, std::ref(csring), std::ref(pool), i);
+		threads[i] = std::thread(send_packet, std::ref(*csring), std::ref(pool), i);
+		//threads[i] = std::thread(send_packet, std::ref(*csring), std::ref(p), i);
 	}
 	for(int i = NUM_THREAD; i < nthread; i++) {
-		threads[i] = std::thread(recv_packet, std::ref(scring), std::ref(pool), i - NUM_THREAD);
+		threads[i] = std::thread(recv_packet, std::ref(*scring), std::ref(pool), i - NUM_THREAD);
+		//threads[i] = std::thread(recv_packet, std::ref(*scring), std::ref(p), i - NUM_THREAD);
 	}
 
 	std::chrono::system_clock::time_point start, end;
 	start = std::chrono::system_clock::now();
-	recv_packet(scring, pool, NUM_THREAD - 1);
+	recv_packet(*scring, pool, NUM_THREAD - 1);
 	for(int i = 0; i < nthread; i++) {
 		threads[i].join();
 	}
@@ -50,15 +57,14 @@ int main() {
 	return 0;
 }
 
-void send_packet(ring *csring, packet *pool, uint_fast8_t id) {
-	int j;
-	int idx = SIZE_BATCH;
-	int index_begin = nums[id];
+void send_packet(ring &csring, packet pool[NUM_THREAD], uint_fast8_t id) {
+	int8_t j;
+	int8_t idx = SIZE_BATCH;
 	int index_end = nums[id + 1];
 	int num_fin = index_end - idx;
 	packet parray[SIZE_BATCH];
 
-	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
+	for(int i = nums[id]; i < index_end; i += SIZE_BATCH) {
 		if(unlikely(num_fin < i)) {
 			idx = index_end - i;
 		}
@@ -66,44 +72,40 @@ void send_packet(ring *csring, packet *pool, uint_fast8_t id) {
 			parray[j] = packet(j + i);
 		}
 
-		for(j = 0; j < idx; j++) {
-			csring->ipush(parray[j], pool, CLT, id);
-		}
+		csring.ipush(parray, pool, CLT, id);
 	}
 }
 
-void recv_packet(ring *scring, packet *pool, uint_fast8_t id) {
-	int j;
-	int idx = SIZE_BATCH;
-	int index_begin = nums[id];
+void recv_packet(ring &scring, packet pool[NUM_THREAD], uint_fast8_t id) {
+	int8_t j;
+	int8_t idx = SIZE_BATCH;
 	int index_end = nums[id + 1];
 	int num_fin = index_end - idx;
 	packet p;
 	packet parray[SIZE_BATCH];
 
-	for(int i = index_begin; i < index_end; i += SIZE_BATCH) {
+	for(int i = nums[id]; i < index_end; i += SIZE_BATCH) {
 		if(unlikely(num_fin < i)) {
 			idx = index_end - i;
 		}
 
+		scring.pull(parray, pool, id);
 		for(j = 0; j < idx; j++) {
-			p = scring->pull(pool, id);
-
-			if(unlikely(!check_verification(&p))) {
+			if(unlikely(!check_verification(&(parray[j])))) {
 				puts("verification error");
 				exit(1);
 			}
-			parray[j] = p;
-		}
 
-		for(j = 0; j < idx; j++) {
 			if(unlikely((parray[j].id & 8388607) == 0)) {
-					parray[j].print();
+#if INFO_CPU == 0
+				printf("%g%\n", getCurrentValue_p());
+#endif
+				parray[j].print();
 			}
 		}
 	}
 }
 
 bool check_verification(packet *p) {
-	return likely(p->verification ^ 0xffffffff == p->id);
+	return likely((p->verification ^ 0xffffffff) == p->id);
 }
