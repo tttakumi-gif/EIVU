@@ -33,36 +33,33 @@ class desc {
 public:
 	dstatus status;
 	uint16_t id;
-	uint8_t len;
+	uint_fast8_t len;
 	//bool is_used;
 	packet *entry;
 
 	desc();
 	desc(dstatus);
 
-	void set_param(packet, uint16_t, dstatus);
+	void set_param(packet, uint_fast16_t, dstatus);
 	void delete_info(dstatus);
 };
 
 class ring {
 public:
-	uint16_t rsrv_idx[NUM_THREAD];
-	uint16_t recv_idx[NUM_THREAD];
-	uint16_t proc_idx[NUM_THREAD];
+	uint_fast16_t rsrv_idx[NUM_THREAD];
+	//uint_fast16_t recv_idx[NUM_THREAD];
+	//uint_fast16_t proc_idx[NUM_THREAD];
 	uint16_t size;
 	desc descs[SIZE_RING];
 
 	ring();
-	ring(const ring&);
-	ring(ring&&);
-	ring& operator=(const ring&);
-	ring&& operator=(ring&&);
+	void operator=(ring&&);
 
 	uint_fast32_t get_index(packet[NUM_THREAD], rsource, uint_fast8_t);
 	bool dinit(uint_fast8_t);
 	bool push(packet, packet[NUM_THREAD], rsource, uint_fast8_t);
 	void ipush(packet[SIZE_BATCH], packet[NUM_THREAD], rsource, uint_fast8_t);
-	void pull(packet[SIZE_BATCH], packet[NUM_THREAD], uint_fast8_t);
+	void pull(packet[SIZE_BATCH], packet[NUM_THREAD], uint_fast16_t);
 	void init_descs();
 };
 

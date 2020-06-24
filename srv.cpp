@@ -52,19 +52,20 @@ int main() {
 }
 
 void rs_packet(ring &csring, ring &scring, packet pool[NUM_THREAD], uint_fast8_t id) {
-	int8_t j;
-	int8_t idx = SIZE_BATCH;
-	int index_end = nums[id + 1];
-	int num_fin = index_end - idx;
+	int_fast8_t j;
+	int_fast8_t idx = SIZE_BATCH;
+	uint_fast16_t root = id * SIZE_BATCH;
+	int_fast32_t index_end = nums[id + 1];
+	int_fast32_t num_fin = index_end - idx;
 	packet p;
 	packet parray[SIZE_BATCH];
 
-	for(int i = nums[id]; i < index_end; i += SIZE_BATCH) {
+	for(int_fast32_t i = nums[id]; i < index_end; i += SIZE_BATCH) {
 		if(num_fin < i) {
 			idx = index_end - i;
 		}
 
-		csring.pull(parray, pool, id);
+		csring.pull(parray, pool, root);
 		for(j = 0; j < idx; j++) {
 #if INFO_CPU == 1
 			if(unlikely((parray[j].id & 8388607) == 0)) {

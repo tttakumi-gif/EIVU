@@ -15,18 +15,18 @@
 
 void do_none();
 
-constexpr uint16_t DUMMY_SIZE = SIZE_PACKET - sizeof(uint32_t) - sizeof(uint32_t) - sizeof(uint16_t);
+constexpr uint_fast16_t DUMMY_SIZE = SIZE_PACKET - sizeof(uint32_t) - sizeof(uint32_t) - sizeof(uint16_t);
 
 class packet {
 public:
-	uint32_t id;
-	uint8_t len;
+	uint_fast32_t id;
+	uint_fast8_t len;
 	char dummy[DUMMY_SIZE];
 	uint_fast32_t verification;
 
 	packet();
-	packet(uint32_t);
-	packet(uint32_t, const char*);
+	packet(uint_fast32_t);
+	packet(uint_fast32_t, const char*);
 
 	void print();
 	void set_verification();

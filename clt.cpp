@@ -4,7 +4,7 @@
 
 void send_packet(ring&, packet[NUM_THREAD], uint_fast8_t);
 void recv_packet(ring&, packet[NUM_THREAD], uint_fast8_t);
-bool check_verification(packet*);
+bool check_verification(packet);
 
 int main() {
 	puts("begin");
@@ -58,13 +58,13 @@ int main() {
 }
 
 void send_packet(ring &csring, packet pool[NUM_THREAD], uint_fast8_t id) {
-	int8_t j;
-	int8_t idx = SIZE_BATCH;
-	int index_end = nums[id + 1];
-	int num_fin = index_end - idx;
+	int_fast8_t j;
+	int_fast8_t idx = SIZE_BATCH;
+	int_fast32_t index_end = nums[id + 1];
+	int_fast32_t num_fin = index_end - idx;
 	packet parray[SIZE_BATCH];
 
-	for(int i = nums[id]; i < index_end; i += SIZE_BATCH) {
+	for(int_fast32_t i = nums[id]; i < index_end; i += SIZE_BATCH) {
 		if(unlikely(num_fin < i)) {
 			idx = index_end - i;
 		}
@@ -77,21 +77,22 @@ void send_packet(ring &csring, packet pool[NUM_THREAD], uint_fast8_t id) {
 }
 
 void recv_packet(ring &scring, packet pool[NUM_THREAD], uint_fast8_t id) {
-	int8_t j;
-	int8_t idx = SIZE_BATCH;
-	int index_end = nums[id + 1];
-	int num_fin = index_end - idx;
+	int_fast8_t j;
+	int_fast8_t idx = SIZE_BATCH;
+	int_fast16_t root = id * SIZE_BATCH;
+	int_fast32_t index_end = nums[id + 1];
+	int_fast32_t num_fin = index_end - idx;
 	packet p;
 	packet parray[SIZE_BATCH];
 
-	for(int i = nums[id]; i < index_end; i += SIZE_BATCH) {
+	for(int_fast32_t i = nums[id]; i < index_end; i += SIZE_BATCH) {
 		if(unlikely(num_fin < i)) {
 			idx = index_end - i;
 		}
 
-		scring.pull(parray, pool, id);
+		scring.pull(parray, pool, root);
 		for(j = 0; j < idx; j++) {
-			if(unlikely(!check_verification(&(parray[j])))) {
+			if(unlikely(!check_verification(parray[j]))) {
 				puts("verification error");
 				exit(1);
 			}
@@ -106,6 +107,6 @@ void recv_packet(ring &scring, packet pool[NUM_THREAD], uint_fast8_t id) {
 	}
 }
 
-bool check_verification(packet *p) {
-	return likely((p->verification ^ 0xffffffff) == p->id);
+bool check_verification(packet p) {
+	return likely((p.verification ^ 0xffffffff) == p.id);
 }
