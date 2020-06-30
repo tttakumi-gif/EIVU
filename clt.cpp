@@ -2,8 +2,8 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void send_packet(ring&, packet[NUM_THREAD], uint_fast8_t);
-void recv_packet(ring&, packet[NUM_THREAD], uint_fast8_t);
+void send_packet(ring&, packet[NUM_THREAD], uint_fast32_t);
+void recv_packet(ring&, packet[NUM_THREAD], uint_fast32_t);
 bool check_verification(packet);
 
 int main() {
@@ -57,9 +57,9 @@ int main() {
 	return 0;
 }
 
-void send_packet(ring &csring, packet pool[NUM_THREAD], uint_fast8_t id) {
-	int_fast8_t j;
-	int_fast8_t idx = SIZE_BATCH;
+void send_packet(ring &csring, packet pool[NUM_THREAD], uint_fast32_t id) {
+	int_fast32_t j;
+	int_fast32_t idx = SIZE_BATCH;
 	int_fast32_t index_end = nums[id + 1];
 	int_fast32_t num_fin = index_end - idx;
 	packet parray[SIZE_BATCH];
@@ -68,6 +68,7 @@ void send_packet(ring &csring, packet pool[NUM_THREAD], uint_fast8_t id) {
 		if(unlikely(num_fin < i)) {
 			idx = index_end - i;
 		}
+
 		for(j = 0; j < idx; j++) {
 			parray[j] = packet(j + i);
 		}
@@ -76,13 +77,12 @@ void send_packet(ring &csring, packet pool[NUM_THREAD], uint_fast8_t id) {
 	}
 }
 
-void recv_packet(ring &scring, packet pool[NUM_THREAD], uint_fast8_t id) {
-	int_fast8_t j;
-	int_fast8_t idx = SIZE_BATCH;
+void recv_packet(ring &scring, packet pool[NUM_THREAD], uint_fast32_t id) {
+	int_fast32_t j;
+	int_fast32_t idx = SIZE_BATCH;
 	int_fast16_t root = id * SIZE_BATCH;
 	int_fast32_t index_end = nums[id + 1];
 	int_fast32_t num_fin = index_end - idx;
-	packet p;
 	packet parray[SIZE_BATCH];
 
 	for(int_fast32_t i = nums[id]; i < index_end; i += SIZE_BATCH) {

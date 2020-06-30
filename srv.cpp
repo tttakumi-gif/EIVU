@@ -1,8 +1,8 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void rs_packet(ring&, ring&, packet[NUM_THREAD], uint_fast8_t);
-void init_d(ring&, uint_fast8_t);
+void rs_packet(ring&, ring&, packet[NUM_THREAD], uint_fast32_t);
+void init_d(ring&, uint_fast32_t);
 
 int main() {
 	puts("begin");
@@ -51,9 +51,9 @@ int main() {
 	return 0;
 }
 
-void rs_packet(ring &csring, ring &scring, packet pool[NUM_THREAD], uint_fast8_t id) {
-	int_fast8_t j;
-	int_fast8_t idx = SIZE_BATCH;
+void rs_packet(ring &csring, ring &scring, packet pool[NUM_THREAD], uint_fast32_t id) {
+	int_fast32_t j;
+	int_fast32_t idx = SIZE_BATCH;
 	uint_fast16_t root = id * SIZE_BATCH;
 	int_fast32_t index_end = nums[id + 1];
 	int_fast32_t num_fin = index_end - idx;
