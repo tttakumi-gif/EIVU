@@ -1,7 +1,7 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void rs_packet(ring&, ring&, packet[NUM_THREAD], uint_fast32_t);
+void rs_packet(ring&, ring&, packet[NUM_THREAD]);
 void init_d(ring&, uint_fast32_t);
 
 int main() {
@@ -15,66 +15,47 @@ int main() {
 
 	set_packet_nums(nums);
 
-#if 1
-	std::thread threads[NUM_THREAD - 1];
-	for(int i = 0; i < NUM_THREAD - 1; i++) {
-		threads[i] = std::thread(rs_packet, std::ref(*csring), std::ref(*scring), std::ref(pool), i);
-	}
-
 #if INFO_CPU == 1
 	init_p();
 #endif
 
 	*flag = true;
-	rs_packet(*csring, *scring, pool, NUM_THREAD - 1);
-	for(int i = 0; i < NUM_THREAD - 1; i++) {
-		threads[i].join();
-	}
-#else
-	int nthread = NUM_THREAD * 2 - 1;
-	std::thread threads[nthread];
-	for(int i = 0; i < NUM_THREAD; i++) {
-		threads[i] = std::thread(rs_packet, std::ref(*csring), std::ref(*scring), std::ref(pool), i);
-	}
-	for(int i = NUM_THREAD; i < nthread; i++) {
-		threads[i] = std::thread(init_d, std::ref(*scring), i - NUM_THREAD);
-	}
-	*flag = true;
-	init_d(*scring, NUM_THREAD - 1);
-	for(int i = 0; i < nthread; i++) {
-		threads[i].join();
-	}
-#endif
+	rs_packet(*csring, *scring, pool);
 
 	shm_unlink("shm_buf");
 
 	return 0;
 }
 
-void rs_packet(ring &csring, ring &scring, packet pool[NUM_THREAD], uint_fast32_t id) {
+void rs_packet(ring &csring, ring &scring, packet pool[NUM_THREAD]) {
+	int_fast32_t i;
 	int_fast32_t j;
-	int_fast32_t idx = SIZE_BATCH;
-	uint_fast16_t root = id * SIZE_BATCH;
-	int_fast32_t index_end = nums[id + 1];
-	int_fast32_t num_fin = index_end - idx;
+	int_fast32_t num_fin = SIZE_BATCH;
 	packet p;
 	packet parray[SIZE_BATCH];
 
-	for(int_fast32_t i = nums[id]; i < index_end; i += SIZE_BATCH) {
-		if(num_fin < i) {
-			idx = index_end - i;
-		}
-
-		csring.pull(parray, pool, root);
-		for(j = 0; j < idx; j++) {
+	for(i = 0; i < NUM_PACKET; i += SIZE_BATCH) {
+		csring.pull(parray, pool, num_fin);
+		for(packet& p : parray) {
 #if INFO_CPU == 1
-			if(unlikely((parray[j].id & 8388607) == 0)) {
+			if(unlikely((p.id & 8388607) == 0)) {
 				printf("%g%\n", getCurrentValue_p());
 			}
 #endif
+			p.set_verification();
+		}
+
+		scring.ipush(parray, pool, SRV, num_fin);
+	}
+
+	if(NUM_PACKET < i) {
+		i -= SIZE_BATCH;
+		num_fin = NUM_PACKET - i;
+		csring.pull(parray, pool, num_fin);
+		for(j = 0; j < num_fin; j++) {
 			parray[j].set_verification();
 		}
 
-		scring.ipush(parray, pool, SRV, id);
+		scring.ipush(parray, pool, SRV, num_fin);
 	}
 }

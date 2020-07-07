@@ -23,16 +23,14 @@ inline void desc::set_param(packet p, uint_fast16_t this_id, dstatus _status) {
 
 inline ring::ring() {
 	size = SIZE_RING;
-	for(int i = 0; i < NUM_THREAD; i++) {
-		rsrv_idx[i] = i * SIZE_BATCH;
-	}
+	rsrv_idx = 0;
 	memset(descs, 0, sizeof(desc) * SIZE_RING);
 	init_descs();
 }
 
 inline void ring::operator=(ring&& r) {
 	size = r.size;
-	memcpy(rsrv_idx, r.rsrv_idx, sizeof(uint_fast16_t) * NUM_THREAD);
+	rsrv_idx = r.rsrv_idx;
 	memcpy(descs, r.descs, sizeof(desc) * SIZE_RING);
 }
 
@@ -42,19 +40,15 @@ inline void ring::init_descs() {
 	}
 }
 
-inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[NUM_THREAD], rsource source, uint_fast32_t id) {
-	uint_fast16_t index;
-	uint_fast16_t prev_idx;
-	uint_fast16_t num = (source == CLT) ? 0 : SIZE_RING;
-	uint_fast16_t root = num + id * SIZE_BATCH;
+inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[NUM_THREAD], rsource source, int_fast32_t num_fin) {
+	uint_fast16_t prev_idx = rsrv_idx;
+	uint_fast16_t index = (source == CLT) ? 0 : SIZE_RING;
 
-	for(int_fast32_t i = 0; i < SIZE_BATCH; i++, rsrv_idx[id]++) {
-		prev_idx = rsrv_idx[id];
+	for(int_fast32_t i = 0; i < num_fin; i++, index++) {
 		while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PULL) {
 			do_none();
 		}
 
-		index = root + i;
 		while(0 < pool[index].len) {
 			do_none();
 		}
@@ -62,21 +56,23 @@ inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[NUM_THREAD], rsou
 
 		descs[prev_idx].entry = pool + index;
 		descs[prev_idx].set_param(parray[i], index, PUSH);
+
+		prev_idx = (prev_idx + 1) & NUM_MOD;
 	}
 
-	rsrv_idx[id] = root - num;
+	rsrv_idx = prev_idx;
 }
 
-inline void ring::pull(packet parray[SIZE_BATCH], packet pool[NUM_THREAD], uint_fast16_t prev_idx) {
-	for(int_fast32_t i = 0; i < SIZE_BATCH; i++, prev_idx++) {
-		while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PUSH) {
+inline void ring::pull(packet parray[SIZE_BATCH], packet pool[NUM_THREAD], int_fast32_t num_fin) {
+	for(int_fast32_t i = 0; i < num_fin; i++) {
+		while(__atomic_load_n(&descs[i].status, __ATOMIC_ACQUIRE) != PUSH) {
 			do_none();
 		}
 
-		descs[prev_idx].entry = pool + descs[prev_idx].id;
-		parray[i] = *(descs[prev_idx].entry);
+		descs[i].entry = pool + descs[i].id;
+		parray[i] = *(descs[i].entry);
 
-		descs[prev_idx].delete_info(PULL);
+		descs[i].delete_info(PULL);
 	}
 }
 
@@ -155,4 +151,3 @@ inline bool ring::push(packet p, packet pool[NUM_THREAD], rsource source, uint_f
 	return true;
 }
 #endif
-

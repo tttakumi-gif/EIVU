@@ -2,8 +2,8 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void send_packet(ring&, packet[NUM_THREAD], uint_fast32_t);
-void recv_packet(ring&, packet[NUM_THREAD], uint_fast32_t);
+void send_packet(ring&, packet[NUM_THREAD]);
+void recv_packet(ring&, packet[NUM_THREAD]);
 bool check_verification(packet);
 
 int main() {
@@ -29,24 +29,14 @@ int main() {
 	while(!*flag) {
 	}
 
-	//packet *p = pool;
-	int nthread = NUM_THREAD * 2 - 1;
-	std::thread threads[nthread];
-	for(int i = 0; i < NUM_THREAD; i++) {
-		threads[i] = std::thread(send_packet, std::ref(*csring), std::ref(pool), i);
-		//threads[i] = std::thread(send_packet, std::ref(*csring), std::ref(p), i);
-	}
-	for(int i = NUM_THREAD; i < nthread; i++) {
-		threads[i] = std::thread(recv_packet, std::ref(*scring), std::ref(pool), i - NUM_THREAD);
-		//threads[i] = std::thread(recv_packet, std::ref(*scring), std::ref(p), i - NUM_THREAD);
-	}
+	std::thread thread_send(send_packet, std::ref(*csring), std::ref(pool));
 
 	std::chrono::system_clock::time_point start, end;
 	start = std::chrono::system_clock::now();
-	recv_packet(*scring, pool, NUM_THREAD - 1);
-	for(int i = 0; i < nthread; i++) {
-		threads[i].join();
-	}
+
+	recv_packet(*scring, pool);
+	thread_send.join();
+
 	end = std::chrono::system_clock::now();
 
 	shm_unlink("shm_buf");
@@ -57,51 +47,68 @@ int main() {
 	return 0;
 }
 
-void send_packet(ring &csring, packet pool[NUM_THREAD], uint_fast32_t id) {
+void send_packet(ring &csring, packet pool[NUM_THREAD]) {
+	int_fast32_t i;
 	int_fast32_t j;
-	int_fast32_t idx = SIZE_BATCH;
-	int_fast32_t index_end = nums[id + 1];
-	int_fast32_t num_fin = index_end - idx;
+	int_fast32_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
-	for(int_fast32_t i = nums[id]; i < index_end; i += SIZE_BATCH) {
-		if(unlikely(num_fin < i)) {
-			idx = index_end - i;
+	for(i = 0; i < NUM_PACKET; i += SIZE_BATCH) {
+		j = 0;
+		for(packet& p : parray) {
+			p = packet(j + i);
+			j++;
 		}
+		csring.ipush(parray, pool, CLT, num_fin);
+	}
 
-		for(j = 0; j < idx; j++) {
-			parray[j] = packet(j + i);
+	if(NUM_PACKET < i) {
+		j = 0;
+		for(i -= SIZE_BATCH; i < NUM_PACKET; i++, j++) {
+			parray[j] = packet(i);
 		}
-
-		csring.ipush(parray, pool, CLT, id);
+		csring.ipush(parray, pool, CLT, j);
 	}
 }
 
-void recv_packet(ring &scring, packet pool[NUM_THREAD], uint_fast32_t id) {
-	int_fast32_t j;
-	int_fast32_t idx = SIZE_BATCH;
-	int_fast16_t root = id * SIZE_BATCH;
-	int_fast32_t index_end = nums[id + 1];
-	int_fast32_t num_fin = index_end - idx;
+void recv_packet(ring &scring, packet pool[NUM_THREAD]) {
+	int_fast32_t i;
+	int_fast32_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
-	for(int_fast32_t i = nums[id]; i < index_end; i += SIZE_BATCH) {
-		if(unlikely(num_fin < i)) {
-			idx = index_end - i;
-		}
-
-		scring.pull(parray, pool, root);
-		for(j = 0; j < idx; j++) {
-			if(unlikely(!check_verification(parray[j]))) {
+	for(i = 0; i < NUM_PACKET; i += SIZE_BATCH) {
+		scring.pull(parray, pool, num_fin);
+		for(packet p : parray) {
+			if(unlikely(!check_verification(p))) {
 				puts("verification error");
 				exit(1);
 			}
 
-			if(unlikely((parray[j].id & 8388607) == 0)) {
+			if(unlikely((p.id & 8388607) == 0)) {
 #if INFO_CPU == 0
 				printf("%g%\n", getCurrentValue_p());
 #endif
-				parray[j].print();
+				p.print();
+			}
+		}
+	}
+
+	if(NUM_PACKET < i) {
+		i -= SIZE_BATCH;
+		num_fin = NUM_PACKET - i;
+		scring.pull(parray, pool, num_fin);
+
+		for(i = 0; i < num_fin; i++) {
+			if(unlikely(!check_verification(parray[i]))) {
+				puts("verification error");
+				exit(1);
+			}
+
+			if(unlikely((parray[i].id & 8388607) == 0)) {
+#if INFO_CPU == 0
+				printf("%g%\n", getCurrentValue_p());
+#endif
+				parray[i].print();
 			}
 		}
 	}

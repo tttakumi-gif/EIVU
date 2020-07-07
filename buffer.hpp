@@ -4,7 +4,7 @@
 #include "packet.hpp"
 
 #define INFO_CPU 2
-#define SIZE_BATCH 1024
+#define SIZE_BATCH 32
 #define NUM_THREAD 1
 
 #define likely(x) __builtin_expect(!!(x), 1)
@@ -32,8 +32,8 @@ enum dstatus : int_fast32_t {
 class desc {
 public:
 	dstatus status;
-	uint16_t id;
-	uint_fast8_t len;
+	uint32_t id;
+	uint32_t len;
 	//bool is_used;
 	packet *entry;
 
@@ -46,7 +46,7 @@ public:
 
 class ring {
 public:
-	uint_fast16_t rsrv_idx[NUM_THREAD];
+	uint_fast16_t rsrv_idx;
 	//uint_fast16_t recv_idx[NUM_THREAD];
 	//uint_fast16_t proc_idx[NUM_THREAD];
 	uint16_t size;
@@ -58,8 +58,8 @@ public:
 	uint_fast32_t get_index(packet[NUM_THREAD], rsource, uint_fast8_t);
 	bool dinit(uint_fast8_t);
 	bool push(packet, packet[NUM_THREAD], rsource, uint_fast8_t);
-	void ipush(packet[SIZE_BATCH], packet[NUM_THREAD], rsource, uint_fast32_t);
-	void pull(packet[SIZE_BATCH], packet[NUM_THREAD], uint_fast16_t);
+	void ipush(packet[SIZE_BATCH], packet[NUM_THREAD], rsource, int_fast32_t);
+	void pull(packet[SIZE_BATCH], packet[NUM_THREAD], int_fast32_t);
 	void init_descs();
 };
 
