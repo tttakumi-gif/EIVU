@@ -1,8 +1,7 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void rs_packet(ring&, ring&, packet[NUM_THREAD]);
-void init_d(ring&, uint_fast32_t);
+void rs_packet(ring&, ring&, packet[SIZE_POOL]);
 
 int main() {
 	puts("begin");
@@ -12,8 +11,6 @@ int main() {
 	ring *scring = (ring*)(csring + 1);
 	packet *pool = (packet*)(scring + 1);
 	bool *flag = (bool*)(pool + SIZE_POOL);
-
-	set_packet_nums(nums);
 
 #if INFO_CPU == 1
 	init_p();
@@ -27,35 +24,34 @@ int main() {
 	return 0;
 }
 
-void rs_packet(ring &csring, ring &scring, packet pool[NUM_THREAD]) {
-	int_fast32_t i;
+void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL]) {
+	int_fast32_t i = NUM_PACKET;
 	int_fast32_t j;
-	int_fast32_t num_fin = SIZE_BATCH;
-	packet p;
+	int_fast8_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
-	for(i = 0; i < NUM_PACKET; i += SIZE_BATCH) {
+	do {
+		// 送受信パケット数の決定
+		if(unlikely(i < SIZE_BATCH)) {
+			num_fin = i;
+		}
+
+		// パケット受信
 		csring.pull(parray, pool, num_fin);
-		for(packet& p : parray) {
+
+		// verificationセット
+		for(j = 0; j < num_fin; j++) {
 #if INFO_CPU == 1
-			if(unlikely((p.id & 8388607) == 0)) {
+			if(unlikely((parray[j].id & 8388607) == 0)) {
 				printf("%g%\n", getCurrentValue_p());
 			}
 #endif
-			p.set_verification();
-		}
-
-		scring.ipush(parray, pool, SRV, num_fin);
-	}
-
-	if(NUM_PACKET < i) {
-		i -= SIZE_BATCH;
-		num_fin = NUM_PACKET - i;
-		csring.pull(parray, pool, num_fin);
-		for(j = 0; j < num_fin; j++) {
 			parray[j].set_verification();
 		}
 
+		// パケット送信
 		scring.ipush(parray, pool, SRV, num_fin);
-	}
+
+		i -= SIZE_BATCH;
+	} while(0 < i);
 }

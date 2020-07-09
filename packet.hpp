@@ -7,16 +7,16 @@
 
 #include "cpuinfo.hpp"
 
-//#define NUM_PACKET 5000000
-#define NUM_PACKET 10000000
-//#define NUM_PACKET 25000000
 //#define NUM_PACKET 100000000
-#define SIZE_PACKET 16
+//#define SIZE_PACKET 16
+
+constexpr uint_fast8_t SIZE_PACKET = 16;
+constexpr uint_fast32_t NUM_PACKET = 100000000;
 
 void do_none() {
 }
 
-constexpr uint_fast16_t DUMMY_SIZE = SIZE_PACKET - sizeof(uint32_t) - sizeof(uint32_t) - sizeof(uint16_t);
+constexpr uint_fast16_t DUMMY_SIZE = SIZE_PACKET - sizeof(uint32_t) - sizeof(uint32_t) - sizeof(uint_fast8_t);
 
 class packet {
 public:
@@ -50,7 +50,7 @@ inline packet::packet(uint32_t this_id, const char* this_dummy) {
 }
 
 inline void packet::print() {
-	printf("id: %d, len: %d, dummy: %s, verification: 0x%x\n", id, len, dummy, verification);
+	std::printf("id: %d, len: %d, dummy: %s, verification: 0x%x\n", id, len, dummy, verification);
 }
 
 inline void packet::set_verification() {

@@ -2,8 +2,8 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void send_packet(ring&, packet[NUM_THREAD]);
-void recv_packet(ring&, packet[NUM_THREAD]);
+void send_packet(ring&, packet[SIZE_POOL]);
+void recv_packet(ring&, packet[SIZE_POOL]);
 bool check_verification(packet);
 
 int main() {
@@ -16,11 +16,12 @@ int main() {
 	ring *scring = (ring*)(csring + 1);
 	*scring = ring();
 	packet *pool = (packet*)(scring + 1);
-	memset(pool, 0, sizeof(packet) * SIZE_POOL);
+	for(int i = 0; i < SIZE_POOL; i++) {
+		pool[i] = packet();
+	}
+
 	volatile bool *flag = (volatile bool*)(pool + SIZE_POOL);
 	*flag = false;
-
-	set_packet_nums(nums);
 
 #if INFO_CPU == 0
 	init_p();
@@ -47,71 +48,63 @@ int main() {
 	return 0;
 }
 
-void send_packet(ring &csring, packet pool[NUM_THREAD]) {
-	int_fast32_t i;
-	int_fast32_t j;
-	int_fast32_t num_fin = SIZE_BATCH;
+void send_packet(ring &csring, packet pool[SIZE_POOL]) {
+	uint_fast32_t i;
+	uint_fast32_t j = 0;
 	packet parray[SIZE_BATCH];
 
-	for(i = 0; i < NUM_PACKET; i += SIZE_BATCH) {
-		j = 0;
-		for(packet& p : parray) {
-			p = packet(j + i);
-			j++;
-		}
-		csring.ipush(parray, pool, CLT, num_fin);
-	}
+	while(true) {
+		i = j;
 
-	if(NUM_PACKET < i) {
-		j = 0;
-		for(i -= SIZE_BATCH; i < NUM_PACKET; i++, j++) {
-			parray[j] = packet(i);
+		// パケット生成
+		for(packet& p : parray) {
+			p = packet(j);
+			j++;
+
+			// 指定パケット数に達したら終了
+			if(unlikely(NUM_PACKET <= j)) {
+				csring.ipush(parray, pool, CLT, j - i);
+				return;
+			}
 		}
-		csring.ipush(parray, pool, CLT, j);
+
+		// パケット送信
+		csring.ipush(parray, pool, CLT, SIZE_BATCH);
 	}
 }
 
-void recv_packet(ring &scring, packet pool[NUM_THREAD]) {
-	int_fast32_t i;
-	int_fast32_t num_fin = SIZE_BATCH;
+void recv_packet(ring &scring, packet pool[SIZE_POOL]) {
+	uint_fast32_t i = NUM_PACKET;
+	uint_fast32_t j;
+	uint_fast8_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
-	for(i = 0; i < NUM_PACKET; i += SIZE_BATCH) {
+	do {
+		// 受信パケット数の決定
+		if(unlikely(i < SIZE_BATCH)) {
+			num_fin = i;
+		}
+		
+		// パケット受信
 		scring.pull(parray, pool, num_fin);
-		for(packet p : parray) {
-			if(unlikely(!check_verification(p))) {
+
+		// パケット検証
+		for(j = 0; j < num_fin; j++) {
+			if(unlikely(!check_verification(parray[j]))) {
 				puts("verification error");
 				exit(1);
 			}
 
-			if(unlikely((p.id & 8388607) == 0)) {
+			if(unlikely((parray[j].id & 8388607) == 0)) {
 #if INFO_CPU == 0
 				printf("%g%\n", getCurrentValue_p());
 #endif
-				p.print();
+				parray[j].print();
 			}
 		}
-	}
 
-	if(NUM_PACKET < i) {
 		i -= SIZE_BATCH;
-		num_fin = NUM_PACKET - i;
-		scring.pull(parray, pool, num_fin);
-
-		for(i = 0; i < num_fin; i++) {
-			if(unlikely(!check_verification(parray[i]))) {
-				puts("verification error");
-				exit(1);
-			}
-
-			if(unlikely((parray[i].id & 8388607) == 0)) {
-#if INFO_CPU == 0
-				printf("%g%\n", getCurrentValue_p());
-#endif
-				parray[i].print();
-			}
-		}
-	}
+	} while(0 < i);
 }
 
 bool check_verification(packet p) {

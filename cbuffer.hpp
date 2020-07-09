@@ -1,7 +1,5 @@
 #pragma once
 
-uint32_t nums[NUM_THREAD + 1];
-
 inline desc::desc() {
 }
 
@@ -15,15 +13,18 @@ inline void desc::delete_info(dstatus _status) {
 	__atomic_store_n(&status, _status, __ATOMIC_RELEASE);
 }
 
-inline void desc::set_param(packet p, uint_fast16_t this_id, dstatus _status) {
+//inline void desc::set_param(packet p, uint_fast8_t this_id, dstatus _status) {
+inline void desc::set_param(uint_fast8_t this_id, dstatus _status) {
 	id = this_id;
-	len = sizeof(p);
+	//len = sizeof(p);
+	len = SIZE_PACKET;
 	__atomic_store_n(&status, _status, __ATOMIC_RELEASE);
 }
 
 inline ring::ring() {
 	size = SIZE_RING;
 	rsrv_idx = 0;
+	proc_idx = 0;
 	memset(descs, 0, sizeof(desc) * SIZE_RING);
 	init_descs();
 }
@@ -31,6 +32,7 @@ inline ring::ring() {
 inline void ring::operator=(ring&& r) {
 	size = r.size;
 	rsrv_idx = r.rsrv_idx;
+	proc_idx = r.proc_idx;
 	memcpy(descs, r.descs, sizeof(desc) * SIZE_RING);
 }
 
@@ -40,11 +42,11 @@ inline void ring::init_descs() {
 	}
 }
 
-inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[NUM_THREAD], rsource source, int_fast32_t num_fin) {
-	uint_fast16_t prev_idx = rsrv_idx;
-	uint_fast16_t index = (source == CLT) ? 0 : SIZE_RING;
+inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsource source, uint_fast8_t num_fin) {
+	uint_fast8_t prev_idx = rsrv_idx;
+	uint_fast8_t index = (source == CLT) ? 0 : SIZE_RING;
 
-	for(int_fast32_t i = 0; i < num_fin; i++, index++) {
+	for(uint_fast8_t i = 0; i < num_fin; i++, index++) {
 		while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PULL) {
 			do_none();
 		}
@@ -55,7 +57,8 @@ inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[NUM_THREAD], rsou
 		pool[index] = parray[i];
 
 		descs[prev_idx].entry = pool + index;
-		descs[prev_idx].set_param(parray[i], index, PUSH);
+		//descs[prev_idx].set_param(parray[i], index, PUSH);
+		descs[prev_idx].set_param(index, PUSH);
 
 		prev_idx = (prev_idx + 1) & NUM_MOD;
 	}
@@ -63,32 +66,22 @@ inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[NUM_THREAD], rsou
 	rsrv_idx = prev_idx;
 }
 
-inline void ring::pull(packet parray[SIZE_BATCH], packet pool[NUM_THREAD], int_fast32_t num_fin) {
-	for(int_fast32_t i = 0; i < num_fin; i++) {
-		while(__atomic_load_n(&descs[i].status, __ATOMIC_ACQUIRE) != PUSH) {
+inline void ring::pull(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], uint_fast8_t num_fin) {
+	uint_fast8_t prev_idx = proc_idx;
+
+	for(uint_fast8_t i = 0; i < num_fin; i++) {
+		while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PUSH) {
 			do_none();
 		}
 
-		descs[i].entry = pool + descs[i].id;
-		parray[i] = *(descs[i].entry);
+		descs[prev_idx].entry = pool + descs[prev_idx].id;
+		parray[prev_idx] = *(descs[prev_idx].entry);
+		descs[prev_idx].delete_info(PULL);
 
-		descs[i].delete_info(PULL);
+		prev_idx = (prev_idx + 1) & NUM_MOD;
 	}
-}
 
-inline void set_packet_nums(uint32_t *nums) {
-	int mod = NUM_PACKET % NUM_THREAD;
-	int result = NUM_PACKET / NUM_THREAD;
-	int temp = result;
-
-	nums[0] = 0;
-	for(int i = 0; i < NUM_THREAD; i++) {
-		if(i < mod) {
-			temp++;
-		}
-		nums[i + 1] = temp;
-		temp += result;
-	}
+	proc_idx = prev_idx;
 }
 
 // 未使用
@@ -150,4 +143,20 @@ inline bool ring::push(packet p, packet pool[NUM_THREAD], rsource source, uint_f
 
 	return true;
 }
+
+inline void set_packet_nums(uint32_t *nums) {
+	int mod = NUM_PACKET % NUM_THREAD;
+	int result = NUM_PACKET / NUM_THREAD;
+	int temp = result;
+
+	nums[0] = 0;
+	for(int i = 0; i < NUM_THREAD; i++) {
+		if(i < mod) {
+			temp++;
+		}
+		nums[i + 1] = temp;
+		temp += result;
+	}
+}
+
 #endif
