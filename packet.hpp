@@ -13,7 +13,7 @@
 constexpr uint_fast8_t SIZE_PACKET = 16;
 constexpr uint_fast32_t NUM_PACKET = 100000000;
 
-void do_none() {
+inline void do_none() {
 }
 
 constexpr uint_fast16_t DUMMY_SIZE = SIZE_PACKET - sizeof(uint32_t) - sizeof(uint32_t) - sizeof(uint_fast8_t);
@@ -21,9 +21,9 @@ constexpr uint_fast16_t DUMMY_SIZE = SIZE_PACKET - sizeof(uint32_t) - sizeof(uin
 class packet {
 public:
 	uint32_t id;
+	uint32_t verification;
 	uint_fast8_t len;
 	char dummy[DUMMY_SIZE];
-	uint32_t verification;
 
 	packet();
 	packet(uint32_t);

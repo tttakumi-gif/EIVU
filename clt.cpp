@@ -4,11 +4,19 @@
 
 void send_packet(ring&, packet[SIZE_POOL]);
 void recv_packet(ring&, packet[SIZE_POOL]);
-bool check_verification(packet);
+void check_verification(packet);
+void judge_packet(packet[SIZE_BATCH], uint_fast32_t);
 
 int main() {
 	puts("begin");
-	std::cout << "size: " << sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL << std::endl;
+	{
+		int size = sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL + sizeof(volatile bool);
+		std::cout << "size: " << size << std::endl;
+		assert(size <= SIZE_SHM);
+		std::cout << "psize: " << sizeof(packet) << std::endl;
+		std::cout << "dsize: " << sizeof(desc) << std::endl;
+		std::cout << "rsize: " << sizeof(ring) << std::endl;
+	}
 
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
 	ring *csring = (ring*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
@@ -75,8 +83,7 @@ void send_packet(ring &csring, packet pool[SIZE_POOL]) {
 
 void recv_packet(ring &scring, packet pool[SIZE_POOL]) {
 	uint_fast32_t i = NUM_PACKET;
-	uint_fast32_t j;
-	uint_fast8_t num_fin = SIZE_BATCH;
+	uint_fast32_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
 	do {
@@ -84,29 +91,32 @@ void recv_packet(ring &scring, packet pool[SIZE_POOL]) {
 		if(unlikely(i < SIZE_BATCH)) {
 			num_fin = i;
 		}
+		i -= SIZE_BATCH;
 		
 		// パケット受信
 		scring.pull(parray, pool, num_fin);
 
 		// パケット検証
-		for(j = 0; j < num_fin; j++) {
-			if(unlikely(!check_verification(parray[j]))) {
-				puts("verification error");
-				exit(1);
-			}
-
-			if(unlikely((parray[j].id & 8388607) == 0)) {
-#if INFO_CPU == 0
-				printf("%g%\n", getCurrentValue_p());
-#endif
-				parray[j].print();
-			}
-		}
-
-		i -= SIZE_BATCH;
+		judge_packet(parray, num_fin);
 	} while(0 < i);
 }
 
-bool check_verification(packet p) {
-	return likely((p.verification ^ 0xffffffff) == p.id);
+inline void check_verification(packet p) {
+	if(unlikely((p.verification ^ 0xffffffff) != p.id)) {
+		puts("verification error");
+		exit(1);
+	}
+}
+
+inline void judge_packet(packet parray[SIZE_BATCH], uint_fast32_t num_fin) {
+	for(uint_fast32_t i = 0; i < num_fin; i++) {
+		check_verification(parray[i]);
+
+		if(unlikely((parray[i].id & 8388607) == 0)) {
+#if INFO_CPU == 0
+			printf("%g%\n", getCurrentValue_p());
+#endif
+			parray[i].print();
+		}
+	}
 }
