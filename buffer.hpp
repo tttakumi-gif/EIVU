@@ -18,23 +18,14 @@ enum rsource : uint_fast8_t {
 	SRV,
 };
 
-enum dstatus : uint_fast8_t {
-	INIT,
-	PUSH,
-	PULL,
-};
-
 class desc {
 public:
-	dstatus status;
-	uint_fast8_t id;
-	uint_fast8_t len;
+	//int_fast32_t id;
+	int_fast8_t id;
 	packet *entry;
 
-	desc();
-
-	void set_param(uint_fast8_t, dstatus);
-	void delete_info(dstatus);
+	void set_param(int_fast32_t);
+	void delete_info();
 };
 
 class ring {

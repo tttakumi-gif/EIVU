@@ -1,25 +1,18 @@
 #pragma once
 
-inline desc::desc() {
-}
-
-inline void desc::delete_info(dstatus _status) {
+inline void desc::delete_info() {
 	entry->len = 0;
-	//len = 0;
-	__atomic_store_n(&status, _status, __ATOMIC_RELEASE);
+	__atomic_store_n(&id, -1, __ATOMIC_RELEASE);
 }
 
-inline void desc::set_param(uint_fast8_t this_id, dstatus _status) {
-	id = this_id;
-	//len = SIZE_PACKET;
-	__atomic_store_n(&status, _status, __ATOMIC_RELEASE);
+inline void desc::set_param(int_fast32_t this_id) {
+	__atomic_store_n(&id, this_id, __ATOMIC_RELEASE);
 }
 
 inline ring::ring() {
 	size = SIZE_RING;
 	rsrv_idx = 0;
 	proc_idx = 0;
-	memset(descs, 0, sizeof(desc) * SIZE_RING);
 	init_descs();
 }
 
@@ -31,17 +24,18 @@ inline void ring::operator=(ring&& r) {
 }
 
 inline void ring::init_descs() {
+	memset(descs, 0, sizeof(desc) * SIZE_RING);
 	for(int i = 0; i < SIZE_RING; i++) {
-		descs[i].status = PULL;
+		descs[i].id = -1;
 	}
 }
 
 inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsource source, uint_fast8_t num_fin) {
 	uint_fast8_t prev_idx = rsrv_idx;
-	uint_fast8_t index = (source == CLT) ? 0 : SIZE_RING;
+	int_fast32_t index = (source == CLT) ? 0 : SIZE_RING;
 
 	for(uint_fast8_t i = 0; i < num_fin; i++, index++) {
-		while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PULL) {
+		while(0 <= __atomic_load_n(&descs[prev_idx].id, __ATOMIC_ACQUIRE)) {
 			do_none();
 		}
 
@@ -51,7 +45,7 @@ inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsour
 		pool[index] = parray[i];
 
 		descs[prev_idx].entry = pool + index;
-		descs[prev_idx].set_param(index, PUSH);
+		descs[prev_idx].set_param(index);
 
 		prev_idx = (prev_idx + 1) & NUM_MOD;
 	}
@@ -64,13 +58,13 @@ inline void ring::pull(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], uint_f
 	uint_fast8_t prev_idx = proc_idx;
 
 	for(uint_fast8_t i = 0; i < num_fin; i++) {
-		while(__atomic_load_n(&descs[prev_idx].status, __ATOMIC_ACQUIRE) != PUSH) {
+		while(__atomic_load_n(&descs[prev_idx].id, __ATOMIC_ACQUIRE) < 0) {
 			do_none();
 		}
 
 		descs[prev_idx].entry = pool + descs[prev_idx].id;
 		parray[prev_idx] = *(descs[prev_idx].entry);
-		descs[prev_idx].delete_info(PULL);
+		descs[prev_idx].delete_info();
 
 		prev_idx = (prev_idx + 1) & NUM_MOD;
 	}
