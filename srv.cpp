@@ -25,12 +25,11 @@ int main() {
 }
 
 void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL]) {
-	int_fast32_t i = NUM_PACKET;
-	int_fast32_t j;
-	int_fast8_t num_fin = SIZE_BATCH;
+	uint_fast32_t j;
+	uint_fast8_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
-	do {
+	for(uint_fast32_t i = NUM_PACKET; 0 < i; i-= SIZE_BATCH) {
 		// 送受信パケット数の決定
 		if(unlikely(i < SIZE_BATCH)) {
 			num_fin = i;
@@ -51,7 +50,5 @@ void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL]) {
 
 		// パケット送信
 		scring.ipush(parray, pool, SRV, num_fin);
-
-		i -= SIZE_BATCH;
-	} while(0 < i);
+	}
 }

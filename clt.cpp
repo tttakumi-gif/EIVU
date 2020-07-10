@@ -82,23 +82,21 @@ void send_packet(ring &csring, packet pool[SIZE_POOL]) {
 }
 
 void recv_packet(ring &scring, packet pool[SIZE_POOL]) {
-	uint_fast32_t i = NUM_PACKET;
 	uint_fast32_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
-	do {
+	for(uint_fast32_t i = NUM_PACKET; 0 < i; i -= SIZE_BATCH) {
 		// 受信パケット数の決定
 		if(unlikely(i < SIZE_BATCH)) {
 			num_fin = i;
 		}
-		i -= SIZE_BATCH;
 		
 		// パケット受信
 		scring.pull(parray, pool, num_fin);
 
 		// パケット検証
 		judge_packet(parray, num_fin);
-	} while(0 < i);
+	}
 }
 
 inline void check_verification(packet p) {

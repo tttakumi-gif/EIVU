@@ -20,11 +20,11 @@ enum rsource : uint_fast8_t {
 
 class desc {
 public:
-	//int_fast32_t id;
 	int_fast8_t id;
 	packet *entry;
+	//int_fast8_t id;
 
-	void set_param(int_fast32_t);
+	void set_param(int_fast32_t, packet*);
 	void delete_info();
 };
 
@@ -33,6 +33,9 @@ public:
 	uint_fast8_t rsrv_idx;
 	uint_fast8_t recv_idx;
 	uint_fast8_t proc_idx;
+//	uint_fast32_t rsrv_idx;
+//	uint_fast32_t recv_idx;
+//	uint_fast32_t proc_idx;
 	uint_fast8_t size;
 	desc descs[SIZE_RING];
 

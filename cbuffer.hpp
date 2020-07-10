@@ -5,7 +5,8 @@ inline void desc::delete_info() {
 	__atomic_store_n(&id, -1, __ATOMIC_RELEASE);
 }
 
-inline void desc::set_param(int_fast32_t this_id) {
+inline void desc::set_param(int_fast32_t this_id, packet *pool) {
+	entry = pool + this_id;
 	__atomic_store_n(&id, this_id, __ATOMIC_RELEASE);
 }
 
@@ -32,7 +33,7 @@ inline void ring::init_descs() {
 
 inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsource source, uint_fast8_t num_fin) {
 	uint_fast8_t prev_idx = rsrv_idx;
-	int_fast32_t index = (source == CLT) ? 0 : SIZE_RING;
+	uint_fast32_t index = (source == CLT) ? 0 : SIZE_RING;
 
 	for(uint_fast8_t i = 0; i < num_fin; i++, index++) {
 		while(0 <= __atomic_load_n(&descs[prev_idx].id, __ATOMIC_ACQUIRE)) {
@@ -42,10 +43,9 @@ inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsour
 		while(0 < pool[index].len) {
 			do_none();
 		}
-		pool[index] = parray[i];
 
-		descs[prev_idx].entry = pool + index;
-		descs[prev_idx].set_param(index);
+		pool[index] = parray[i];
+		descs[prev_idx].set_param(index, pool);
 
 		prev_idx = (prev_idx + 1) & NUM_MOD;
 	}
@@ -55,7 +55,7 @@ inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsour
 }
 
 inline void ring::pull(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], uint_fast8_t num_fin) {
-	uint_fast8_t prev_idx = proc_idx;
+	uint_fast32_t prev_idx = proc_idx;
 
 	for(uint_fast8_t i = 0; i < num_fin; i++) {
 		while(__atomic_load_n(&descs[prev_idx].id, __ATOMIC_ACQUIRE) < 0) {
