@@ -10,7 +10,7 @@
 //#define NUM_PACKET 100000000
 //#define SIZE_PACKET 16
 
-constexpr uint_fast8_t SIZE_PACKET = 16;
+constexpr uint_fast32_t SIZE_PACKET = 16;
 constexpr uint_fast32_t NUM_PACKET = 100000000;
 
 inline void do_none() {

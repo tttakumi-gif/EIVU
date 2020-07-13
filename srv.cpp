@@ -1,11 +1,12 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void rs_packet(ring&, ring&, packet[SIZE_POOL]);
+void rs_packet(ring&, ring&, packet[]);
 
 int main() {
 	puts("begin");
 
+	// 初期設定
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
 	ring *csring = (ring*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 	ring *scring = (ring*)(csring + 1);
@@ -17,6 +18,8 @@ int main() {
 #endif
 
 	*flag = true;
+
+	// 送受信開始
 	rs_packet(*csring, *scring, pool);
 
 	shm_unlink("shm_buf");
@@ -26,10 +29,10 @@ int main() {
 
 void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL]) {
 	uint_fast32_t j;
-	uint_fast8_t num_fin = SIZE_BATCH;
+	uint_fast32_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
-	for(uint_fast32_t i = NUM_PACKET; 0 < i; i-= SIZE_BATCH) {
+	for(uint_fast32_t i = NUM_PACKET; 0 < i; i -= SIZE_BATCH) {
 		// 送受信パケット数の決定
 		if(unlikely(i < SIZE_BATCH)) {
 			num_fin = i;

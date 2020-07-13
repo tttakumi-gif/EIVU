@@ -27,12 +27,14 @@ inline void ring::operator=(ring&& r) {
 inline void ring::init_descs() {
 	memset(descs, 0, sizeof(desc) * SIZE_RING);
 	for(int i = 0; i < SIZE_RING; i++) {
-		descs[i].id = -1;
+		__atomic_store_n(&descs[i].id, -1, __ATOMIC_RELEASE);
+		//descs[i].id = -1;
 	}
 }
 
 inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsource source, uint_fast8_t num_fin) {
-	uint_fast8_t prev_idx = rsrv_idx;
+#if 1
+	uint_fast32_t prev_idx = rsrv_idx;
 	uint_fast32_t index = (source == CLT) ? 0 : SIZE_RING;
 
 	for(uint_fast8_t i = 0; i < num_fin; i++, index++) {
@@ -52,6 +54,27 @@ inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsour
 
 	rsrv_idx = prev_idx;
 	recv_idx = prev_idx;
+#else
+	uint_fast32_t prev_idx = rsrv_idx;
+
+	for(uint_fast8_t i = 0; i < num_fin; i++, source++) {
+		while(0 <= __atomic_load_n(&descs[prev_idx].id, __ATOMIC_ACQUIRE)) {
+			do_none();
+		}
+
+		while(0 < pool[source].len) {
+			do_none();
+		}
+
+		pool[source] = parray[i];
+		descs[prev_idx].set_param(source, pool);
+
+		prev_idx = (prev_idx + 1) & NUM_MOD;
+	}
+
+	rsrv_idx = prev_idx;
+	recv_idx = prev_idx;
+#endif
 }
 
 inline void ring::pull(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], uint_fast8_t num_fin) {

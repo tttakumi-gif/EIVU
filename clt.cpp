@@ -2,10 +2,10 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void send_packet(ring&, packet[SIZE_POOL]);
-void recv_packet(ring&, packet[SIZE_POOL]);
+void send_packet(ring&, packet[]);
+void recv_packet(ring&, packet[]);
 void check_verification(packet);
-void judge_packet(packet[SIZE_BATCH], uint_fast32_t);
+void judge_packet(packet[], uint_fast32_t);
 
 int main() {
 	puts("begin");
@@ -18,6 +18,7 @@ int main() {
 		std::cout << "rsize: " << sizeof(ring) << std::endl;
 	}
 
+	// 初期設定
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
 	ring *csring = (ring*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 	*csring = ring();
@@ -38,14 +39,16 @@ int main() {
 	while(!*flag) {
 	}
 
-	std::thread thread_send(send_packet, std::ref(*csring), std::ref(pool));
-
+	// 計測開始
 	std::chrono::system_clock::time_point start, end;
 	start = std::chrono::system_clock::now();
 
+	// 送受信開始
+	std::thread thread_send(send_packet, std::ref(*csring), std::ref(pool));
 	recv_packet(*scring, pool);
-	thread_send.join();
 
+	// 計測終了
+	thread_send.join();
 	end = std::chrono::system_clock::now();
 
 	shm_unlink("shm_buf");
@@ -59,6 +62,7 @@ int main() {
 void send_packet(ring &csring, packet pool[SIZE_POOL]) {
 	uint_fast32_t i;
 	uint_fast32_t j = 0;
+	uint_fast32_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
 	while(true) {
@@ -77,7 +81,7 @@ void send_packet(ring &csring, packet pool[SIZE_POOL]) {
 		}
 
 		// パケット送信
-		csring.ipush(parray, pool, CLT, SIZE_BATCH);
+		csring.ipush(parray, pool, CLT, num_fin);
 	}
 }
 
@@ -100,7 +104,7 @@ void recv_packet(ring &scring, packet pool[SIZE_POOL]) {
 }
 
 inline void check_verification(packet p) {
-	if(unlikely((p.verification ^ 0xffffffff) != p.id)) {
+	if(unlikely(p.id != (p.verification ^ 0xffffffff))) {
 		puts("verification error");
 		exit(1);
 	}
