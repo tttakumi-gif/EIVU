@@ -13,10 +13,6 @@ int main() {
 	packet *pool = (packet*)(scring + 1);
 	bool *flag = (bool*)(pool + SIZE_POOL);
 
-#if INFO_CPU == 1
-	init_p();
-#endif
-
 	*flag = true;
 
 	// 送受信開始
@@ -28,11 +24,13 @@ int main() {
 }
 
 void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL]) {
-	uint_fast32_t j;
-	uint_fast32_t num_fin = SIZE_BATCH;
+	bind_core(1);
+
+	int_fast32_t j;
+	int_fast32_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
-	for(uint_fast32_t i = NUM_PACKET; 0 < i; i -= SIZE_BATCH) {
+	for(int_fast32_t i = NUM_PACKET; 0 < i; i -= SIZE_BATCH) {
 		// 送受信パケット数の決定
 		if(unlikely(i < SIZE_BATCH)) {
 			num_fin = i;
@@ -43,9 +41,13 @@ void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL]) {
 
 		// verificationセット
 		for(j = 0; j < num_fin; j++) {
-#if INFO_CPU == 1
+#if INFO_CPU == PROC_SRV
 			if(unlikely((parray[j].id & 8388607) == 0)) {
-				printf("%g%\n", getCurrentValue_p());
+				std::printf("%g%%\n", getCurrentValue_p());
+			}
+#elif INFO_CPU == TOTAL_SRV
+			if(unlikely((parray[j].id & 8388607) == 0)) {
+				std::printf("%g%%\n", getCurrentValue_t());
 			}
 #endif
 			parray[j].set_verification();
@@ -54,4 +56,12 @@ void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL]) {
 		// パケット送信
 		scring.ipush(parray, pool, SRV, num_fin);
 	}
+}
+
+void init_resource() {
+#if INFO_CPU == PROC_SRV
+	init_p();
+#elif INFO_CPU == TOTAL_SRV
+	init_t();
+#endif
 }

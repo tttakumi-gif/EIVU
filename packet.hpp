@@ -4,46 +4,56 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
+#include <sys/syscall.h>
 
 #include "cpuinfo.hpp"
 
-//#define NUM_PACKET 100000000
-//#define SIZE_PACKET 16
+#define DUMMY_FULL 1
 
-constexpr uint_fast32_t SIZE_PACKET = 16;
-constexpr uint_fast32_t NUM_PACKET = 100000000;
+constexpr int_fast32_t SIZE_PACKET = 512;
+//constexpr int_fast32_t SIZE_PACKET = 16;
+constexpr int_fast32_t NUM_PACKET = 100000000;
+//constexpr int_fast32_t NUM_PACKET = 1000000000;
 
-inline void do_none() {
+constexpr int_fast32_t get_dummy_size(int isize, int vsize, int lsize) {
+	return SIZE_PACKET - isize - vsize - lsize;
 }
-
-constexpr uint_fast16_t DUMMY_SIZE = SIZE_PACKET - sizeof(uint32_t) - sizeof(uint32_t) - sizeof(uint_fast8_t);
 
 class packet {
 public:
-	uint32_t id;
-	uint32_t verification;
-	uint_fast8_t len;
-	char dummy[DUMMY_SIZE];
+	int32_t id;
+	int32_t verification;
+	int32_t len;
+	char dummy[get_dummy_size(sizeof(id), sizeof(verification), sizeof(len))];
 
 	packet();
-	packet(uint32_t);
-	packet(uint32_t, const char*);
+	packet(int32_t);
+	packet(int32_t, const char*);
 
 	void print();
 	void set_verification();
 
 };
 
-inline packet::packet() {
-	len = 0;
+constexpr int_fast32_t DUMMY_SIZE = get_dummy_size(sizeof(packet::id), sizeof(packet::verification), sizeof(packet::len));
+char GLOBAL_DUMMY[DUMMY_SIZE];
+
+inline void do_none() {
 }
 
-inline packet::packet(uint32_t this_id) {
+inline packet::packet() {
+	len = 0;
+#ifdef DUMMY_FULL
+	strncpy(dummy, GLOBAL_DUMMY, DUMMY_SIZE);
+#endif
+}
+
+inline packet::packet(int32_t this_id) {
 	id = this_id;
 	len = sizeof(packet);
 }
 
-inline packet::packet(uint32_t this_id, const char* this_dummy) {
+inline packet::packet(int32_t this_id, const char* this_dummy) {
 	id = this_id;
 	len = sizeof(packet);
 	strncpy(dummy, this_dummy, DUMMY_SIZE);
@@ -55,4 +65,12 @@ inline void packet::print() {
 
 inline void packet::set_verification() {
 	verification = id ^ 0xffffffff;
+}
+
+void set_global_dummy() {
+	int i;
+	for(i = 0; i < DUMMY_SIZE - 1; i++) {
+		GLOBAL_DUMMY[i] = '0' + i;
+	}
+	GLOBAL_DUMMY[i] = '\0';
 }

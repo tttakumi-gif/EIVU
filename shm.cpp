@@ -17,7 +17,8 @@ int open_shmfile(std::string filename, uint32_t size, bool is_create) {
 
 	//int ret = ftruncate(fd, size);
 	//int rete = errno;
-	ftruncate(fd, size);
+	int no = ftruncate(fd, size);
+	assert(no != -1);
 
 	return fd;
 }

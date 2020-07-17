@@ -5,14 +5,16 @@
 void send_packet(ring&, packet[]);
 void recv_packet(ring&, packet[]);
 void check_verification(packet);
-void judge_packet(packet[], uint_fast32_t);
+void judge_packet(packet[], int_fast32_t);
+void init_resource();
 
 int main() {
 	puts("begin");
+
 	{
-		int size = sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL + sizeof(volatile bool);
+		constexpr int size = sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL + sizeof(volatile bool);
 		std::cout << "size: " << size << std::endl;
-		assert(size <= SIZE_SHM);
+		static_assert(size <= SIZE_SHM, "over packet size");
 		std::cout << "psize: " << sizeof(packet) << std::endl;
 		std::cout << "dsize: " << sizeof(desc) << std::endl;
 		std::cout << "rsize: " << sizeof(ring) << std::endl;
@@ -31,10 +33,7 @@ int main() {
 
 	volatile bool *flag = (volatile bool*)(pool + SIZE_POOL);
 	*flag = false;
-
-#if INFO_CPU == 0
-	init_p();
-#endif
+	init_resource();
 
 	while(!*flag) {
 	}
@@ -60,9 +59,11 @@ int main() {
 }
 
 void send_packet(ring &csring, packet pool[SIZE_POOL]) {
-	uint_fast32_t i;
-	uint_fast32_t j = 0;
-	uint_fast32_t num_fin = SIZE_BATCH;
+	bind_core(2);
+
+	int_fast32_t i;
+	int_fast32_t j = 0;
+	int_fast32_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
 	while(true) {
@@ -86,10 +87,12 @@ void send_packet(ring &csring, packet pool[SIZE_POOL]) {
 }
 
 void recv_packet(ring &scring, packet pool[SIZE_POOL]) {
-	uint_fast32_t num_fin = SIZE_BATCH;
+	bind_core(3);
+
+	int_fast32_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];
 
-	for(uint_fast32_t i = NUM_PACKET; 0 < i; i -= SIZE_BATCH) {
+	for(int_fast32_t i = NUM_PACKET; 0 < i; i -= SIZE_BATCH) {
 		// 受信パケット数の決定
 		if(unlikely(i < SIZE_BATCH)) {
 			num_fin = i;
@@ -104,21 +107,35 @@ void recv_packet(ring &scring, packet pool[SIZE_POOL]) {
 }
 
 inline void check_verification(packet p) {
-	if(unlikely(p.id != (p.verification ^ 0xffffffff))) {
+	if(unlikely(p.id != static_cast<signed>(p.verification ^ 0xffffffff))) {
 		puts("verification error");
 		exit(1);
 	}
 }
 
-inline void judge_packet(packet parray[SIZE_BATCH], uint_fast32_t num_fin) {
-	for(uint_fast32_t i = 0; i < num_fin; i++) {
+inline void judge_packet(packet parray[SIZE_BATCH], int_fast32_t num_fin) {
+	for(int_fast32_t i = 0; i < num_fin; i++) {
 		check_verification(parray[i]);
 
 		if(unlikely((parray[i].id & 8388607) == 0)) {
-#if INFO_CPU == 0
-			printf("%g%\n", getCurrentValue_p());
+#if INFO_CPU == PROC_CLT_R
+			std::printf("%g%%\n", getCurrentValue_p());
+#elif INFO_CPU == TOTAL_CLT
+			std::printf("%g%%\n", getCurrentValue_t());
 #endif
 			parray[i].print();
 		}
 	}
+}
+
+void init_resource() {
+#if INFO_CPU == PROC_CLT_S || INFO_CPU == PROC_CLT_R || INFO_CPU == PROC_SRV
+	init_p();
+#elif INFO_CPU == TOTAL_CLT || INFO_CPU == TOTAL_SRV
+	init_t();
+#endif
+
+#ifdef DUMMY_FULL
+	set_global_dummy();
+#endif
 }
