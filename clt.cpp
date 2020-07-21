@@ -59,7 +59,9 @@ int main() {
 }
 
 void send_packet(ring &csring, packet pool[SIZE_POOL]) {
-	bind_core(2);
+#ifdef CPU_BIND
+	bind_core(5);
+#endif
 
 	int_fast32_t i;
 	int_fast32_t j = 0;
@@ -87,7 +89,9 @@ void send_packet(ring &csring, packet pool[SIZE_POOL]) {
 }
 
 void recv_packet(ring &scring, packet pool[SIZE_POOL]) {
-	bind_core(3);
+#ifdef CPU_BIND
+	bind_core(6);
+#endif
 
 	int_fast32_t num_fin = SIZE_BATCH;
 	packet parray[SIZE_BATCH];

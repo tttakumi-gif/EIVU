@@ -24,7 +24,9 @@ int main() {
 }
 
 void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL]) {
-	bind_core(1);
+#ifdef CPU_BIND
+	bind_core(7);
+#endif
 
 	int_fast32_t j;
 	int_fast32_t num_fin = SIZE_BATCH;
