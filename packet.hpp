@@ -1,11 +1,3 @@
-#include <string.h>
-#include <iostream>
-#include <bitset>
-#include <thread>
-#include <atomic>
-#include <mutex>
-#include <sys/syscall.h>
-
 #include "cpuinfo.hpp"
 
 #define DUMMY_FULL 1

@@ -1,11 +1,6 @@
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/mman.h>
-#include <assert.h>
+#pragma once
 
-#include <iostream>
-#include <cstring>
-#include <typeinfo>
+#include "header.hpp"
 
 #define FILE_MODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
 //#define SIZE_SHM 65536

@@ -2,18 +2,6 @@
 
 #include "header.hpp"
 
-#include "stdlib.h"
-#include "stdio.h"
-#include "string.h"
-#include "sys/times.h"
-#include "sys/vtimes.h"
-#include "sys/syscall.h"
-#include "unistd.h"
-#include "assert.h"
-
-//#include <omp.h>
-#include <iostream>
-
 clock_t lastCPU, lastSysCPU, lastUserCPU;
 int numProcessors;
 
