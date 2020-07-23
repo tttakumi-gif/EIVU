@@ -3,8 +3,14 @@
 
 void rs_packet(ring&, ring&, packet[]);
 
-int main() {
-	puts("begin");
+int main(int argc, char* argv[]) {
+	std::printf("begin");
+	if(1 < argc) {
+		std::printf(" %s\n", argv[1]);
+	}
+	else {
+		std::puts("");
+	}
 
 	// 初期設定
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
@@ -28,35 +34,17 @@ void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL]) {
 	bind_core(7);
 #endif
 
-	int_fast32_t j;
-	int_fast32_t num_fin = SIZE_BATCH;
-	packet parray[SIZE_BATCH];
+	int id[SIZE_BATCH];
+	packet *p[SIZE_BATCH];
+	csring.set_ringaddr(&scring);
+	assert(csring.ring_pair != nullptr);
 
+	int_fast32_t num_fin = SIZE_BATCH;
 	for(int_fast32_t i = NUM_PACKET; 0 < i; i -= SIZE_BATCH) {
-		// 送受信パケット数の決定
 		if(unlikely(i < SIZE_BATCH)) {
 			num_fin = i;
 		}
-
-		// パケット受信
-		csring.pull(parray, pool, num_fin);
-
-		// verificationセット
-		for(j = 0; j < num_fin; j++) {
-#if INFO_CPU == PROC_SRV
-			if(unlikely((parray[j].id & 8388607) == 0)) {
-				std::printf("%g%%\n", getCurrentValue_p());
-			}
-#elif INFO_CPU == TOTAL_SRV
-			if(unlikely((parray[j].id & 8388607) == 0)) {
-				std::printf("%g%%\n", getCurrentValue_t());
-			}
-#endif
-			parray[j].set_verification();
-		}
-
-		// パケット送信
-		scring.ipush(parray, pool, SRV, num_fin);
+		csring.move_packet(pool, num_fin, id, p);
 	}
 }
 

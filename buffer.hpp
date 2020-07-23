@@ -36,11 +36,13 @@ public:
 };
 
 class ring {
+private:
+	int_fast32_t pindex;
 public:
+	ring *ring_pair;
 	int_fast32_t rsrv_idx;
 	int_fast32_t recv_idx;
 	int_fast32_t proc_idx;
-	int_fast32_t pindex;
 	int_fast8_t size;
 	desc descs[SIZE_RING];
 
@@ -49,7 +51,9 @@ public:
 
 	void ipush(packet[], packet[], rsource, int_fast8_t);
 	void pull(packet[], packet[], int_fast8_t);
+	void move_packet(packet[], int_fast8_t, int[], packet**);
 	void init_descs();
+	void set_ringaddr(ring*);
 	void wait_push(int_fast32_t, int_fast32_t, packet[]);
 	void wait_pull(int_fast32_t);
 };

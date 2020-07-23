@@ -8,7 +8,7 @@ for num in {0..10}; do
 		:
 	done
 
-	./srv.out
+	./srv.out $num
 
 	rm $FILE
 done

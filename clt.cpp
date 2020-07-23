@@ -52,7 +52,7 @@ int main() {
 	shm_unlink("shm_buf");
 
 	double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-	std::cout << elapsed / 1000 << "sec" << std::endl;
+	std::cout << "result: " << elapsed / 1000 << "sec" << std::endl;
 
 	return 0;
 }
