@@ -19,6 +19,7 @@ constexpr int_fast32_t SIZE_RING = 128;
 constexpr int_fast32_t SIZE_POOL = 128;
 
 constexpr int_fast32_t NUM_MOD = SIZE_RING - 1;
+//constexpr int_fast32_t NUM_MOD = SIZE_RING;
 constexpr int_fast32_t NUM_PMOD = SIZE_POOL / 2;
 
 enum rsource {
@@ -54,6 +55,7 @@ public:
 	void move_packet(packet[], int_fast8_t, int[], packet**);
 	void init_descs();
 	void set_ringaddr(ring*);
+	void set_pooladdr(packet*);
 	void wait_push(int_fast32_t, int_fast32_t, packet[]);
 	void wait_pull(int_fast32_t);
 };

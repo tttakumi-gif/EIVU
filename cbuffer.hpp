@@ -54,6 +54,7 @@ inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsour
 			pool_idx = source;
 		}
 		prev_idx = (prev_idx + 1) & NUM_MOD;
+		//prev_idx = (prev_idx + 1) % NUM_MOD;
 	}
 
 	// 共有変数に反映
@@ -76,6 +77,7 @@ inline void ring::pull(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], int_fa
 
 		// index更新
 		prev_idx = (prev_idx + 1) & NUM_MOD;
+		//prev_idx = (prev_idx + 1) % NUM_MOD;
 	}
 
 	// 共有変数に反映
@@ -91,15 +93,20 @@ inline void ring::move_packet(packet pool[SIZE_POOL], int_fast8_t num_fin, int i
 		p[i] = pool + id[i];
 		__atomic_store_n(&descs[prev_idx].id, -1, __ATOMIC_RELEASE);
 		prev_idx = (prev_idx + 1) & NUM_MOD;
+		//prev_idx = (prev_idx + 1) % NUM_MOD;
 	}
 	proc_idx = prev_idx;
 
 	prev_idx = ring_pair->rsrv_idx;
 	for(int_fast8_t i = 0; i < num_fin; i++) {
+		while(0 <= __atomic_load_n(&ring_pair->descs[prev_idx].id, __ATOMIC_ACQUIRE)) {
+			do_none();
+		}
 		p[i]->set_verification();
 		ring_pair->descs[prev_idx].set_param(id[i], pool);
 
 		prev_idx = (prev_idx + 1) & NUM_MOD;
+		//prev_idx = (prev_idx + 1) % NUM_MOD;
 	}
 	ring_pair->rsrv_idx = prev_idx;
 	ring_pair->recv_idx = prev_idx;
