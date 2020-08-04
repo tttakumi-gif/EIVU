@@ -1,13 +1,15 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void send_packet(ring&, packet[]);
-void recv_packet(ring&, packet[]);
+#define PRINT
+
+void send_packet(ring&, packet[], info_opt);
+void recv_packet(ring&, packet[], info_opt);
 void check_verification(packet);
 void judge_packet(packet[], int_fast32_t);
 void init_resource();
 
-int main() {
+int main(int argc, char **argv) {
 	puts("begin");
 
 	{
@@ -30,6 +32,8 @@ int main() {
 		pool[i] = packet();
 	}
 
+	info_opt opt = get_opt(argc, argv);
+
 	volatile bool *flag = (volatile bool*)(pool + SIZE_POOL);
 	*flag = false;
 	init_resource();
@@ -42,8 +46,8 @@ int main() {
 	start = std::chrono::system_clock::now();
 
 	// 送受信開始
-	std::thread thread_send(send_packet, std::ref(*csring), std::ref(pool));
-	recv_packet(*scring, pool);
+	std::thread thread_send(send_packet, std::ref(*csring), std::ref(pool), opt);
+	recv_packet(*scring, pool, opt);
 
 	// 計測終了
 	thread_send.join();
@@ -57,47 +61,64 @@ int main() {
 	return 0;
 }
 
-void send_packet(ring &csring, packet pool[SIZE_POOL]) {
+void send_packet(ring &csring, packet pool[SIZE_POOL], info_opt opt) {
 #ifdef CPU_BIND
 	bind_core(5);
 #endif
 
-	int_fast32_t i;
-	int_fast32_t j = 0;
-	int_fast32_t num_fin = SIZE_BATCH;
-	packet parray[SIZE_BATCH];
+	int_fast32_t i = NUM_PACKET;
+	int_fast32_t j;
+	int_fast32_t num_fin = opt.size_batch;
+	packet *parray;
+	parray = new packet[opt.size_batch];
 
+	while(0 < i) {
+		// 受信パケット数の決定
+		if(unlikely(i < num_fin)) {
+			num_fin = i;
+		}
+
+		for(j = 0; j < num_fin; j++, i--) {
+			parray[j] = packet(i);
+		}
+		
+		// パケット受信
+		csring.ipush(parray, pool, CLT, num_fin);
+	}
+	/*
 	while(true) {
-		i = j;
 
 		// パケット生成
-		for(packet& p : parray) {
-			p = packet(j);
-			j++;
+		for(int i = j; j < NUM_PACKET; j++) {
+			int num = j - i;
+			parray[num] = packet(j);
 
 			// 指定パケット数に達したら終了
 			if(unlikely(NUM_PACKET <= j)) {
-				csring.ipush(parray, pool, CLT, j - i);
+				csring.ipush(parray, pool, CLT, num);
 				return;
 			}
 		}
 
 		// パケット送信
 		csring.ipush(parray, pool, CLT, num_fin);
-	}
+	}*/
+
+	delete(parray);
 }
 
-void recv_packet(ring &scring, packet pool[SIZE_POOL]) {
+void recv_packet(ring &scring, packet pool[SIZE_POOL], info_opt opt) {
 #ifdef CPU_BIND
 	bind_core(6);
 #endif
 
-	int_fast32_t num_fin = SIZE_BATCH;
-	packet parray[SIZE_BATCH];
+	int_fast32_t num_fin = opt.size_batch;
+	packet *parray;
+	parray = new packet[opt.size_batch];
 
-	for(int_fast32_t i = NUM_PACKET; 0 < i; i -= SIZE_BATCH) {
+	for(int_fast32_t i = NUM_PACKET; 0 < i; i -= num_fin) {
 		// 受信パケット数の決定
-		if(unlikely(i < SIZE_BATCH)) {
+		if(unlikely(i < num_fin)) {
 			num_fin = i;
 		}
 		
@@ -107,6 +128,8 @@ void recv_packet(ring &scring, packet pool[SIZE_POOL]) {
 		// パケット検証
 		judge_packet(parray, num_fin);
 	}
+
+	delete(parray);
 }
 
 inline void check_verification(packet p) {
@@ -116,7 +139,7 @@ inline void check_verification(packet p) {
 	}
 }
 
-inline void judge_packet(packet parray[SIZE_BATCH], int_fast32_t num_fin) {
+inline void judge_packet(packet parray[], int_fast32_t num_fin) {
 	for(int_fast32_t i = 0; i < num_fin; i++) {
 		check_verification(parray[i]);
 
@@ -126,7 +149,9 @@ inline void judge_packet(packet parray[SIZE_BATCH], int_fast32_t num_fin) {
 #elif INFO_CPU == TOTAL_CLT
 			std::printf("%g%%\n", getCurrentValue_t());
 #endif
+#ifdef PRINT
 			parray[i].print();
+#endif
 		}
 	}
 }

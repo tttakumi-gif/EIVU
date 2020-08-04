@@ -1,0 +1,12 @@
+task-clock: 247.1451
+context-switches: 104
+cpu-migrations: 0
+page-faults: 128
+cycles  : 3,558,527,915
+stalled-cycles-frontend: 13,418,291
+stalled-cycles-backend: 2,824,956,216
+instructions: 5,150,229,849
+cache-references: 194,512,242
+cache-misses: 115,780,279
+branches: 506,391,695
+branch-misses: 3,936,064

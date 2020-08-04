@@ -2,7 +2,7 @@
 
 #define DUMMY_FULL 1
 
-constexpr int_fast32_t SIZE_PACKET = 32;
+constexpr int_fast32_t SIZE_PACKET = 64;
 //constexpr int_fast32_t NUM_PACKET = 100000000;
 constexpr int_fast32_t NUM_PACKET = 100000000;
 

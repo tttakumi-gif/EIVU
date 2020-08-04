@@ -1,0 +1,600 @@
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.032sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.036sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.982sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.989sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.967sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.991sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.025sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.055sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.988sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.995sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.028sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.988sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.032sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.989sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.005sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.022sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.027sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.026sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.993sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.025sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.996sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.019sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.038sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.019sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.019sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.016sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.02sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.983sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.977sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.018sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.025sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.015sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.992sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.016sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.004sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.991sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.016sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.992sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.022sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.023sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.994sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.998sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.008sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.016sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.01sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.996sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.001sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.034sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.027sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.017sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.996sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.048sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.054sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.052sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.039sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.042sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.038sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.028sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.058sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.036sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.046sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.064sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.032sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.04sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.997sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.041sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.035sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.001sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.999sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.037sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.037sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.032sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.997sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.039sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.063sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.999sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.977sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.044sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.995sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.977sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.033sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.027sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.001sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.997sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.993sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.05sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.024sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.025sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.997sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.03sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 0.999sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.014sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.048sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.046sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.064sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.044sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.048sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.075sec
+begin
+size: 9313
+psize: 32
+dsize: 16
+rsize: 560
+result: 1.025sec

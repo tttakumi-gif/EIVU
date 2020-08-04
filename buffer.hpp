@@ -15,8 +15,8 @@
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
 constexpr int_fast32_t SIZE_BATCH = 32;
-constexpr int_fast32_t SIZE_RING = 128;
-constexpr int_fast32_t SIZE_POOL = 128;
+constexpr int_fast32_t SIZE_RING = 32;
+constexpr int_fast32_t SIZE_POOL = 256;
 
 constexpr int_fast32_t NUM_MOD = SIZE_RING - 1;
 //constexpr int_fast32_t NUM_MOD = SIZE_RING;
@@ -44,15 +44,15 @@ public:
 	int_fast32_t rsrv_idx;
 	int_fast32_t recv_idx;
 	int_fast32_t proc_idx;
-	int_fast8_t size;
+	int_fast32_t size;
 	desc descs[SIZE_RING];
 
 	ring();
 	void operator=(ring&&);
 
-	void ipush(packet[], packet[], rsource, int_fast8_t);
-	void pull(packet[], packet[], int_fast8_t);
-	void move_packet(packet[], int_fast8_t, int[], packet**);
+	void ipush(packet[], packet[], rsource, int_fast32_t);
+	void pull(packet[], packet[], int_fast32_t);
+	void move_packet(packet[], int_fast32_t, int_fast32_t[]);
 	void init_descs();
 	void set_ringaddr(ring*);
 	void set_pooladdr(packet*);

@@ -14,8 +14,9 @@ if [ -e $LOG ]; then
 fi
 
 echo run...
-for num in {0..10}; do
+for num in `seq 1 100`; do
 	./clt.out >> result/log &
+	#./clt.out &
 	
 	sleep 0.1
 	touch $FILE

@@ -37,11 +37,11 @@ inline void ring::set_ringaddr(ring *r) {
 	ring_pair = r;
 }
 
-inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsource source, int_fast8_t num_fin) {
+inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source, int_fast32_t num_fin) {
 	int_fast32_t prev_idx = rsrv_idx;
 	int_fast32_t pool_idx = source + pindex;
 
-	for(int_fast8_t i = 0; i < num_fin; i++) {
+	for(int_fast32_t i = 0; i < num_fin; i++) {
 		// ディスクリプタとパケットプールが確保できるまでwait
 		wait_push(prev_idx, pool_idx, pool);
 
@@ -53,8 +53,8 @@ inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsour
 		if(++pool_idx % NUM_PMOD == 0) {
 			pool_idx = source;
 		}
-		prev_idx = (prev_idx + 1) & NUM_MOD;
-		//prev_idx = (prev_idx + 1) % NUM_MOD;
+		//prev_idx = (prev_idx + 1) & NUM_MOD;
+		prev_idx = (prev_idx + 1) % SIZE_RING;
 	}
 
 	// 共有変数に反映
@@ -63,10 +63,10 @@ inline void ring::ipush(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], rsour
 	pindex = pool_idx % NUM_PMOD;
 }
 
-inline void ring::pull(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], int_fast8_t num_fin) {
+inline void ring::pull(packet parray[], packet pool[SIZE_POOL], int_fast32_t num_fin) {
 	int_fast32_t prev_idx = proc_idx;
 
-	for(int_fast8_t i = 0; i < num_fin; i++) {
+	for(int_fast32_t i = 0; i < num_fin; i++) {
 		// ディスクリプタにバッファが割り当てられるまでwait
 		wait_pull(prev_idx);
 
@@ -76,37 +76,37 @@ inline void ring::pull(packet parray[SIZE_BATCH], packet pool[SIZE_POOL], int_fa
 		descs[prev_idx].delete_info();
 
 		// index更新
-		prev_idx = (prev_idx + 1) & NUM_MOD;
-		//prev_idx = (prev_idx + 1) % NUM_MOD;
+		//prev_idx = (prev_idx + 1) & NUM_MOD;
+		prev_idx = (prev_idx + 1) % SIZE_RING;
 	}
 
 	// 共有変数に反映
 	proc_idx = prev_idx;
 }
 
-inline void ring::move_packet(packet pool[SIZE_POOL], int_fast8_t num_fin, int id[], packet* p[]) {
+inline void ring::move_packet(packet pool[SIZE_POOL], int_fast32_t num_fin, int_fast32_t id[]) {
+	int_fast32_t i;
 	int_fast32_t prev_idx = proc_idx;
-	for(int_fast8_t i = 0; i < num_fin; i++) {
+	for(i = 0; i < num_fin; i++) {
 		wait_pull(prev_idx);
 
 		id[i] = descs[prev_idx].id;
-		p[i] = pool + id[i];
 		__atomic_store_n(&descs[prev_idx].id, -1, __ATOMIC_RELEASE);
-		prev_idx = (prev_idx + 1) & NUM_MOD;
-		//prev_idx = (prev_idx + 1) % NUM_MOD;
+		//prev_idx = (prev_idx + 1) & NUM_MOD;
+		prev_idx = (prev_idx + 1) % SIZE_RING;
 	}
 	proc_idx = prev_idx;
 
 	prev_idx = ring_pair->rsrv_idx;
-	for(int_fast8_t i = 0; i < num_fin; i++) {
+	for(i = 0; i < num_fin; i++) {
 		while(0 <= __atomic_load_n(&ring_pair->descs[prev_idx].id, __ATOMIC_ACQUIRE)) {
 			do_none();
 		}
-		p[i]->set_verification();
+		(pool + id[i])->set_verification();
 		ring_pair->descs[prev_idx].set_param(id[i], pool);
 
-		prev_idx = (prev_idx + 1) & NUM_MOD;
-		//prev_idx = (prev_idx + 1) % NUM_MOD;
+		//prev_idx = (prev_idx + 1) & NUM_MOD;
+		prev_idx = (prev_idx + 1) % SIZE_RING;
 	}
 	ring_pair->rsrv_idx = prev_idx;
 	ring_pair->recv_idx = prev_idx;

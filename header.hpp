@@ -13,13 +13,15 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <assert.h>
+#include <getopt.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/times.h>
+#include <sys/vtimes.h>
 
 #include <cstring>
 #include <typeinfo>
 #include <iostream>
 #include <chrono>
 
-#include "stdlib.h"
-#include "stdio.h"
-#include "sys/times.h"
-#include "sys/vtimes.h"
+#include "option.hpp"
