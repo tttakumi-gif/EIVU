@@ -1,6 +1,8 @@
+#pragma once
+
 #include "cpuinfo.hpp"
 
-#define DUMMY_FULL 1
+#define DUMMY_FULL
 
 constexpr int_fast32_t SIZE_PACKET = 64;
 //constexpr int_fast32_t NUM_PACKET = 100000000;

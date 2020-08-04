@@ -2,8 +2,6 @@
 
 #include "header.hpp"
 
-bool judge_process(std::string);
-
 enum process_srv : int_fast8_t {
 	COPY,
 	MOVE,
@@ -22,7 +20,10 @@ public:
 	}
 };
 
-struct option longopts[] = {
+info_opt get_opt(int, char**);
+bool judge_process(std::string);
+
+static struct option longopts[] = {
 	{"batch", required_argument, nullptr, 'b'},
 	{"process", required_argument, nullptr, 'p'},
 	{"num", required_argument, nullptr, 'n'},

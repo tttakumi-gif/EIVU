@@ -1,3 +1,5 @@
+#pragma once
+
 inline void desc::delete_info() {
 	__atomic_store_n(&entry->len, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&id, -1, __ATOMIC_RELEASE);
