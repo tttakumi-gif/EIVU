@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <sys/times.h>
 #include <sys/vtimes.h>
+#include <sys/vtimes.h>
+#include <immintrin.h>
 
 #include <cstring>
 #include <typeinfo>

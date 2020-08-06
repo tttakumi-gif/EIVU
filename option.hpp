@@ -43,7 +43,11 @@ info_opt get_opt(int argc, char **argv) {
 				break;
 			case 'p':
 				if(judge_process(optarg)) {
+					std::printf("--process = copy\n");
 					result.process = COPY;
+				}
+				else {
+					std::printf("--process = move\n");
 				}
 				break;
 			case 'n':

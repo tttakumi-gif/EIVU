@@ -5,8 +5,10 @@
 #define DUMMY_FULL
 
 constexpr int_fast32_t SIZE_PACKET = 64;
+constexpr int_fast32_t NUM_LOOP = SIZE_PACKET / 4;
+//constexpr int_fast32_t NUM_LOOP = SIZE_PACKET / 16;
+constexpr int_fast32_t NUM_PACKET = 50000000;
 //constexpr int_fast32_t NUM_PACKET = 100000000;
-constexpr int_fast32_t NUM_PACKET = 100000000;
 
 constexpr int_fast32_t get_dummy_size(int isize, int vsize, int lsize) {
 	return SIZE_PACKET - isize - vsize - lsize;
@@ -26,7 +28,7 @@ public:
 	void print();
 	void set_verification();
 
-};
+}__attribute__((aligned(16)));
 
 constexpr int_fast32_t DUMMY_SIZE = get_dummy_size(sizeof(packet::id), sizeof(packet::verification), sizeof(packet::len));
 char GLOBAL_DUMMY[DUMMY_SIZE];
@@ -44,6 +46,7 @@ inline packet::packet() {
 inline packet::packet(int32_t this_id) {
 	id = this_id;
 	len = sizeof(packet);
+	strncpy(dummy, GLOBAL_DUMMY, DUMMY_SIZE);
 }
 
 inline packet::packet(int32_t this_id, const char* this_dummy) {

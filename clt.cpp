@@ -134,7 +134,9 @@ void recv_packet(ring &scring, packet pool[SIZE_POOL], info_opt opt) {
 
 inline void check_verification(packet p) {
 	if(unlikely(p.id != static_cast<signed>(p.verification ^ 0xffffffff))) {
-		puts("verification error");
+		std::printf("verification error\n");
+		p.print();
+		std::printf("not 0x%x\n", (p.id ^ 0xffffffff));
 		exit(1);
 	}
 }

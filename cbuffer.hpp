@@ -1,5 +1,7 @@
 #pragma once
 
+#include <x86intrin.h>
+
 inline void desc::delete_info() {
 	__atomic_store_n(&entry->len, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&id, -1, __ATOMIC_RELEASE);
@@ -43,6 +45,7 @@ inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source,
 	int_fast32_t prev_idx = rsrv_idx;
 	int_fast32_t pool_idx = source + pindex;
 
+#if 0
 	for(int_fast32_t i = 0; i < num_fin; i++) {
 		// ディスクリプタとパケットプールが確保できるまでwait
 		wait_push(prev_idx, pool_idx, pool);
@@ -58,6 +61,52 @@ inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source,
 		//prev_idx = (prev_idx + 1) & NUM_MOD;
 		prev_idx = (prev_idx + 1) % SIZE_RING;
 	}
+#else
+	for(int_fast32_t i = 0; i < num_fin; i++) {
+		// ディスクリプタとパケットプールが確保できるまでwait
+		wait_push(prev_idx, pool_idx, pool);
+
+		// パケットの紐づけ
+		for(int_fast32_t j = 0; j < SIZE_PACKET; j += 16) {
+			//_mm_store_si128((__m128i*)((char*)(pool + pool_idx) + j), _mm_load_si128((__m128i*)((char*)(parray + i) + j)));
+			_mm_stream_si128((__m128i*)((char*)(pool + pool_idx) + j), _mm_stream_load_si128((__m128i*)((char*)(parray + i) + j)));
+		_mm_clflushopt(pool + pool_idx);
+			//_mm_clflush(pool + pool_idx);
+			//_mm_lfence();
+		}
+		_mm_mfence();
+
+//		int* addr = (int*)(pool + pool_idx);
+//		_mm_stream_si32(addr, parray[i].id);
+//		_mm_stream_si32(addr + 2, parray[i].len);
+//			_mm_stream_si128((__m128i*)((char*)(pool + pool_idx)), _mm_stream_load_si128((__m128i*)((char*)(parray + i))));
+//			pool[pool_idx].verification = 0;
+
+//		if(pool[pool_idx].id != parray[i].id) {
+//			std::printf("error!!\n");
+//			parray[i].print();
+//			pool[pool_idx].print();
+//			exit(1);
+//		}
+		//pool[pool_idx].len = 16;
+
+//		int* addr = (int*)(pool + pool_idx);
+//		*addr = parray[i].id;
+//		*(addr + 2) = parray[i].len;
+//		std::cout << addr << ", " << (pool + pool_idx) << "\n";
+//		std::cout << addr + 2 << ", " << (pool + pool_idx) << "\n";
+//		packet* addr = pool + pool_idx;
+//		*addr = parray[i];
+
+		descs[prev_idx].set_param(pool_idx, pool);
+
+		// index更新
+		if(++pool_idx % NUM_PMOD == 0) {
+			pool_idx = source;
+		}
+		prev_idx = (prev_idx + 1) % SIZE_RING;
+	}
+#endif
 
 	// 共有変数に反映
 	rsrv_idx = prev_idx;
@@ -94,7 +143,6 @@ inline void ring::move_packet(packet pool[SIZE_POOL], int_fast32_t num_fin, int_
 
 		id[i] = descs[prev_idx].id;
 		__atomic_store_n(&descs[prev_idx].id, -1, __ATOMIC_RELEASE);
-		//prev_idx = (prev_idx + 1) & NUM_MOD;
 		prev_idx = (prev_idx + 1) % SIZE_RING;
 	}
 	proc_idx = prev_idx;
@@ -107,7 +155,6 @@ inline void ring::move_packet(packet pool[SIZE_POOL], int_fast32_t num_fin, int_
 		(pool + id[i])->set_verification();
 		ring_pair->descs[prev_idx].set_param(id[i], pool);
 
-		//prev_idx = (prev_idx + 1) & NUM_MOD;
 		prev_idx = (prev_idx + 1) % SIZE_RING;
 	}
 	ring_pair->rsrv_idx = prev_idx;

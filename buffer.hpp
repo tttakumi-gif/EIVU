@@ -61,6 +61,6 @@ public:
 	void set_pooladdr(packet*);
 	void wait_push(int_fast32_t, int_fast32_t, packet[]);
 	void wait_pull(int_fast32_t);
-};
+}__attribute__((aligned(16)));;
 
 #include "cbuffer.hpp"
