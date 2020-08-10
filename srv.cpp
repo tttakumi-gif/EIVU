@@ -6,9 +6,9 @@ void rs_packet(ring&, ring&, packet[], info_opt);
 int main(int argc, char* argv[]) {
 	// 初期設定
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
-	ring *csring = (ring*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+	packet *pool = (packet*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+	ring *csring = (ring*)(pool + SIZE_POOL);
 	ring *scring = (ring*)(csring + 1);
-	packet *pool = (packet*)(scring + 1);
 
 	info_opt opt = get_opt(argc, argv);
 	if(-1 < opt.num) {
@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 		std::puts("");
 	}
 	
-	bool *flag = (bool*)(pool + SIZE_POOL);
+	bool *flag = (bool*)(scring + 1);
 	*flag = true;
 
 	// 送受信開始
@@ -53,7 +53,8 @@ void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL], info_opt opt)
 	}
 	else if(opt.process == COPY) {
 		packet *parray;
-		parray = new packet[opt.size_batch];
+		parray = new (std::align_val_t{64}) packet[opt.size_batch];
+		//parray = new packet[opt.size_batch];
 
 		int_fast32_t num_fin = opt.size_batch;
 

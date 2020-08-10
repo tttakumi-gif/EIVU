@@ -15,7 +15,7 @@ public:
 
 	info_opt() {
 		size_batch = 32;
-		process = MOVE;
+		process = COPY;
 		num = -1;
 	}
 };

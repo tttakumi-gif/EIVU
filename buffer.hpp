@@ -19,7 +19,7 @@
 
 constexpr int_fast32_t SIZE_BATCH = 32;
 constexpr int_fast32_t SIZE_RING = 32;
-constexpr int_fast32_t SIZE_POOL = 256;
+constexpr int_fast32_t SIZE_POOL = 64;
 
 constexpr int_fast32_t NUM_MOD = SIZE_RING - 1;
 //constexpr int_fast32_t NUM_MOD = SIZE_RING;
@@ -42,25 +42,28 @@ public:
 class ring {
 private:
 	int_fast32_t pindex;
-public:
-	ring *ring_pair;
 	int_fast32_t rsrv_idx;
 	int_fast32_t recv_idx;
 	int_fast32_t proc_idx;
 	int_fast32_t size;
+public:
+	ring *ring_pair;
 	desc descs[SIZE_RING];
 
+private:
+	void init_descs();
+	void wait_push(int_fast32_t, int_fast32_t, packet[]);
+	void wait_pull(int_fast32_t);
+
+public:
 	ring();
 	void operator=(ring&&);
 
 	void ipush(packet[], packet[], rsource, int_fast32_t);
 	void pull(packet[], packet[], int_fast32_t);
 	void move_packet(packet[], int_fast32_t, int_fast32_t[]);
-	void init_descs();
 	void set_ringaddr(ring*);
 	void set_pooladdr(packet*);
-	void wait_push(int_fast32_t, int_fast32_t, packet[]);
-	void wait_pull(int_fast32_t);
-}__attribute__((aligned(16)));;
+};
 
 #include "cbuffer.hpp"

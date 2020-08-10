@@ -1,7 +1,5 @@
 #pragma once
 
-#include <x86intrin.h>
-
 inline void desc::delete_info() {
 	__atomic_store_n(&entry->len, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&id, -1, __ATOMIC_RELEASE);
@@ -62,41 +60,31 @@ inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source,
 		prev_idx = (prev_idx + 1) % SIZE_RING;
 	}
 #else
+	int iii = pool_idx;
 	for(int_fast32_t i = 0; i < num_fin; i++) {
 		// ディスクリプタとパケットプールが確保できるまでwait
 		wait_push(prev_idx, pool_idx, pool);
+		auto* xmm01 = pool + pool_idx;
+		auto* xmm02 = parray + i;
 
 		// パケットの紐づけ
-		for(int_fast32_t j = 0; j < SIZE_PACKET; j += 16) {
-			//_mm_store_si128((__m128i*)((char*)(pool + pool_idx) + j), _mm_load_si128((__m128i*)((char*)(parray + i) + j)));
-			_mm_stream_si128((__m128i*)((char*)(pool + pool_idx) + j), _mm_stream_load_si128((__m128i*)((char*)(parray + i) + j)));
-		_mm_clflushopt(pool + pool_idx);
-			//_mm_clflush(pool + pool_idx);
-			//_mm_lfence();
+		for(int_fast32_t j = 0; j < NUM_LOOP; j++) {
+			if(!IS_PSMALL) {
+				_mm256_stream_si256((__m256i*)xmm01 + j, _mm256_stream_load_si256((__m256i*)xmm02 + j));
+			}
+			else {
+				_mm_stream_si128((__m128i*)xmm01 + j, _mm_stream_load_si128((__m128i*)xmm02 + j));
+			}
 		}
 		_mm_mfence();
 
-//		int* addr = (int*)(pool + pool_idx);
-//		_mm_stream_si32(addr, parray[i].id);
-//		_mm_stream_si32(addr + 2, parray[i].len);
-//			_mm_stream_si128((__m128i*)((char*)(pool + pool_idx)), _mm_stream_load_si128((__m128i*)((char*)(parray + i))));
-//			pool[pool_idx].verification = 0;
+		if(++pool_idx % NUM_PMOD == 0) {
+			pool_idx = source;
+		}
+	}
 
-//		if(pool[pool_idx].id != parray[i].id) {
-//			std::printf("error!!\n");
-//			parray[i].print();
-//			pool[pool_idx].print();
-//			exit(1);
-//		}
-		//pool[pool_idx].len = 16;
-
-//		int* addr = (int*)(pool + pool_idx);
-//		*addr = parray[i].id;
-//		*(addr + 2) = parray[i].len;
-//		std::cout << addr << ", " << (pool + pool_idx) << "\n";
-//		std::cout << addr + 2 << ", " << (pool + pool_idx) << "\n";
-//		packet* addr = pool + pool_idx;
-//		*addr = parray[i];
+	pool_idx = iii;
+	for(int_fast32_t i = 0; i < num_fin; i++) {
 
 		descs[prev_idx].set_param(pool_idx, pool);
 
@@ -104,7 +92,9 @@ inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source,
 		if(++pool_idx % NUM_PMOD == 0) {
 			pool_idx = source;
 		}
-		prev_idx = (prev_idx + 1) % SIZE_RING;
+		if(SIZE_RING <= ++prev_idx) {
+			prev_idx = 0;
+		}
 	}
 #endif
 
@@ -127,8 +117,9 @@ inline void ring::pull(packet parray[], packet pool[SIZE_POOL], int_fast32_t num
 		descs[prev_idx].delete_info();
 
 		// index更新
-		//prev_idx = (prev_idx + 1) & NUM_MOD;
-		prev_idx = (prev_idx + 1) % SIZE_RING;
+		if(SIZE_RING <= ++prev_idx) {
+			prev_idx = 0;
+		}
 	}
 
 	// 共有変数に反映

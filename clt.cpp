@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
 		constexpr int size = sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL + sizeof(volatile bool);
 		std::cout << "size: " << size << std::endl;
 		static_assert(size <= SIZE_SHM, "over packet size");
+		static_assert(SIZE_BATCH < SIZE_POOL, "need to adjust pool size");
 		std::cout << "psize: " << sizeof(packet) << std::endl;
 		std::cout << "dsize: " << sizeof(desc) << std::endl;
 		std::cout << "rsize: " << sizeof(ring) << std::endl;
@@ -23,18 +24,19 @@ int main(int argc, char **argv) {
 
 	// 初期設定
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
-	ring *csring = (ring*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+	packet *pool = (packet*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+	std::cout << pool << std::endl;
+	ring *csring = (ring*)(pool + SIZE_POOL);
 	*csring = ring();
 	ring *scring = (ring*)(csring + 1);
 	*scring = ring();
-	packet *pool = (packet*)(scring + 1);
 	for(int i = 0; i < SIZE_POOL; i++) {
 		pool[i] = packet();
 	}
 
 	info_opt opt = get_opt(argc, argv);
 
-	volatile bool *flag = (volatile bool*)(pool + SIZE_POOL);
+	volatile bool *flag = (volatile bool*)(scring + 1);
 	*flag = false;
 	init_resource();
 
@@ -70,7 +72,7 @@ void send_packet(ring &csring, packet pool[SIZE_POOL], info_opt opt) {
 	int_fast32_t j;
 	int_fast32_t num_fin = opt.size_batch;
 	packet *parray;
-	parray = new packet[opt.size_batch];
+	parray = new (std::align_val_t{64}) packet[opt.size_batch];
 
 	while(0 < i) {
 		// 受信パケット数の決定

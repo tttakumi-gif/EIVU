@@ -5,8 +5,8 @@
 #define DUMMY_FULL
 
 constexpr int_fast32_t SIZE_PACKET = 64;
-constexpr int_fast32_t NUM_LOOP = SIZE_PACKET / 4;
-//constexpr int_fast32_t NUM_LOOP = SIZE_PACKET / 16;
+constexpr bool IS_PSMALL = SIZE_PACKET < 32;
+constexpr int_fast32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32);
 constexpr int_fast32_t NUM_PACKET = 50000000;
 //constexpr int_fast32_t NUM_PACKET = 100000000;
 
@@ -28,7 +28,7 @@ public:
 	void print();
 	void set_verification();
 
-}__attribute__((aligned(16)));
+};
 
 constexpr int_fast32_t DUMMY_SIZE = get_dummy_size(sizeof(packet::id), sizeof(packet::verification), sizeof(packet::len));
 char GLOBAL_DUMMY[DUMMY_SIZE];
