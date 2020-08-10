@@ -76,12 +76,12 @@ inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source,
 				_mm_stream_si128((__m128i*)xmm01 + j, _mm_stream_load_si128((__m128i*)xmm02 + j));
 			}
 		}
-		_mm_mfence();
 
 		if(++pool_idx % NUM_PMOD == 0) {
 			pool_idx = source;
 		}
 	}
+	_mm_sfence();
 
 	pool_idx = iii;
 	for(int_fast32_t i = 0; i < num_fin; i++) {
@@ -107,6 +107,7 @@ inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source,
 inline void ring::pull(packet parray[], packet pool[SIZE_POOL], int_fast32_t num_fin) {
 	int_fast32_t prev_idx = proc_idx;
 
+	_mm_lfence();
 	for(int_fast32_t i = 0; i < num_fin; i++) {
 		// ディスクリプタにバッファが割り当てられるまでwait
 		wait_pull(prev_idx);
@@ -129,6 +130,7 @@ inline void ring::pull(packet parray[], packet pool[SIZE_POOL], int_fast32_t num
 inline void ring::move_packet(packet pool[SIZE_POOL], int_fast32_t num_fin, int_fast32_t id[]) {
 	int_fast32_t i;
 	int_fast32_t prev_idx = proc_idx;
+
 	for(i = 0; i < num_fin; i++) {
 		wait_pull(prev_idx);
 
