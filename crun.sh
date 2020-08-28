@@ -14,8 +14,8 @@ if [ -e $LOG ]; then
 fi
 
 echo run...
-for num in `seq 1 100`; do
-	./clt.out >> result/log &
+for num in `seq 1 50`; do
+	./clt.out --stream=off >> result/log &
 	#./clt.out &
 	
 	sleep 0.1

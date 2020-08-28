@@ -12,14 +12,13 @@
 
 #define INFO_CPU NONE
 
-#define CPU_BIND
+//#define CPU_BIND
 
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-constexpr int_fast32_t SIZE_BATCH = 32;
-constexpr int_fast32_t SIZE_RING = 32;
-constexpr int_fast32_t SIZE_POOL = 64;
+constexpr int_fast32_t SIZE_RING = 64;
+constexpr int_fast32_t SIZE_POOL = 256;
 
 constexpr int_fast32_t NUM_MOD = SIZE_RING - 1;
 //constexpr int_fast32_t NUM_MOD = SIZE_RING;
@@ -45,6 +44,9 @@ private:
 	int_fast32_t rsrv_idx;
 	int_fast32_t recv_idx;
 	int_fast32_t proc_idx;
+//	int32_t rsrv_idx;
+//	int32_t recv_idx;
+//	int32_t proc_idx;
 	int_fast32_t size;
 public:
 	ring *ring_pair;
@@ -52,14 +54,14 @@ public:
 
 private:
 	void init_descs();
-	void wait_push(int_fast32_t, int_fast32_t, packet[]);
-	void wait_pull(int_fast32_t);
+	void wait_push(int_fast32_t, packet*);
+	packet* wait_pull(int_fast32_t, packet*);
 
 public:
 	ring();
 	void operator=(ring&&);
 
-	void ipush(packet[], packet[], rsource, int_fast32_t);
+	void ipush(packet[], packet[], rsource, int_fast32_t, bool);
 	void pull(packet[], packet[], int_fast32_t);
 	void move_packet(packet[], int_fast32_t, int_fast32_t[]);
 	void set_ringaddr(ring*);

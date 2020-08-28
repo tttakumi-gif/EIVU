@@ -39,82 +39,81 @@ inline void ring::set_ringaddr(ring *r) {
 	ring_pair = r;
 }
 
-inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source, int_fast32_t num_fin) {
+inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source, int_fast32_t num_fin, bool is_stream) {
 	int_fast32_t prev_idx = rsrv_idx;
 	int_fast32_t pool_idx = source + pindex;
 
-#if 0
-	for(int_fast32_t i = 0; i < num_fin; i++) {
-		// ディスクリプタとパケットプールが確保できるまでwait
-		wait_push(prev_idx, pool_idx, pool);
+	if(!is_stream) {
+		for(int_fast32_t i = 0; i < num_fin; i++) {
+			// ディスクリプタとパケットプールが確保できるまでwait
+			wait_push(prev_idx, pool + pool_idx);
 
-		// パケットの紐づけ
-		pool[pool_idx] = parray[i];
-		descs[prev_idx].set_param(pool_idx, pool);
+			// パケットの紐づけ
+			pool[pool_idx] = parray[i];
+			//memcpy(pool + pool_idx, parray + i, SIZE_PACKET);
+			descs[prev_idx].set_param(pool_idx, pool);
 
-		// index更新
-		if(++pool_idx % NUM_PMOD == 0) {
-			pool_idx = source;
-		}
-		//prev_idx = (prev_idx + 1) & NUM_MOD;
-		prev_idx = (prev_idx + 1) % SIZE_RING;
-	}
-#else
-	int iii = pool_idx;
-	for(int_fast32_t i = 0; i < num_fin; i++) {
-		// ディスクリプタとパケットプールが確保できるまでwait
-		wait_push(prev_idx, pool_idx, pool);
-		auto* xmm01 = pool + pool_idx;
-		auto* xmm02 = parray + i;
-
-		// パケットの紐づけ
-		for(int_fast32_t j = 0; j < NUM_LOOP; j++) {
-			if(!IS_PSMALL) {
-				_mm256_stream_si256((__m256i*)xmm01 + j, _mm256_stream_load_si256((__m256i*)xmm02 + j));
+			// index更新
+			if(++pool_idx % NUM_PMOD == 0) {
+				pool_idx = source;
 			}
-			else {
-				_mm_stream_si128((__m128i*)xmm01 + j, _mm_stream_load_si128((__m128i*)xmm02 + j));
+			if(SIZE_RING <= ++prev_idx) {
+				prev_idx = 0;
 			}
 		}
 
-		if(++pool_idx % NUM_PMOD == 0) {
-			pool_idx = source;
-		}
+		rsrv_idx = prev_idx;
+		recv_idx = prev_idx;
 	}
-	_mm_sfence();
+	else {
+		for(int_fast32_t i = 0; i < num_fin; i++) {
+			// ディスクリプタとパケットプールが確保できるまでwait
+			auto* xmm01 = pool + pool_idx;
+			auto* xmm02 = parray + i;
+			wait_push(prev_idx, xmm01);
 
-	pool_idx = iii;
-	for(int_fast32_t i = 0; i < num_fin; i++) {
+			// パケットの紐づけ
+			for(int_fast32_t j = 0; j < NUM_LOOP; j++) {
+				if(!IS_PSMALL) {
+					_mm256_stream_si256((__m256i*)xmm01 + j, _mm256_stream_load_si256((__m256i*)xmm02 + j));
+//					_mm256_stream_si256((__m256i*)xmm01 + j, _mm256_load_si256((__m256i*)xmm02 + j));
+				}
+				else {
+					_mm_stream_si128((__m128i*)xmm01 + j, _mm_stream_load_si128((__m128i*)xmm02 + j));
+				}
+			}
+			descs[prev_idx].set_param(pool_idx, pool);
 
-		descs[prev_idx].set_param(pool_idx, pool);
-
-		// index更新
-		if(++pool_idx % NUM_PMOD == 0) {
-			pool_idx = source;
+			// index更新
+			if(++pool_idx % NUM_PMOD == 0) {
+				pool_idx = source;
+			}
+			if(SIZE_RING <= ++prev_idx) {
+				prev_idx = 0;
+			}
 		}
-		if(SIZE_RING <= ++prev_idx) {
-			prev_idx = 0;
-		}
+
+//		_mm_stream_si64((long long*)&rsrv_idx, prev_idx);
+//			__m128i xmm = _mm_set1_epi32(prev_idx);
+//			_mm_maskstore_epi32((int*)&rsrv_idx, _mm_set_epi32(0, 0, -1, -1), xmm);
+		rsrv_idx = prev_idx;
+		recv_idx = prev_idx;
 	}
-#endif
 
 	// 共有変数に反映
-	rsrv_idx = prev_idx;
-	recv_idx = prev_idx;
 	pindex = pool_idx % NUM_PMOD;
 }
 
 inline void ring::pull(packet parray[], packet pool[SIZE_POOL], int_fast32_t num_fin) {
 	int_fast32_t prev_idx = proc_idx;
 
-	_mm_lfence();
 	for(int_fast32_t i = 0; i < num_fin; i++) {
 		// ディスクリプタにバッファが割り当てられるまでwait
-		wait_pull(prev_idx);
+		packet *p = wait_pull(prev_idx, pool);
 
 		// パケットの取得, ディスクリプタの紐づけ解除
-		descs[prev_idx].entry = pool + descs[prev_idx].id;
-		parray[i] = *(descs[prev_idx].entry);
+		descs[prev_idx].entry = p;
+		parray[i] = *p;
 		descs[prev_idx].delete_info();
 
 		// index更新
@@ -132,7 +131,7 @@ inline void ring::move_packet(packet pool[SIZE_POOL], int_fast32_t num_fin, int_
 	int_fast32_t prev_idx = proc_idx;
 
 	for(i = 0; i < num_fin; i++) {
-		wait_pull(prev_idx);
+		wait_pull(prev_idx, pool);
 
 		id[i] = descs[prev_idx].id;
 		__atomic_store_n(&descs[prev_idx].id, -1, __ATOMIC_RELEASE);
@@ -150,25 +149,34 @@ inline void ring::move_packet(packet pool[SIZE_POOL], int_fast32_t num_fin, int_
 
 		prev_idx = (prev_idx + 1) % SIZE_RING;
 	}
+
 	ring_pair->rsrv_idx = prev_idx;
 	ring_pair->recv_idx = prev_idx;
 }
 
-inline void ring::wait_push(int_fast32_t prev_idx, int_fast32_t pool_idx, packet pool[SIZE_POOL]) {
+inline void ring::wait_push(int_fast32_t prev_idx, packet *p) {
 	// ディスクリプタが空くまでwait
 	while(0 <= __atomic_load_n(&descs[prev_idx].id, __ATOMIC_ACQUIRE)) {
 		do_none();
 	}
 
 	// パケットを格納するバッファが空くまでwait
-	while(0 < __atomic_load_n(&pool[pool_idx].len, __ATOMIC_ACQUIRE)) {
+	while(0 < __atomic_load_n(&p->len, __ATOMIC_ACQUIRE)) {
 		do_none();
 	}
 }
 
-inline void ring::wait_pull(int_fast32_t prev_idx) {
+inline packet* ring::wait_pull(int_fast32_t prev_idx, packet *pool) {
 	// ディスクリプタにバッファが割り当てられるまでwait
 	while(__atomic_load_n(&descs[prev_idx].id, __ATOMIC_ACQUIRE) < 0) {
 		do_none();
 	}
+
+	packet *ret = &pool[descs[prev_idx].id];
+	// パケットを格納するバッファが空くまでwait
+	while(__atomic_load_n(&ret->len, __ATOMIC_ACQUIRE) <= 0) {
+		do_none();
+	}
+
+	return ret;
 }

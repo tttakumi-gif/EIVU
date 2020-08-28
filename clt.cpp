@@ -16,7 +16,6 @@ int main(int argc, char **argv) {
 		constexpr int size = sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL + sizeof(volatile bool);
 		std::cout << "size: " << size << std::endl;
 		static_assert(size <= SIZE_SHM, "over packet size");
-		static_assert(SIZE_BATCH < SIZE_POOL, "need to adjust pool size");
 		std::cout << "psize: " << sizeof(packet) << std::endl;
 		std::cout << "dsize: " << sizeof(desc) << std::endl;
 		std::cout << "rsize: " << sizeof(ring) << std::endl;
@@ -35,6 +34,7 @@ int main(int argc, char **argv) {
 	}
 
 	info_opt opt = get_opt(argc, argv);
+	assert(opt.size_batch < SIZE_POOL);
 
 	volatile bool *flag = (volatile bool*)(scring + 1);
 	*flag = false;
@@ -71,8 +71,11 @@ void send_packet(ring &csring, packet pool[SIZE_POOL], info_opt opt) {
 	int_fast32_t i = NUM_PACKET;
 	int_fast32_t j;
 	int_fast32_t num_fin = opt.size_batch;
+	bool is_stream = (opt.stream == ON) ? true : false;
 	packet *parray;
-	parray = new (std::align_val_t{64}) packet[opt.size_batch];
+	parray = new (std::align_val_t{32}) packet[opt.size_batch];
+	assert((intptr_t(pool) & 31) == 0);
+	assert((intptr_t(parray) & 31) == 0);
 
 	while(0 < i) {
 		// 受信パケット数の決定
@@ -85,7 +88,7 @@ void send_packet(ring &csring, packet pool[SIZE_POOL], info_opt opt) {
 		}
 		
 		// パケット受信
-		csring.ipush(parray, pool, CLT, num_fin);
+		csring.ipush(parray, pool, CLT, num_fin, is_stream);
 	}
 	/*
 	while(true) {

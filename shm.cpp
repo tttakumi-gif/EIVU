@@ -12,7 +12,8 @@ int open_shmfile(std::string filename, uint32_t size, bool is_create) {
 	int fde = errno;
 	if(fd == -1) {
 		fprintf(stderr, "shm_open failed. err = %s\n\n", std::strerror(fde));
-		return -1;
+		exit(0);
+		//return -1;
 	}
 
 	//int ret = ftruncate(fd, size);
