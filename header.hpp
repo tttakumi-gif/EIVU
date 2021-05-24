@@ -26,3 +26,11 @@
 #include <iostream>
 #include <chrono>
 
+
+#if 1
+#define AVOID_CLT
+#define AVOID_SRV
+#elif 0
+#define READ_SRV
+#endif
+

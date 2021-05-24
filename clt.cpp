@@ -118,8 +118,10 @@ void recv_packet(ring &scring, packet pool[SIZE_POOL], info_opt opt) {
 #endif
 
 	int_fast32_t num_fin = opt.size_batch;
+#ifndef AVOID_CLT
 	packet *parray;
 	parray = new packet[opt.size_batch];
+#endif
 
 	for(int_fast32_t i = NUM_PACKET; 0 < i; i -= num_fin) {
 		// 受信パケット数の決定
@@ -128,17 +130,33 @@ void recv_packet(ring &scring, packet pool[SIZE_POOL], info_opt opt) {
 		}
 		
 		// パケット受信
+#ifdef AVOID_CLT
+		scring.pull_avoid(num_fin);
+#else
 		scring.pull(parray, pool, num_fin);
+#endif
 
 		// パケット検証
+#ifdef AVOID_CLT
+		for(volatile int_fast32_t i = 0; i < num_fin; i++) {
+			;
+		}
+#else
 		judge_packet(parray, num_fin);
+#endif
 	}
 
+#ifndef AVOID_CLT
 	delete(parray);
+#endif
 }
 
 inline void check_verification(packet p) {
+#ifdef READ_SRV
+	if(unlikely(p.id == -1)) {
+#else
 	if(unlikely(p.id != static_cast<signed>(p.verification ^ 0xffffffff))) {
+#endif
 		std::printf("verification error\n");
 		p.print();
 		std::printf("not 0x%x\n", (p.id ^ 0xffffffff));
@@ -147,9 +165,10 @@ inline void check_verification(packet p) {
 }
 
 inline void judge_packet(packet parray[], int_fast32_t num_fin) {
-	for(int_fast32_t i = 0; i < num_fin; i++) {
+	for(volatile int_fast32_t i = 0; i < num_fin; i++) {
 		check_verification(parray[i]);
 
+#ifndef READ_SRV
 		if(unlikely((parray[i].id & 8388607) == 0)) {
 #if INFO_CPU == PROC_CLT_R
 			std::printf("%g%%\n", getCurrentValue_p());
@@ -160,6 +179,7 @@ inline void judge_packet(packet parray[], int_fast32_t num_fin) {
 			parray[i].print();
 #endif
 		}
+#endif
 	}
 }
 

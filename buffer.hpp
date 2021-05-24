@@ -35,7 +35,9 @@ public:
 	packet *entry;
 
 	void set_param(int_fast32_t, packet*);
+	void set_param_avoid(int_fast32_t);
 	void delete_info();
+	void delete_info_avoid();
 };
 
 class ring {
@@ -54,16 +56,20 @@ public:
 
 private:
 	void init_descs();
-	void wait_push(int_fast32_t, packet*);
+	void wait_push(int_fast32_t);
 	packet* wait_pull(int_fast32_t, packet*);
+	void wait_pull_avoid(int_fast32_t);
 
 public:
 	ring();
 	void operator=(ring&&);
 
 	void ipush(packet[], packet[], rsource, int_fast32_t, bool);
+	void ipush_avoid(rsource, int_fast32_t, bool);
 	void pull(packet[], packet[], int_fast32_t);
-	void move_packet(packet[], int_fast32_t, int_fast32_t[]);
+	void pull_avoid(int_fast32_t);
+	void move_packet(packet[], int_fast32_t);
+	void move_packet_avoid(int_fast32_t);
 	void set_ringaddr(ring*);
 	void set_pooladdr(packet*);
 };

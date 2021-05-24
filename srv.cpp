@@ -35,9 +35,6 @@ void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL], info_opt opt)
 #endif
 
 	if(opt.process == MOVE) {
-		int_fast32_t *id;
-		id = new int_fast32_t[opt.size_batch];
-
 		csring.set_ringaddr(&scring);
 		assert(csring.ring_pair != nullptr);
 
@@ -48,16 +45,22 @@ void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL], info_opt opt)
 				num_fin = i;
 			}
 
-			csring.move_packet(pool, num_fin, id);
+#ifdef AVOID_SRV
+			csring.move_packet_avoid(num_fin);
+#else
+			csring.move_packet(pool, num_fin);
+#endif
 		}
 	}
 	else if(opt.process == COPY) {
 		bool is_stream = (opt.stream == ON) ? true : false;
+#ifndef AVOID_SRV
 		packet *parray;
 		parray = new (std::align_val_t{32}) packet[opt.size_batch];
 		//parray = new packet[opt.size_batch];
 		assert((intptr_t(pool) & 31) == 0);
 		assert((intptr_t(parray) & 31) == 0);
+#endif
 
 		int_fast32_t num_fin = opt.size_batch;
 
@@ -66,11 +69,26 @@ void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL], info_opt opt)
 				num_fin = i;
 			}
 
+#ifdef AVOID_SRV
+			csring.pull_avoid(num_fin);
+			for(volatile int j = 0; j < num_fin; j++) {
+				;
+			}
+			scring.ipush_avoid(SRV, num_fin, is_stream);
+#elif defined(READ_SRV)
 			csring.pull(parray, pool, num_fin);
-			for(int j = 0; j < num_fin; j++) {
+			volatile packet *p;
+			for(volatile int j = 0; j < num_fin; j++) {
+				p = &parray[j];
+			}
+			scring.ipush_avoid(SRV, num_fin, is_stream);
+#else
+			csring.pull(parray, pool, num_fin);
+			for(volatile int j = 0; j < num_fin; j++) {
 				parray[j].set_verification();
 			}
 			scring.ipush(parray, pool, SRV, num_fin, is_stream);
+#endif
 		}
 	}
 }
