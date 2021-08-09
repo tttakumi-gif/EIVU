@@ -69,6 +69,8 @@ public:
 	ring();
 	void operator=(ring&&);
 
+	void zero_push(packet[], rsource, int_fast32_t, bool);
+
 	void ipush(packet[], packet[], rsource, int_fast32_t, bool);
 	void ipush_avoid(rsource, int_fast32_t, bool);
 	void pull(packet[], packet[], int_fast32_t, bool);

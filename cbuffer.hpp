@@ -47,6 +47,51 @@ inline void ring::set_ringaddr(ring *r) {
 	ring_pair = r;
 }
 
+inline void ring::zero_push(packet pool[], rsource source, int_fast32_t num_fin, bool is_stream) {
+	int_fast32_t prev_idx = rsrv_idx;
+	int_fast32_t pool_idx = source + pindex;
+
+#if 1
+	int_fast32_t prev_idx_shadow = prev_idx;
+	int_fast32_t pool_idx_shadow = pool_idx;
+#endif
+
+	for(int_fast32_t i = 0; i < num_fin; i++) {
+		packet *p = pool + pool_idx;
+		// ディスクリプタとパケットプールが確保できるまでwait
+		wait_push(prev_idx, p);
+
+		//descs[prev_idx].set_param(pool_idx, pool);
+
+		// index更新
+		if(++pool_idx % NUM_PMOD == 0) {
+			pool_idx = source;
+		}
+		if(SIZE_RING <= ++prev_idx) {
+			prev_idx = 0;
+		}
+	}
+#if 1
+	for(int_fast32_t i = 0; i < num_fin; i++) {
+		descs[prev_idx_shadow].set_param(pool_idx_shadow, pool);
+		//_mm_clflushopt((void*)(pool + pool_idx_shadow));
+		//_mm_clflush((void*)(pool + pool_idx_shadow));
+		// index更新
+		if(++pool_idx_shadow % NUM_PMOD == 0) {
+			pool_idx_shadow = source;
+		}
+		if(SIZE_RING <= ++prev_idx_shadow) {
+			prev_idx_shadow = 0;
+		}
+	}
+#endif
+
+	rsrv_idx = prev_idx;
+	recv_idx = prev_idx;
+
+	// 共有変数に反映
+	pindex = pool_idx % NUM_PMOD;
+}
 inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source, int_fast32_t num_fin, bool is_stream) {
 	int_fast32_t prev_idx = rsrv_idx;
 	int_fast32_t pool_idx = source + pindex;
@@ -84,7 +129,8 @@ inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source,
 #ifndef pattern1
 		for(int_fast32_t i = 0; i < num_fin; i++) {
 			descs[prev_idx_shadow].set_param(pool_idx_shadow, pool);
-			//_mm_clflush(pool + pool_idx_shadow);
+			//_mm_clflushopt((void*)(pool + pool_idx_shadow));
+			//_mm_clflush((void*)(pool + pool_idx_shadow));
 			// index更新
 			if(++pool_idx_shadow % NUM_PMOD == 0) {
 				pool_idx_shadow = source;
@@ -372,9 +418,13 @@ inline void ring::wait_push(int_fast32_t prev_idx, packet *p) {
 		do_none();
 	}
 
+#ifndef ZERO_COPY
 	while(0 < __atomic_load_n(&p->len, __ATOMIC_ACQUIRE)) {
 		do_none();
 	}
+#else
+	__atomic_load_n(&p->len, __ATOMIC_ACQUIRE);
+#endif
 }
 
 inline packet* ring::wait_pull(int_fast32_t prev_idx, packet *pool) {
@@ -384,9 +434,11 @@ inline packet* ring::wait_pull(int_fast32_t prev_idx, packet *pool) {
 	}
 
 	packet *ret = &pool[descs[prev_idx].id];
+#ifndef ZERO_COPY
 	while(__atomic_load_n(&ret->len, __ATOMIC_ACQUIRE) <= 0) {
 		do_none();
 	}
+#endif
 	return ret;
 }
 

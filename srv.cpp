@@ -5,21 +5,23 @@ void rs_packet(ring&, ring&, packet[], info_opt);
 
 int main(int argc, char* argv[]) {
 	// 初期設定
-	int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
+	int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
 	packet *pool = (packet*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+
 	ring *csring = (ring*)(pool + SIZE_POOL);
+	*csring = ring();
 	ring *scring = (ring*)(csring + 1);
+	*scring = ring();
+	for(int i = 0; i < SIZE_POOL; i++) {
+		pool[i] = packet();
+	}
 
 	info_opt opt = get_opt(argc, argv);
-	if(-1 < opt.num) {
-		std::printf(" %d\n", (int)opt.num);
-	}
-	else {
-		std::puts("");
-	}
 	
-	bool *flag = (bool*)(scring + 1);
-	*flag = true;
+	volatile bool *flag = (volatile bool*)(scring + 1);
+	*flag = false;
+	while(!*flag) {
+	}
 
 	// 送受信開始
 	rs_packet(*csring, *scring, pool, opt);

@@ -19,6 +19,9 @@ int main(int argc, char **argv) {
 	info_opt opt = get_opt(argc, argv);
 //	assert(opt.size_batch < SIZE_POOL);
 
+	bool *flag = (bool*)(scring + 1);
+	*flag = true;
+
 	recv_packet(*scring, pool, opt);
 
 	shm_unlink("shm_buf");

@@ -20,6 +20,7 @@
 #include <sys/vtimes.h>
 #include <sys/vtimes.h>
 #include <immintrin.h>
+#include <x86intrin.h>
 
 #include <cstring>
 #include <typeinfo>
@@ -38,3 +39,4 @@
 #endif
 #endif
 
+#define ZERO_COPY

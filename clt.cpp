@@ -22,16 +22,10 @@ int main(int argc, char **argv) {
 	}
 
 	// 初期設定
-	int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
+	int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
 	packet *pool = (packet*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
-	std::cout << pool << std::endl;
 	ring *csring = (ring*)(pool + SIZE_POOL);
-	*csring = ring();
 	ring *scring = (ring*)(csring + 1);
-	*scring = ring();
-	for(int i = 0; i < SIZE_POOL; i++) {
-		pool[i] = packet();
-	}
 
 	info_opt opt = get_opt(argc, argv);
 //	assert(opt.size_batch < SIZE_POOL);
@@ -67,7 +61,6 @@ void send_packet(ring &csring, packet pool[SIZE_POOL], info_opt opt) {
 #endif
 
 	int_fast32_t i = NUM_PACKET;
-	int_fast32_t j;
 	int_fast32_t num_fin = opt.size_batch;
 	bool is_stream = (opt.stream == ON) ? true : false;
 	packet *parray;
@@ -81,12 +74,17 @@ void send_packet(ring &csring, packet pool[SIZE_POOL], info_opt opt) {
 			num_fin = i;
 		}
 
-		for(j = 0; j < num_fin; j++, i--) {
+#ifndef ZERO_COPY
+		for(int_fast32_t j = 0; j < num_fin; j++, i--) {
 			parray[j] = packet(i);
 		}
 		
 		// パケット受信
 		csring.ipush(parray, pool, CLT, num_fin, is_stream);
+#else
+		csring.zero_push(pool, CLT, num_fin, is_stream);
+		i -= num_fin;
+#endif
 	}
 
 	delete(parray);
