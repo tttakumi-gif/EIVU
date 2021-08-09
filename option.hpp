@@ -25,7 +25,7 @@ public:
 
 inline info_opt::info_opt() {
 	size_batch = 32;
-	process = COPY;
+	process = MOVE;
 	stream = ON;
 	num = -1;
 }

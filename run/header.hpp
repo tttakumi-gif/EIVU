@@ -27,14 +27,10 @@
 #include <chrono>
 
 
-//#define SKIP_CLT
-//#define pattern1
-#if 0
 #if 1
-#define AVOID_CLT
-#define AVOID_SRV
-#else 
+//#define AVOID_CLT
+//#define AVOID_SRV
+#elif 1
 #define READ_SRV
-#endif
 #endif
 

@@ -10,86 +10,63 @@ void judge_packet(packet[], int_fast32_t);
 void init_resource();
 
 int main(int argc, char **argv) {
-	puts("begin");
-
-	{
-		constexpr int size = sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL + sizeof(volatile bool);
-		std::cout << "size: " << size << std::endl;
-		static_assert(size <= SIZE_SHM, "over packet size");
-		std::cout << "psize: " << sizeof(packet) << std::endl;
-		std::cout << "dsize: " << sizeof(desc) << std::endl;
-		std::cout << "rsize: " << sizeof(ring) << std::endl;
-	}
-
 	// 初期設定
-	int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
+	int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
 	packet *pool = (packet*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
-	std::cout << pool << std::endl;
 	ring *csring = (ring*)(pool + SIZE_POOL);
-	*csring = ring();
 	ring *scring = (ring*)(csring + 1);
-	*scring = ring();
-	for(int i = 0; i < SIZE_POOL; i++) {
-		pool[i] = packet();
-	}
 
 	info_opt opt = get_opt(argc, argv);
 //	assert(opt.size_batch < SIZE_POOL);
 
-	volatile bool *flag = (volatile bool*)(scring + 1);
-	*flag = false;
-	init_resource();
-
-	while(!*flag) {
-	}
-
-	// 計測開始
-	std::chrono::system_clock::time_point start, end;
-	start = std::chrono::system_clock::now();
-
-	// 送受信開始
-	send_packet(*csring, pool, opt);
-
-	// 計測終了
-	end = std::chrono::system_clock::now();
+	recv_packet(*scring, pool, opt);
 
 	shm_unlink("shm_buf");
-
-	double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-	std::cout << "result: " << elapsed / 1000 << "sec" << std::endl;
 
 	return 0;
 }
 
-void send_packet(ring &csring, packet pool[SIZE_POOL], info_opt opt) {
+void recv_packet(ring &scring, packet pool[SIZE_POOL], info_opt opt) {
 #ifdef CPU_BIND
-	bind_core(5);
+	bind_core(6);
 #endif
 
-	int_fast32_t i = NUM_PACKET;
-	int_fast32_t j;
 	int_fast32_t num_fin = opt.size_batch;
 	bool is_stream = (opt.stream == ON) ? true : false;
+#ifndef AVOID_CLT
 	packet *parray;
 	parray = new (std::align_val_t{64}) packet[opt.size_batch];
 	assert((intptr_t(pool) & 63) == 0);
 	assert((intptr_t(parray) & 63) == 0);
+#endif
 
-	while(0 < i) {
+	for(int_fast32_t i = NUM_PACKET; 0 < i; i -= num_fin) {
 		// 受信パケット数の決定
 		if(unlikely(i < num_fin)) {
 			num_fin = i;
 		}
-
-		for(j = 0; j < num_fin; j++, i--) {
-			parray[j] = packet(i);
-		}
 		
 		// パケット受信
-		csring.ipush(parray, pool, CLT, num_fin, is_stream);
+#ifdef AVOID_CLT
+		scring.pull_avoid(num_fin);
+#else
+		scring.pull(parray, pool, num_fin, is_stream);
+#endif
+
+//		// パケット検証
+//#ifdef AVOID_CLT
+//		for(volatile int_fast32_t i = 0; i < num_fin; i++) {
+//			;
+//		}
+//#else
+//		
+//		judge_packet(parray, num_fin);
+//#endif
 	}
 
+#ifndef AVOID_CLT
 	delete(parray);
+#endif
 }
 
 inline void check_verification(packet p) {

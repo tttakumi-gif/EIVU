@@ -17,8 +17,12 @@
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-constexpr int_fast32_t SIZE_RING = 64;
+constexpr int_fast32_t SIZE_RING = 256;
 constexpr int_fast32_t SIZE_POOL = 256;
+//constexpr int_fast32_t SIZE_POOL = 32;
+//constexpr int_fast32_t SIZE_POOL = 1024;
+//constexpr int_fast32_t SIZE_POOL = 2048;
+//constexpr int_fast32_t SIZE_POOL = 2048;
 
 constexpr int_fast32_t NUM_MOD = SIZE_RING - 1;
 //constexpr int_fast32_t NUM_MOD = SIZE_RING;
@@ -57,6 +61,7 @@ public:
 private:
 	void init_descs();
 	void wait_push(int_fast32_t);
+	void wait_push(int_fast32_t, packet*);
 	packet* wait_pull(int_fast32_t, packet*);
 	void wait_pull_avoid(int_fast32_t);
 
@@ -66,7 +71,7 @@ public:
 
 	void ipush(packet[], packet[], rsource, int_fast32_t, bool);
 	void ipush_avoid(rsource, int_fast32_t, bool);
-	void pull(packet[], packet[], int_fast32_t);
+	void pull(packet[], packet[], int_fast32_t, bool);
 	void pull_avoid(int_fast32_t);
 	void move_packet(packet[], int_fast32_t);
 	void move_packet_avoid(int_fast32_t);
