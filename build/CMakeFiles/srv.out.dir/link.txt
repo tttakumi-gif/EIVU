@@ -1,1 +1,0 @@
-/opt/rh/devtoolset-8/root/usr/bin/c++  -O3 -march=native -std=c++17 -pthread -mtune=native -Wall -Wextra -ffast-math -mfpmath=both -g   CMakeFiles/srv.out.dir/srv.cpp.o CMakeFiles/srv.out.dir/shm.cpp.o  -o srv.out  -lrt 
