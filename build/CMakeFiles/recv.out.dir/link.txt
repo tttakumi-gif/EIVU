@@ -1,0 +1,1 @@
+/opt/rh/devtoolset-8/root/usr/bin/c++  -O3 -march=native -std=c++17 -pthread -mtune=native -Wall -Wextra -ffast-math -mfpmath=both -g   CMakeFiles/recv.out.dir/recv.cpp.o CMakeFiles/recv.out.dir/shm.cpp.o  -o recv.out  -lrt 

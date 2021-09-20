@@ -1,0 +1,15 @@
+# cmake_minimum_required(VERSION <specify CMake version here>)
+cmake_minimum_required(VERSION 3.11)
+project(new-b4-assignment)
+set(CMAKE_CXX_STANDARD 17)
+
+set(obj "shm.cpp")
+set(flags "-O3 -march=native -std=c++17 -pthread -mtune=native -Wall -Wextra -ffast-math -mfpmath=both -g")
+set(CMAKE_CXX_FLAGS "${flags}")
+
+add_executable(clt.out clt.cpp ${obj})
+target_link_libraries(clt.out PUBLIC rt)
+add_executable(recv.out recv.cpp ${obj})
+target_link_libraries(recv.out PUBLIC rt)
+add_executable(srv.out srv.cpp ${obj})
+target_link_libraries(srv.out PUBLIC rt)

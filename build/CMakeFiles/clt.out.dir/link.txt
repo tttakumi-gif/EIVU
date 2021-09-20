@@ -1,0 +1,1 @@
+/opt/rh/devtoolset-8/root/usr/bin/c++  -O3 -march=native -std=c++17 -pthread -mtune=native -Wall -Wextra -ffast-math -mfpmath=both -g   CMakeFiles/clt.out.dir/clt.cpp.o CMakeFiles/clt.out.dir/shm.cpp.o  -o clt.out  -lrt 

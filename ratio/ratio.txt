@@ -1,0 +1,7 @@
+l1d.replacement
+14,015,551      
+L1-dcache-loads
+97,743,001      
+L1-dcache-stores
+0
+

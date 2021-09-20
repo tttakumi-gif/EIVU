@@ -1,0 +1,5 @@
+/home/takeya/new-b4-assignment/build/CMakeFiles/edit_cache.dir
+/home/takeya/new-b4-assignment/build/CMakeFiles/srv.out.dir
+/home/takeya/new-b4-assignment/build/CMakeFiles/recv.out.dir
+/home/takeya/new-b4-assignment/build/CMakeFiles/rebuild_cache.dir
+/home/takeya/new-b4-assignment/build/CMakeFiles/clt.out.dir

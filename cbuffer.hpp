@@ -74,16 +74,29 @@ inline void ring::zero_push(packet pool[], rsource source, int_fast32_t num_fin,
 #if 1
 	for(int_fast32_t i = 0; i < num_fin; i++) {
 		descs[prev_idx_shadow].set_param(pool_idx_shadow, pool);
-		//_mm_clflushopt((void*)(pool + pool_idx_shadow));
-		//_mm_clflush((void*)(pool + pool_idx_shadow));
 		// index更新
-		if(++pool_idx_shadow % NUM_PMOD == 0) {
+		if(++pool_idx_shadow % SIZE_POOL == 0) {
 			pool_idx_shadow = source;
 		}
 		if(SIZE_RING <= ++prev_idx_shadow) {
 			prev_idx_shadow = 0;
 		}
+		if(is_stream) {
+			_mm_clflushopt((void*)(pool + pool_idx_shadow));
+			//_mm_clflush((void*)(pool + pool_idx_shadow));
+		}
 	}
+//	if(is_stream) {
+//		for(int_fast32_t i = 0; i < num_fin; i++) {
+//			_mm_clflushopt((void*)(pool + pool_idx_shadow2));
+//			if(++pool_idx_shadow % NUM_PMOD == 0) {
+//				pool_idx_shadow2 = source;
+//			}
+//			//if(SIZE_RING <= ++prev_idx_shadow) {
+//			//	prev_idx_shadow = 0;
+//			//}
+//		}
+//	}
 #endif
 
 	rsrv_idx = prev_idx;
