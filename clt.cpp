@@ -16,9 +16,9 @@ int main(int argc, char **argv) {
 		constexpr int size = sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL + sizeof(volatile bool);
 		std::cout << "size: " << size << std::endl;
 		static_assert(size <= SIZE_SHM, "over packet size");
-		std::cout << "psize: " << sizeof(packet) << std::endl;
-		std::cout << "dsize: " << sizeof(desc) << std::endl;
-		std::cout << "rsize: " << sizeof(ring) << std::endl;
+		std::cout << "packet size: " << sizeof(packet) << std::endl;
+		std::cout << "desc size: " << sizeof(desc) << std::endl;
+		std::cout << "ring size: " << sizeof(ring) << std::endl;
 	}
 
 	// 初期設定
@@ -50,7 +50,8 @@ int main(int argc, char **argv) {
 	shm_unlink("shm_buf");
 
 	double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-	std::cout << "result: " << elapsed / 1000 << "sec" << std::endl;
+	double second = elapsed / 1000;
+	std::printf("result: %.3fsec (%.3fMpps)\n", second, NUM_PACKET / second / 1000000);
 
 	return 0;
 }
