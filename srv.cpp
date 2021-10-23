@@ -51,6 +51,8 @@ void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL], info_opt opt)
 			csring.pull_avoid(num_fin);
 #elif defined(AVOID_SRV)
 			csring.move_packet_avoid(num_fin);
+#elif defined(READ_SRV)
+			csring.move_packet_read(pool, num_fin);
 #else
 			csring.move_packet(pool, num_fin);
 #endif
@@ -79,7 +81,7 @@ void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL], info_opt opt)
 			}
 			scring.ipush_avoid(SRV, num_fin, is_stream);
 #elif defined(READ_SRV)
-			csring.pull(parray, pool, num_fin);
+			//csring.pull(parray, pool, num_fin);
 			volatile packet *p;
 			for(volatile int j = 0; j < num_fin; j++) {
 				p = &parray[j];

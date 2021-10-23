@@ -22,7 +22,18 @@ int main(int argc, char **argv) {
 	bool *flag = (bool*)(scring + 1);
 	*flag = true;
 
+	// 計測開始
+	std::chrono::system_clock::time_point start, end;
+	start = std::chrono::system_clock::now();
+
 	recv_packet(*scring, pool, opt);
+
+	// 計測終了
+	end = std::chrono::system_clock::now();
+
+	double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	double second = elapsed / 1000;
+	std::printf("result: %.3fsec (%.3fMpps)\n", second, NUM_PACKET / second / 1000000);
 
 	shm_unlink("shm_buf");
 

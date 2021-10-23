@@ -37,21 +37,10 @@ int main(int argc, char **argv) {
 	while(!*flag) {
 	}
 
-	// 計測開始
-	std::chrono::system_clock::time_point start, end;
-	start = std::chrono::system_clock::now();
-
 	// 送受信開始
 	send_packet(*csring, pool, opt);
 
-	// 計測終了
-	end = std::chrono::system_clock::now();
-
 	shm_unlink("shm_buf");
-
-	double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-	double second = elapsed / 1000;
-	std::printf("result: %.3fsec (%.3fMpps)\n", second, NUM_PACKET / second / 1000000);
 
 	return 0;
 }

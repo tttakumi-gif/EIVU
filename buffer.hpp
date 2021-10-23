@@ -72,6 +72,7 @@ public:
 	void pull_avoid(int_fast32_t);
 	void move_packet(packet[], int_fast32_t);
 	void move_packet_avoid(int_fast32_t);
+	void move_packet_read(packet[], int_fast32_t);
 	void set_ringaddr(ring*);
 	void set_pooladdr(packet*);
 };

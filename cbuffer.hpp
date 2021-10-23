@@ -105,6 +105,7 @@ inline void ring::zero_push(packet pool[], rsource source, int_fast32_t num_fin,
 	// 共有変数に反映
 	pindex = pool_idx % NUM_PMOD;
 }
+
 inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source, int_fast32_t num_fin, bool is_stream) {
 	int_fast32_t prev_idx = rsrv_idx;
 	int_fast32_t pool_idx = source + pindex;
@@ -299,12 +300,11 @@ inline void ring::pull(packet parray[], packet pool[SIZE_POOL], int_fast32_t num
 			// ディスクリプタにバッファが割り当てられるまでwait
 			packet *p = wait_pull(prev_idx, pool);
 
-			// パケットの取得, ディスクリプタの紐づけ解除
-			descs[prev_idx].entry = p;
-
 			//parray[i] = *p;
 			memcpy(parray + i, p, SIZE_PACKET);
 
+			// パケットの取得, ディスクリプタの紐づけ解除
+			descs[prev_idx].entry = p;
 			descs[prev_idx].delete_info();
 
 			// index更新
@@ -318,22 +318,23 @@ inline void ring::pull(packet parray[], packet pool[SIZE_POOL], int_fast32_t num
 			// ディスクリプタにバッファが割り当てられるまでwait
 			packet *p = wait_pull(prev_idx, pool);
 
-			// パケットの取得, ディスクリプタの紐づけ解除
-			descs[prev_idx].entry = p;
-
 			//parray[i] = *p;
 			//memcpy(parray + i, p, SIZE_PACKET);
 			auto* xmm01 = parray + i;
 			auto* xmm02 = p;
 			for(int_fast32_t j = 0; j < NUM_LOOP; j++) {
 				if(!IS_PSMALL) {
-					_mm256_stream_si256((__m256i*)xmm01 + j, _mm256_load_si256((__m256i*)xmm02 + j));
+					//_mm256_stream_si256((__m256i*)xmm01 + j, _mm256_load_si256((__m256i*)xmm02 + j));
+					_mm256_store_si256((__m256i*)xmm01 + j, _mm256_stream_load_si256((__m256i*)xmm02 + j));
 				}
 				else {
-					_mm_stream_si128((__m128i*)xmm01 + j, _mm_load_si128((__m128i*)xmm02 + j));
+					//_mm_stream_si128((__m128i*)xmm01 + j, _mm_load_si128((__m128i*)xmm02 + j));
+					_mm_store_si128((__m128i*)xmm01 + j, _mm_stream_load_si128((__m128i*)xmm02 + j));
 				}
 			}
 
+			// パケットの取得, ディスクリプタの紐づけ解除
+			descs[prev_idx].entry = p;
 			descs[prev_idx].delete_info();
 
 			// index更新
@@ -368,29 +369,40 @@ inline void ring::pull_avoid(int_fast32_t num_fin) {
 }
 
 inline void ring::move_packet(packet pool[SIZE_POOL], int_fast32_t num_fin) {
-	int_fast32_t i, id;
+	int_fast32_t i;
 	int_fast32_t prev_idx = proc_idx;
 	int_fast32_t prev_idx2 = ring_pair->rsrv_idx;
+	int_fast32_t prev_idx_shadow = prev_idx;
+	int_fast32_t prev_idx2_shadow = prev_idx2;
+	int_fast32_t id[32];
 
 	for(i = 0; i < num_fin; i++) {
 		wait_pull(prev_idx, pool);
 
-		id = descs[prev_idx].id;
+		id[i] = descs[prev_idx].id;
 		while(0 <= __atomic_load_n(&ring_pair->descs[prev_idx2].id, __ATOMIC_ACQUIRE)) {
 			do_none();
 		}
 
-		(pool + id)->set_verification();
-		ring_pair->descs[prev_idx2].set_param(id, pool);
+		(pool + id[i])->set_verification();
+		//ring_pair->descs[prev_idx2].set_param(id[i], pool);
 
 		prev_idx2 = (prev_idx2 + 1) % SIZE_RING;
-		__atomic_store_n(&descs[prev_idx].id, -1, __ATOMIC_RELEASE);
+		//__atomic_store_n(&descs[prev_idx].id, -1, __ATOMIC_RELEASE);
 		prev_idx = (prev_idx + 1) % SIZE_RING;
 	}
-	proc_idx = prev_idx;
 
-	ring_pair->rsrv_idx = prev_idx2;
-	ring_pair->recv_idx = prev_idx2;
+	for(i = 0; i < num_fin; i++) {
+		ring_pair->descs[prev_idx2_shadow].set_param(id[i], pool);
+		prev_idx2_shadow = (prev_idx2_shadow + 1) % SIZE_RING;
+		__atomic_store_n(&descs[prev_idx_shadow].id, -1, __ATOMIC_RELEASE);
+		prev_idx_shadow = (prev_idx_shadow + 1) % SIZE_RING;
+	}
+
+	proc_idx = prev_idx_shadow;
+
+	ring_pair->rsrv_idx = prev_idx2_shadow;
+	ring_pair->recv_idx = prev_idx2_shadow;
 }
 
 inline void ring::move_packet_avoid(int_fast32_t num_fin) {
@@ -407,6 +419,32 @@ inline void ring::move_packet_avoid(int_fast32_t num_fin) {
 		}
 
 		ring_pair->descs[prev_idx2].set_param_avoid(id);
+
+		prev_idx2 = (prev_idx2 + 1) % SIZE_RING;
+		__atomic_store_n(&descs[prev_idx].id, -1, __ATOMIC_RELEASE);
+		prev_idx = (prev_idx + 1) % SIZE_RING;
+	}
+	proc_idx = prev_idx;
+
+	ring_pair->rsrv_idx = prev_idx2;
+	ring_pair->recv_idx = prev_idx2;
+}
+
+inline void ring::move_packet_read(packet pool[SIZE_POOL], int_fast32_t num_fin) {
+	int_fast32_t i, id;
+	int_fast32_t prev_idx = proc_idx;
+	int_fast32_t prev_idx2 = ring_pair->rsrv_idx;
+
+	for(i = 0; i < num_fin; i++) {
+		wait_pull(prev_idx, pool);
+
+		id = descs[prev_idx].id;
+		while(0 <= __atomic_load_n(&ring_pair->descs[prev_idx2].id, __ATOMIC_ACQUIRE)) {
+			do_none();
+		}
+
+		//(pool + id)->set_verification();
+		ring_pair->descs[prev_idx2].set_param(id, pool);
 
 		prev_idx2 = (prev_idx2 + 1) % SIZE_RING;
 		__atomic_store_n(&descs[prev_idx].id, -1, __ATOMIC_RELEASE);
