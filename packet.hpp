@@ -72,7 +72,11 @@ inline void packet::print() {
 }
 
 inline void packet::set_verification() {
+#ifdef ZERO_COPY
+	verification = verification + id + 1;
+#else
 	verification = id ^ 0xffffffff;
+#endif
 }
 
 void set_global_dummy() {
