@@ -54,7 +54,6 @@ inline void ring::zero_push(packet pool[], rsource source, int_fast32_t num_fin,
 #if 1
 	int_fast32_t prev_idx_shadow = prev_idx;
 	int_fast32_t pool_idx_shadow = pool_idx;
-	int_fast32_t prev_idx_shadow2 = prev_idx;
 	int_fast32_t pool_idx_shadow2 = pool_idx;
 #endif
 
@@ -62,6 +61,10 @@ inline void ring::zero_push(packet pool[], rsource source, int_fast32_t num_fin,
 		packet *p = pool + pool_idx;
 		// ディスクリプタとパケットプールが確保できるまでwait
 		wait_push(prev_idx, p);
+//		if(is_stream) {
+//			_mm_clflushopt((void*)p);
+//			//_mm_clflush((void*)(pool + pool_idx_shadow));
+//		}
 
 		//descs[prev_idx].set_param(pool_idx, pool);
 
@@ -93,9 +96,6 @@ inline void ring::zero_push(packet pool[], rsource source, int_fast32_t num_fin,
 			_mm_clflushopt((void*)(pool + pool_idx_shadow2));
 			if(++pool_idx_shadow2 % SIZE_POOL == 0) {
 				pool_idx_shadow2 = source;
-			}
-			if(SIZE_RING <= ++prev_idx_shadow2) {
-				prev_idx_shadow2 = 0;
 			}
 		}
 	}

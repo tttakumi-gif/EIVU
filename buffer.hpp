@@ -18,8 +18,8 @@
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
 constexpr int_fast32_t SIZE_RING = 256;
-constexpr int_fast32_t SIZE_POOL = 256;
-//constexpr int_fast32_t SIZE_POOL = 163456;
+//constexpr int_fast32_t SIZE_POOL = 256;
+constexpr int_fast32_t SIZE_POOL = 163456;
 //constexpr int_fast32_t SIZE_POOL = 326912;
 //constexpr int_fast32_t NUM_PMOD = SIZE_POOL / 2;
 

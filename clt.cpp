@@ -72,6 +72,10 @@ void send_packet(ring &csring, packet pool[SIZE_POOL], info_opt opt) {
 		// パケット受信
 		csring.ipush(parray, pool, CLT, num_fin, is_stream);
 #else
+//		for(int_fast32_t j = 0; j < num_fin; j++, i--) {
+//			parray[j] = packet(i);
+//		}
+
 		csring.zero_push(pool, CLT, num_fin, is_stream);
 		i -= num_fin;
 #endif
