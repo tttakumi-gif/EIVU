@@ -29,14 +29,13 @@
 
 
 //#define SKIP_CLT
-//#define pattern1
 #if 0
-#if 0
-//#define AVOID_CLT
-//#define AVOID_SRV
+#if 1
+#define AVOID_CLT
+#define AVOID_SRV
 #else 
 #define READ_SRV
 #endif
 #endif
 
-#define ZERO_COPY
+//#define ZERO_COPY

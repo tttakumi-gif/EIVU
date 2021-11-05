@@ -49,14 +49,17 @@ void send_packet(ring &csring, packet pool[SIZE_POOL], info_opt opt) {
 #ifdef CPU_BIND
 	bind_core(5);
 #endif
+	assert((intptr_t(pool) & 63) == 0);
 
 	int_fast32_t i = NUM_PACKET;
 	int_fast32_t num_fin = opt.size_batch;
 	bool is_stream = (opt.stream == ON) ? true : false;
+
+#ifndef ZERO_COPY
 	packet *parray;
 	parray = new (std::align_val_t{64}) packet[opt.size_batch];
-	assert((intptr_t(pool) & 63) == 0);
 	assert((intptr_t(parray) & 63) == 0);
+#endif
 
 	while(0 < i) {
 		// 受信パケット数の決定
@@ -68,20 +71,16 @@ void send_packet(ring &csring, packet pool[SIZE_POOL], info_opt opt) {
 		for(int_fast32_t j = 0; j < num_fin; j++, i--) {
 			parray[j] = packet(i);
 		}
-		
-		// パケット受信
-		csring.ipush(parray, pool, CLT, num_fin, is_stream);
+		csring.ipush(parray, pool, num_fin, is_stream);
 #else
-//		for(int_fast32_t j = 0; j < num_fin; j++, i--) {
-//			parray[j] = packet(i);
-//		}
-
-		csring.zero_push(pool, CLT, num_fin, is_stream);
+		csring.zero_push(pool, num_fin, is_stream);
 		i -= num_fin;
 #endif
 	}
 
+#ifndef ZERO_COPY
 	delete(parray);
+#endif
 }
 
 inline void check_verification(packet p) {

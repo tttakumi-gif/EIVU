@@ -47,9 +47,9 @@ inline void ring::set_ringaddr(ring *r) {
 	ring_pair = r;
 }
 
-inline void ring::zero_push(packet pool[], rsource source, int_fast32_t num_fin, bool is_stream) {
+inline void ring::zero_push(packet pool[], int_fast32_t num_fin, bool is_stream) {
 	int_fast32_t prev_idx = rsrv_idx;
-	int_fast32_t pool_idx = source + pindex;
+	int_fast32_t pool_idx = pindex;
 
 #if 1
 	int_fast32_t prev_idx_shadow = prev_idx;
@@ -61,16 +61,10 @@ inline void ring::zero_push(packet pool[], rsource source, int_fast32_t num_fin,
 		packet *p = pool + pool_idx;
 		// ディスクリプタとパケットプールが確保できるまでwait
 		wait_push(prev_idx, p);
-//		if(is_stream) {
-//			_mm_clflushopt((void*)p);
-//			//_mm_clflush((void*)(pool + pool_idx_shadow));
-//		}
-
-		//descs[prev_idx].set_param(pool_idx, pool);
 
 		// index更新
 		if(++pool_idx % SIZE_POOL == 0) {
-			pool_idx = source;
+			pool_idx = 0;
 		}
 		if(SIZE_RING <= ++prev_idx) {
 			prev_idx = 0;
@@ -81,21 +75,17 @@ inline void ring::zero_push(packet pool[], rsource source, int_fast32_t num_fin,
 		descs[prev_idx_shadow].set_param(pool_idx_shadow, pool);
 		// index更新
 		if(++pool_idx_shadow % SIZE_POOL == 0) {
-			pool_idx_shadow = source;
+			pool_idx_shadow = 0;
 		}
 		if(SIZE_RING <= ++prev_idx_shadow) {
 			prev_idx_shadow = 0;
 		}
-//		if(is_stream) {
-//			_mm_clflushopt((void*)(pool + pool_idx_shadow));
-//			//_mm_clflush((void*)(pool + pool_idx_shadow));
-//		}
 	}
 	if(is_stream) {
 		for(int_fast32_t i = 0; i < num_fin; i++) {
 			_mm_clflushopt((void*)(pool + pool_idx_shadow2));
 			if(++pool_idx_shadow2 % SIZE_POOL == 0) {
-				pool_idx_shadow2 = source;
+				pool_idx_shadow2 = 0;
 			}
 		}
 	}
@@ -108,16 +98,13 @@ inline void ring::zero_push(packet pool[], rsource source, int_fast32_t num_fin,
 	pindex = pool_idx % SIZE_POOL;
 }
 
-inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source, int_fast32_t num_fin, bool is_stream) {
+inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], int_fast32_t num_fin, bool is_stream) {
 	int_fast32_t prev_idx = rsrv_idx;
-	int_fast32_t pool_idx = source + pindex;
+	int_fast32_t pool_idx = pindex;
+	int_fast32_t prev_idx_shadow = prev_idx;
+	int_fast32_t pool_idx_shadow = pool_idx;
 
 	if(!is_stream) {
-#ifndef pattern1
-		int_fast32_t prev_idx_shadow = prev_idx;
-		int_fast32_t pool_idx_shadow = pool_idx;
-#endif
-
 		for(int_fast32_t i = 0; i < num_fin; i++) {
 			packet *p = pool + pool_idx;
 			// ディスクリプタとパケットプールが確保できるまでwait
@@ -128,54 +115,34 @@ inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source,
 #endif
 
 			// パケットの紐づけ
-			//pool[pool_idx] = parray[i];
 			memcpy(p, parray + i, SIZE_PACKET);
-#ifdef pattern1
-			descs[prev_idx].set_param(pool_idx, pool);
-#endif
+			//descs[prev_idx].set_param(pool_idx, pool);
 
 			// index更新
 			if(++pool_idx % SIZE_POOL == 0) {
-				pool_idx = source;
+				pool_idx = 0;
 			}
 			if(SIZE_RING <= ++prev_idx) {
 				prev_idx = 0;
 			}
 		}
-#ifndef pattern1
 		for(int_fast32_t i = 0; i < num_fin; i++) {
 			descs[prev_idx_shadow].set_param(pool_idx_shadow, pool);
 			//_mm_clflushopt((void*)(pool + pool_idx_shadow));
 			//_mm_clflush((void*)(pool + pool_idx_shadow));
 			// index更新
 			if(++pool_idx_shadow % SIZE_POOL == 0) {
-				pool_idx_shadow = source;
+				pool_idx_shadow = 0;
 			}
 			if(SIZE_RING <= ++prev_idx_shadow) {
 				prev_idx_shadow = 0;
 			}
 		}
-#endif
-//		for(int_fast32_t i = 0; i < num_fin; i++) {
-//			_mm_clflush(&pool[pool_idx_shadow]);
-//			// index更新
-//			if(++pool_idx_shadow % SIZE_POOL == 0) {
-//				pool_idx_shadow = source;
-//			}
-//			if(SIZE_RING <= ++prev_idx_shadow) {
-//				prev_idx_shadow = 0;
-//			}
-//		}
 
 		rsrv_idx = prev_idx;
 		recv_idx = prev_idx;
 	}
 	else {
-#ifndef pattern1
-		int_fast32_t prev_idx_shadow = prev_idx;
-		int_fast32_t pool_idx_shadow = pool_idx;
-#endif
-
 		for(int_fast32_t i = 0; i < num_fin; i++) {
 			// ディスクリプタとパケットプールが確保できるまでwait
 			auto* xmm01 = pool + pool_idx;
@@ -196,31 +163,27 @@ inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source,
 					_mm_stream_si128((__m128i*)xmm01 + j, _mm_load_si128((__m128i*)xmm02 + j));
 				}
 			}
-#ifdef pattern1
-			descs[prev_idx].set_param(pool_idx, pool);
-#endif
+			//descs[prev_idx].set_param(pool_idx, pool);
 
 			// index更新
 			if(++pool_idx % SIZE_POOL == 0) {
-				pool_idx = source;
+				pool_idx = 0;
 			}
 			if(SIZE_RING <= ++prev_idx) {
 				prev_idx = 0;
 			}
 		}
 
-#ifndef pattern1
 		for(int_fast32_t i = 0; i < num_fin; i++) {
 			descs[prev_idx_shadow].set_param(pool_idx_shadow, pool);
 			// index更新
 			if(++pool_idx_shadow % SIZE_POOL == 0) {
-				pool_idx_shadow = source;
+				pool_idx_shadow = 0;
 			}
 			if(SIZE_RING <= ++prev_idx_shadow) {
 				prev_idx_shadow = 0;
 			}
 		}
-#endif
 
 		rsrv_idx = prev_idx;
 		recv_idx = prev_idx;
@@ -230,10 +193,10 @@ inline void ring::ipush(packet parray[], packet pool[SIZE_POOL], rsource source,
 	pindex = pool_idx % SIZE_POOL;
 }
 
-inline void ring::ipush_avoid(rsource source, int_fast32_t num_fin, bool is_stream) {
+inline void ring::ipush_avoid(int_fast32_t num_fin, bool is_stream) {
 	int_fast32_t prev_idx = rsrv_idx;
 	int_fast32_t prev_idx_shadow = prev_idx;
-	int_fast32_t pool_idx = source + pindex;
+	int_fast32_t pool_idx = pindex;
 	int_fast32_t pool_idx_shadow = pool_idx;
 
 	if(!is_stream) {
@@ -246,7 +209,7 @@ inline void ring::ipush_avoid(rsource source, int_fast32_t num_fin, bool is_stre
 
 			// index更新
 			if(++pool_idx % SIZE_POOL == 0) {
-				pool_idx = source;
+				pool_idx = 0;
 			}
 			if(SIZE_RING <= ++prev_idx) {
 				prev_idx = 0;
@@ -268,7 +231,7 @@ inline void ring::ipush_avoid(rsource source, int_fast32_t num_fin, bool is_stre
 
 			// index更新
 			if(++pool_idx % SIZE_POOL == 0) {
-				pool_idx = source;
+				pool_idx = 0;
 			}
 			if(SIZE_RING <= ++prev_idx) {
 				prev_idx = 0;
@@ -279,7 +242,7 @@ inline void ring::ipush_avoid(rsource source, int_fast32_t num_fin, bool is_stre
 			descs[prev_idx_shadow].set_param_avoid(pool_idx_shadow);
 			// index更新
 			if(++pool_idx_shadow % SIZE_POOL == 0) {
-				pool_idx_shadow = source;
+				pool_idx_shadow = 0;
 			}
 			if(SIZE_RING <= ++prev_idx_shadow) {
 				prev_idx_shadow = 0;
@@ -327,7 +290,7 @@ inline void ring::pull(packet parray[], packet pool[SIZE_POOL], int_fast32_t num
 			for(int_fast32_t j = 0; j < NUM_LOOP; j++) {
 				if(!IS_PSMALL) {
 					//_mm256_stream_si256((__m256i*)xmm01 + j, _mm256_load_si256((__m256i*)xmm02 + j));
-					_mm256_store_si256((__m256i*)xmm01 + j, _mm256_stream_load_si256((__m256i*)xmm02 + j));
+					_mm256_stream_si256((__m256i*)xmm01 + j, _mm256_stream_load_si256((__m256i*)xmm02 + j));
 				}
 				else {
 					//_mm_stream_si128((__m128i*)xmm01 + j, _mm_load_si128((__m128i*)xmm02 + j));

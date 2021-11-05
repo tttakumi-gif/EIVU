@@ -4,15 +4,16 @@
 
 #define DUMMY_FULL
 
-constexpr int_fast32_t SIZE_PACKET = 64;
-//constexpr int_fast32_t SIZE_PACKET = 1024;
+//constexpr int_fast32_t SIZE_PACKET = 128;
+constexpr int_fast32_t SIZE_PACKET = 1024;
 constexpr bool IS_PSMALL = SIZE_PACKET < 32;
 constexpr int_fast32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32);
 #if 1
-//constexpr int_fast32_t NUM_PACKET = 75000000;
+constexpr int_fast32_t NUM_PACKET = 75000000;
 //constexpr int_fast32_t NUM_PACKET = 100000000;
 //constexpr int_fast32_t NUM_PACKET = 300000000;
-constexpr int_fast32_t NUM_PACKET = 1000000000;
+//constexpr int_fast32_t NUM_PACKET = 500000000;
+//constexpr int_fast32_t NUM_PACKET = 1000000000;
 #elif 0
 constexpr int_fast32_t NUM_PACKET = 420000000;
 #else

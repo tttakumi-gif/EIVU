@@ -18,15 +18,10 @@
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
 constexpr int_fast32_t SIZE_RING = 256;
-//constexpr int_fast32_t SIZE_POOL = 256;
-constexpr int_fast32_t SIZE_POOL = 163456;
+constexpr int_fast32_t SIZE_POOL = 256;
+//constexpr int_fast32_t SIZE_POOL = 163456;
 //constexpr int_fast32_t SIZE_POOL = 326912;
 //constexpr int_fast32_t NUM_PMOD = SIZE_POOL / 2;
-
-enum rsource {
-		CLT = 0,
-			SRV = 0,
-};
 
 class desc {
 public:
@@ -64,10 +59,10 @@ public:
 	ring();
 	void operator=(ring&&);
 
-	void zero_push(packet[], rsource, int_fast32_t, bool);
+	void zero_push(packet[], int_fast32_t, bool);
 
-	void ipush(packet[], packet[], rsource, int_fast32_t, bool);
-	void ipush_avoid(rsource, int_fast32_t, bool);
+	void ipush(packet[], packet[], int_fast32_t, bool);
+	void ipush_avoid(int_fast32_t, bool);
 	void pull(packet[], packet[], int_fast32_t, bool);
 	void pull_avoid(int_fast32_t);
 	void move_packet(packet[], int_fast32_t);
