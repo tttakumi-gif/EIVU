@@ -3,16 +3,16 @@
 
 //#define PRINT
 
-void send_packet(ring&, packet[], info_opt);
-void recv_packet(ring&, packet[], info_opt);
+void recv_packet(ring&, buf*, info_opt);
 void check_verification(packet);
 void judge_packet(packet[], int_fast32_t);
 void init_resource();
 
 int main(int argc, char **argv) {
+
 	// 初期設定
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
-	packet *pool = (packet*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+	buf *pool = (buf*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 	ring *csring = (ring*)(pool + SIZE_POOL);
 	ring *scring = (ring*)(csring + 1);
 
@@ -40,19 +40,19 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void recv_packet(ring &scring, packet pool[SIZE_POOL], info_opt opt) {
+void recv_packet(ring &scring, buf pool[SIZE_POOL], info_opt opt) {
 #ifdef CPU_BIND
 	bind_core(6);
 #endif
 
 	int_fast32_t num_fin = opt.size_batch;
 	bool is_stream = (opt.stream == ON) ? true : false;
-#ifndef AVOID_CLT
+//#ifndef AVOID_CLT
 	packet *parray;
 	parray = new (std::align_val_t{64}) packet[opt.size_batch];
 	assert((intptr_t(pool) & 63) == 0);
 	assert((intptr_t(parray) & 63) == 0);
-#endif
+//#endif
 
 	for(int_fast32_t i = NUM_PACKET; 0 < i; i -= num_fin) {
 		// 受信パケット数の決定
@@ -63,6 +63,7 @@ void recv_packet(ring &scring, packet pool[SIZE_POOL], info_opt opt) {
 		// パケット受信
 #ifdef AVOID_CLT
 		scring.pull_avoid(num_fin);
+		//scring.pull_avoid(parray, pool, num_fin, is_stream);
 #else
 		scring.pull(parray, pool, num_fin, is_stream);
 #endif

@@ -3,8 +3,7 @@
 
 //#define PRINT
 
-void send_packet(ring&, packet[], info_opt);
-void recv_packet(ring&, packet[], info_opt);
+void send_packet(ring&, buf*, info_opt);
 void check_verification(packet);
 void judge_packet(packet[], int_fast32_t);
 void init_resource();
@@ -13,7 +12,7 @@ int main(int argc, char **argv) {
 	puts("begin");
 
 	{
-		constexpr int size = sizeof(ring) * 2 + sizeof(packet) * SIZE_POOL + sizeof(volatile bool);
+		constexpr int size = sizeof(ring) * 2 + sizeof(buf) * SIZE_POOL + sizeof(volatile bool);
 		std::cout << "size: " << size << std::endl;
 		static_assert(size <= SIZE_SHM, "over packet size");
 		std::cout << "packet size: " << sizeof(packet) << std::endl;
@@ -23,7 +22,7 @@ int main(int argc, char **argv) {
 
 	// 初期設定
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
-	packet *pool = (packet*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+	buf *pool = (buf*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 	ring *csring = (ring*)(pool + SIZE_POOL);
 	ring *scring = (ring*)(csring + 1);
 
@@ -45,7 +44,7 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void send_packet(ring &csring, packet pool[SIZE_POOL], info_opt opt) {
+void send_packet(ring &csring, buf *pool, info_opt opt) {
 #ifdef CPU_BIND
 	bind_core(5);
 #endif

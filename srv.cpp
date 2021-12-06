@@ -1,19 +1,19 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-void rs_packet(ring&, ring&, packet[], info_opt);
+void rs_packet(ring&, ring&, buf*, info_opt);
 
 int main(int argc, char* argv[]) {
 	// 初期設定
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
-	packet *pool = (packet*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+	buf *pool = (buf*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 
 	ring *csring = (ring*)(pool + SIZE_POOL);
 	*csring = ring();
 	ring *scring = (ring*)(csring + 1);
 	*scring = ring();
 	for(int i = 0; i < SIZE_POOL; i++) {
-		pool[i] = packet();
+		memset(&pool[i], 0, SIZE_PACKET);
 	}
 
 	info_opt opt = get_opt(argc, argv);
@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL], info_opt opt) {
+void rs_packet(ring &csring, ring &scring, buf *pool, info_opt opt) {
 #ifdef CPU_BIND
 	bind_core(7);
 #endif
@@ -50,9 +50,7 @@ void rs_packet(ring &csring, ring &scring, packet pool[SIZE_POOL], info_opt opt)
 #ifdef SKIP_CLT
 			csring.pull_avoid(num_fin);
 #elif defined(AVOID_SRV)
-			csring.move_packet_avoid(num_fin);
-#elif defined(READ_SRV)
-			csring.move_packet_read(pool, num_fin);
+			csring.move_packet(num_fin);
 #else
 			csring.move_packet(pool, num_fin);
 #endif

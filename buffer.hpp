@@ -18,9 +18,9 @@
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
 constexpr int_fast32_t SIZE_RING = 256;
-constexpr int_fast32_t SIZE_POOL = 256;
+//constexpr int_fast32_t SIZE_POOL = 256;
 //constexpr int_fast32_t SIZE_POOL = 163456;
-//constexpr int_fast32_t SIZE_POOL = 326912;
+constexpr int_fast32_t SIZE_POOL = 326912;
 //constexpr int_fast32_t NUM_PMOD = SIZE_POOL / 2;
 
 class desc {
@@ -28,7 +28,7 @@ public:
 	int_fast32_t id;
 	packet *entry;
 
-	void set_param(int_fast32_t, packet*);
+	void set_param(int_fast32_t, buf*);
 	void set_param_avoid(int_fast32_t);
 	void delete_info();
 	void delete_info_avoid();
@@ -52,21 +52,25 @@ private:
 	void init_descs();
 	void wait_push(int_fast32_t);
 	void wait_push(int_fast32_t, packet*);
-	packet* wait_pull(int_fast32_t, packet*);
+	packet* wait_pull(int_fast32_t, buf*);
 	void wait_pull_avoid(int_fast32_t);
 
 public:
 	ring();
 	void operator=(ring&&);
 
-	void zero_push(packet[], int_fast32_t, bool);
+	void zero_push(buf*, int_fast32_t, bool);
 
-	void ipush(packet[], packet[], int_fast32_t, bool);
+	void ipush(packet[], buf*, int_fast32_t, bool);
 	void ipush_avoid(int_fast32_t, bool);
-	void pull(packet[], packet[], int_fast32_t, bool);
+	void pull(packet[], buf*, int_fast32_t, bool);
+	void pull_avoid(packet[], buf*, int_fast32_t, bool);
 	void pull_avoid(int_fast32_t);
-	void move_packet(packet[], int_fast32_t);
-	void move_packet_avoid(int_fast32_t);
+#if defined(AVOID_SRV)
+	void move_packet(int_fast32_t);
+#else
+	void move_packet(buf*, int_fast32_t);
+#endif
 	void move_packet_read(packet[], int_fast32_t);
 	void set_ringaddr(ring*);
 	void set_pooladdr(packet*);
