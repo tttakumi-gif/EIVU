@@ -64,7 +64,6 @@ public:
 	void ipush(packet[], buf*, int_fast32_t, bool);
 	void ipush_avoid(int_fast32_t, bool);
 	void pull(packet[], buf*, int_fast32_t, bool);
-	void pull_avoid(packet[], buf*, int_fast32_t, bool);
 	void pull_avoid(int_fast32_t);
 #if defined(AVOID_SRV)
 	void move_packet(int_fast32_t);

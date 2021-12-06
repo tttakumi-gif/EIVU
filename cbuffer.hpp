@@ -54,7 +54,7 @@ inline void ring::zero_push(buf *pool, int_fast32_t num_fin, bool is_stream) {
 #if 1
 	int_fast32_t prev_idx_shadow = prev_idx;
 	int_fast32_t pool_idx_shadow = pool_idx;
-//	int_fast32_t pool_idx_shadow2 = pool_idx;
+	int_fast32_t pool_idx_shadow2 = pool_idx;
 #endif
 
 	for(int_fast32_t i = 0; i < num_fin; i++) {
@@ -87,14 +87,14 @@ inline void ring::zero_push(buf *pool, int_fast32_t num_fin, bool is_stream) {
 			prev_idx_shadow = 0;
 		}
 	}
-//	if(is_stream) {
-//		for(int_fast32_t i = 0; i < num_fin; i++) {
-//			_mm_clflushopt((void*)(pool + pool_idx_shadow2));
-//			if(++pool_idx_shadow2 % SIZE_POOL == 0) {
-//				pool_idx_shadow2 = 0;
-//			}
-//		}
-//	}
+	if(is_stream) {
+		for(int_fast32_t i = 0; i < num_fin; i++) {
+			_mm_clflushopt((void*)(pool + pool_idx_shadow2));
+			if(++pool_idx_shadow2 % SIZE_POOL == 0) {
+				pool_idx_shadow2 = 0;
+			}
+		}
+	}
 #endif
 
 	rsrv_idx = prev_idx;
@@ -311,31 +311,6 @@ inline void ring::pull(packet parray[], buf *pool, int_fast32_t num_fin, bool is
 			if(SIZE_RING <= ++prev_idx) {
 				prev_idx = 0;
 			}
-		}
-	}
-
-	// 共有変数に反映
-	proc_idx = prev_idx;
-}
-
-inline void ring::pull_avoid(packet parray[], buf *pool, int_fast32_t num_fin, bool is_stream) {
-	int_fast32_t prev_idx = proc_idx;
-
-	for(int_fast32_t i = 0; i < num_fin; i++) {
-		// ディスクリプタにバッファが割り当てられるまでwait
-		//wait_pull_avoid(prev_idx);
-			packet *p = wait_pull(prev_idx, pool);
-
-			memcpy(parray + i, p, SIZE_PACKET);
-
-		memcpy(parray + i, (packet*)(&pool[descs[prev_idx].id]), SIZE_PACKET);
-
-		// パケットの取得, ディスクリプタの紐づけ解除
-		descs[prev_idx].delete_info_avoid();
-
-		// index更新
-		if(SIZE_RING <= ++prev_idx) {
-			prev_idx = 0;
 		}
 	}
 
