@@ -12,7 +12,7 @@
 
 #define INFO_CPU NONE
 
-//#define CPU_BIND
+#define CPU_BIND
 
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)

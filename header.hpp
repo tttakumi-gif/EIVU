@@ -37,4 +37,4 @@
 #endif
 #endif
 
-//#define ZERO_COPY
+#define ZERO_COPY
