@@ -1,8 +1,6 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-//#define PRINT
-
 namespace {
 	void send_packet(ring &csring, buf *pool, info_opt opt) {
 #ifdef CPU_BIND
@@ -15,9 +13,10 @@ namespace {
 		bool is_stream = (opt.stream == ON) ? true : false;
 
 #ifndef ZERO_COPY
-		packet *parray;
-		parray = new (std::align_val_t{64}) packet[opt.size_batch];
-		assert((intptr_t(parray) & 63) == 0);
+		int local_pool_index = 0;
+
+		buf* pool_local = new (std::align_val_t{64}) buf[SIZE_POOL];
+		packet** parray = new packet*[opt.size_batch];
 #endif
 
 		while(0 < i) {
@@ -28,7 +27,13 @@ namespace {
 
 #ifndef ZERO_COPY
 			for(int_fast32_t j = 0; j < num_fin; j++, i--) {
-				parray[j] = packet(i);
+				parray[j] = (packet*)&pool_local[local_pool_index];
+				parray[j]->id = i;
+				parray[j]->len = SIZE_PACKET;
+
+				if(SIZE_POOL <= ++local_pool_index) {
+					local_pool_index = 0;
+				}
 			}
 			csring.ipush(parray, pool, num_fin, is_stream);
 #else
@@ -39,39 +44,8 @@ namespace {
 
 #ifndef ZERO_COPY
 		delete(parray);
+		delete(pool_local);
 #endif
-	}
-
-	inline void check_verification(packet p) {
-#ifdef READ_SRV
-		if(unlikely(p.id == -1)) {
-#else
-		if(unlikely(p.id != static_cast<signed>(p.verification ^ 0xffffffff))) {
-#endif
-			std::printf("verification error\n");
-			p.print();
-			std::printf("not 0x%x\n", (p.id ^ 0xffffffff));
-			exit(1);
-		}
-	}
-
-	inline void judge_packet(packet parray[], int_fast32_t num_fin) {
-		for(volatile int_fast32_t i = 0; i < num_fin; i++) {
-			check_verification(parray[i]);
-
-#ifndef READ_SRV
-			if(unlikely((parray[i].id & 8388607) == 0)) {
-#if INFO_CPU == PROC_CLT_R
-				std::printf("%g%%\n", getCurrentValue_p());
-#elif INFO_CPU == TOTAL_CLT
-				std::printf("%g%%\n", getCurrentValue_t());
-#endif
-#ifdef PRINT
-				parray[i].print();
-#endif
-			}
-#endif
-		}
 	}
 
 	void init_resource() {

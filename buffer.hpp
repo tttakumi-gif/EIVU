@@ -2,6 +2,7 @@
 
 #include "packet.hpp"
 #include "option.hpp"
+#include "random.hpp"
 
 #define PROC_CLT_S 0
 #define PROC_CLT_R 1
@@ -36,6 +37,7 @@ public:
 
 class ring {
 private:
+	random_generator rand;
 	int_fast32_t pindex;
 	int_fast32_t rsrv_idx;
 	int_fast32_t recv_idx;
@@ -61,7 +63,7 @@ public:
 
 	void zero_push(buf*, int_fast32_t, bool);
 
-	void ipush(packet[], buf*, int_fast32_t, bool);
+	void ipush(packet**, buf*, int_fast32_t, bool);
 	void ipush_avoid(int_fast32_t, bool);
 	void pull(packet[], buf*, int_fast32_t, bool);
 	void pull_avoid(int_fast32_t);

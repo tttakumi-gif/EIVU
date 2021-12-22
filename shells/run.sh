@@ -24,8 +24,8 @@ perf="perf stat $opt_perf -r $loop $i"
 #sudo ${perf} ~/new-b4-assignment/build/srv.out --stream=off --process=move --batch=32 &
 sudo ~/new-b4-assignment/build/srv.out --stream=off --process=move --batch=32 &
 sleep 0.5
-#sudo ${perf} ~/new-b4-assignment/build/clt.out --batch=$batch --process=copy --stream=$1 &
-sudo ~/new-b4-assignment/build/clt.out --batch=$batch --process=copy --stream=$1 &
+sudo ${perf} ~/new-b4-assignment/build/clt.out --batch=$batch --process=copy --stream=$1 &
+#sudo ~/new-b4-assignment/build/clt.out --batch=$batch --process=copy --stream=$1 &
 sleep 0.5
 #sudo ${perf} ~/new-b4-assignment/build/recv.out --stream=$2 --process=copy --batch=32
 sudo ~/new-b4-assignment/build/recv.out --stream=$2 --process=copy --batch=32

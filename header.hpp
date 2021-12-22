@@ -8,6 +8,7 @@
 #include <atomic>
 #include <mutex>
 #include <sys/syscall.h>
+#include <time.h>
 //#include <omp.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -31,10 +32,13 @@
 #if 0
 #if 1
 #define AVOID_CLT
-//#define AVOID_SRV
+#define AVOID_SRV
 #else 
 #define READ_SRV
 #endif
 #endif
 
-#define ZERO_COPY
+//#define ZERO_COPY
+#ifdef ZERO_COPY
+#define AVOID_CLT
+#endif
