@@ -4,40 +4,30 @@
 
 #define DUMMY_FULL
 
-constexpr int_fast32_t SIZE_PACKET = 64;
 //constexpr int_fast32_t SIZE_PACKET = 1024;
+constexpr int_fast32_t SIZE_PACKET = 1518;
 constexpr bool IS_PSMALL = SIZE_PACKET < 32;
-constexpr int_fast32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32);
+constexpr int_fast32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32) + (SIZE_PACKET % 32 == 0 ? 0 : 1);
+
 #if 1
-//constexpr int_fast32_t NUM_PACKET = 32000000;
+constexpr int_fast32_t NUM_PACKET = 32000000;
 //constexpr int_fast32_t NUM_PACKET = 50000000;
-//constexpr int_fast32_t NUM_PACKET = 75000000;
-constexpr int_fast32_t NUM_PACKET = 100000000;
 //constexpr int_fast32_t NUM_PACKET = 100000000;
-//constexpr int_fast32_t NUM_PACKET = 300000000;
-//constexpr int_fast32_t NUM_PACKET = 500000000;
-//constexpr int_fast32_t NUM_PACKET = 1000000000;
-#elif 0
-constexpr int_fast32_t NUM_PACKET = 420000000;
 #else
 constexpr int_fast32_t NUM_PACKET = 100000000000000000;
 #endif
-//constexpr int_fast32_t NUM_PACKET = 500000000;
-//constexpr int_fast32_t NUM_PACKET = 1000000000;
 
 constexpr int_fast32_t get_dummy_size(int isize, int vsize, int lsize) {
 	return SIZE_PACKET - isize - vsize - lsize;
 }
 
-struct buf {
-	char addr[64];
-};
-
 class packet {
 public:
 	int32_t id;
-	int32_t verification;
 	int32_t len;
+	int32_t verification;
+	//char dummy[get_dummy_size(sizeof(int32_t), sizeof(int32_t), sizeof(int32_t))];
+	//char dummy[1504];
 	char dummy[get_dummy_size(sizeof(id), sizeof(verification), sizeof(len))];
 
 	packet();
@@ -47,6 +37,16 @@ public:
 	void print();
 	void set_verification();
 
+};
+
+#if 0
+constexpr int_fast32_t SIZE_BUFFER = 2048;
+#else
+constexpr int_fast32_t SIZE_BUFFER = sizeof(packet);
+#endif
+
+struct buf {
+	char addr[SIZE_BUFFER];
 };
 
 constexpr int_fast32_t DUMMY_SIZE = get_dummy_size(sizeof(packet::id), sizeof(packet::verification), sizeof(packet::len));

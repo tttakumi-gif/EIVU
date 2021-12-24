@@ -14,7 +14,6 @@ namespace {
 
 #ifndef ZERO_COPY
 		int local_pool_index = 0;
-
 		buf* pool_local = new (std::align_val_t{64}) buf[SIZE_POOL];
 		packet** parray = new packet*[opt.size_batch];
 #endif
@@ -27,10 +26,13 @@ namespace {
 
 #ifndef ZERO_COPY
 			for(int_fast32_t j = 0; j < num_fin; j++, i--) {
+#ifdef RANDOM
+				parray[j] = (packet*)&pool_local[(int)ids[j]];
+#else
 				parray[j] = (packet*)&pool_local[local_pool_index];
+#endif
 				parray[j]->id = i;
 				parray[j]->len = SIZE_PACKET;
-
 				if(SIZE_POOL <= ++local_pool_index) {
 					local_pool_index = 0;
 				}
@@ -68,7 +70,7 @@ int main(int argc, char **argv) {
 		constexpr int size = sizeof(ring) * 2 + sizeof(buf) * SIZE_POOL + sizeof(volatile bool);
 		std::cout << "size: " << size << std::endl;
 		static_assert(size <= SIZE_SHM, "over packet size");
-		std::cout << "packet size: " << sizeof(packet) << std::endl;
+		std::cout << "packet size: " << sizeof(packet) << ", " << SIZE_PACKET << std::endl;
 		std::cout << "desc size: " << sizeof(desc) << std::endl;
 		std::cout << "ring size: " << sizeof(ring) << std::endl;
 	}

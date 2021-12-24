@@ -8,8 +8,8 @@ i="-I 1000"
 #i=""
 loop=1
 batch=32
-perf="perf stat $opt_perf -r $loop $i"
-#perf=""
+#perf="perf stat $opt_perf -r $loop $i"
+perf=""
 
 #sudo perf stat $opt_perf -r $loop ~/new-b4-assignment/build/clt.out --stream=off --batch=$batch &
 #sudo perf stat $opt_perf -r $loop ~/new-b4-assignment/build/clt.out --stream=on --batch=$batch &

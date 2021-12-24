@@ -4,33 +4,32 @@
 #define PRINT
 
 namespace {
-	inline void check_verification(packet p) {
+	inline void check_verification(packet* p) {
 #ifdef READ_SRV
-		if(unlikely(p.id == -1)) {
+		if(unlikely(p->id == -1)) {
 #else
-		if(unlikely(p.id != static_cast<signed>(p.verification ^ 0xffffffff))) {
+		if(unlikely(p->id != static_cast<signed>(p->verification ^ 0xffffffff))) {
 #endif
 			std::printf("verification error\n");
-			p.print();
-			std::printf("not 0x%x\n", (p.id ^ 0xffffffff));
+			p->print();
+			std::printf("not 0x%x\n", (p->id ^ 0xffffffff));
 			exit(1);
 		}
 	}
 
-	inline void judge_packet(packet parray[], int_fast32_t num_fin) {
+	inline void judge_packet(packet* parray[], int_fast32_t num_fin) {
 		for(volatile int_fast32_t i = 0; i < num_fin; i++) {
 			check_verification(parray[i]);
 
 #ifndef READ_SRV
-			if(unlikely((parray[i].id & 8388607) == 0)) {
-//			if(unlikely((parray[i].id & 63) == 0)) {
+			if(unlikely((parray[i]->id & 8388607) == 0)) {
 #if INFO_CPU == PROC_CLT_R
 				std::printf("%g%%\n", getCurrentValue_p());
 #elif INFO_CPU == TOTAL_CLT
 				std::printf("%g%%\n", getCurrentValue_t());
 #endif
 #ifdef PRINT
-				parray[i].print();
+				parray[i]->print();
 #endif
 			}
 #endif
@@ -44,12 +43,10 @@ namespace {
 
 		int_fast32_t num_fin = opt.size_batch;
 		bool is_stream = (opt.stream == ON) ? true : false;
-	//#ifndef AVOID_CLT
-		packet *parray;
-		parray = new (std::align_val_t{64}) packet[opt.size_batch];
-		assert((intptr_t(pool) & 63) == 0);
-		assert((intptr_t(parray) & 63) == 0);
-	//#endif
+
+		int local_pool_index = 0;
+		buf* pool_local = new (std::align_val_t{64}) buf[SIZE_POOL];
+		packet** parray = new packet*[opt.size_batch];
 
 		for(int_fast32_t i = NUM_PACKET; 0 < i; i -= num_fin) {
 			// 受信パケット数の決定
@@ -62,22 +59,26 @@ namespace {
 			scring.pull_avoid(num_fin);
 			//scring.pull_avoid(parray, pool, num_fin, is_stream);
 #else
-			scring.pull(parray, pool, num_fin, is_stream);
+			for(int_fast32_t j = 0; j < num_fin; j++) {
+#ifdef RANDOM
+				parray[j] = (packet*)&pool_local[(int)ids[j]];
+#else
+				parray[j] = (packet*)&pool_local[local_pool_index];
 #endif
+				if(SIZE_POOL <= ++local_pool_index) {
+					local_pool_index = 0;
+				}
+			}
 
-	//		// パケット検証
-	//#ifdef AVOID_CLT
-	//		for(volatile int_fast32_t i = 0; i < num_fin; i++) {
-	//			;
-	//		}
-	//#else
-	//		
+			scring.pull(parray, pool, num_fin, is_stream);
+			// パケット検証
 			judge_packet(parray, num_fin);
-	//#endif
+#endif
 		}
 
 #ifndef AVOID_CLT
 		delete(parray);
+		delete(pool_local);
 #endif
 	}
 

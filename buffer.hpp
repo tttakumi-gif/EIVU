@@ -53,9 +53,7 @@ public:
 private:
 	void init_descs();
 	void wait_push(int_fast32_t);
-	void wait_push(int_fast32_t, packet*);
-	packet* wait_pull(int_fast32_t, buf*);
-	void wait_pull_avoid(int_fast32_t);
+	void wait_pull(int_fast32_t);
 
 public:
 	ring();
@@ -65,7 +63,7 @@ public:
 
 	void ipush(packet**, buf*, int_fast32_t, bool);
 	void ipush_avoid(int_fast32_t, bool);
-	void pull(packet[], buf*, int_fast32_t, bool);
+	void pull(packet**, buf*, int_fast32_t, bool);
 	void pull_avoid(int_fast32_t);
 #if defined(AVOID_SRV)
 	void move_packet(int_fast32_t);
