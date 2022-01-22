@@ -38,9 +38,9 @@
 #endif
 #endif
 
+#define RANDOM
 //#define ZERO_COPY
 #ifdef ZERO_COPY
 #define AVOID_CLT
 #endif
 
-#define RANDOM
