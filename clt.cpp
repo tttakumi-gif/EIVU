@@ -27,17 +27,25 @@ namespace {
 #ifndef ZERO_COPY
 			for(int_fast32_t j = 0; j < num_fin; j++, i--) {
 #ifdef RANDOM
-				parray[j] = (packet*)&pool_local[(int)ids[j]];
+				parray[j] = (packet*)&pool_local[local_pool_index + (int)ids[j]];
 #else
 				parray[j] = (packet*)&pool_local[local_pool_index];
-#endif
-				parray[j]->id = i;
-				parray[j]->len = SIZE_PACKET;
 				if(SIZE_POOL <= ++local_pool_index) {
 					local_pool_index = 0;
 				}
+#endif
+				parray[j]->id = i;
+				parray[j]->len = SIZE_PACKET;
 			}
 			csring.ipush(parray, pool, num_fin, is_stream);
+
+#ifdef RANDOM
+			local_pool_index += num_fin;
+			if(SIZE_POOL <= local_pool_index) {
+				local_pool_index = 0;
+			}
+#endif
+
 #else
 			csring.zero_push(pool, num_fin, is_stream);
 			i -= num_fin;

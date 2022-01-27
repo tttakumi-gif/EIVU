@@ -61,16 +61,24 @@ namespace {
 #else
 			for(int_fast32_t j = 0; j < num_fin; j++) {
 #ifdef RANDOM
-				parray[j] = (packet*)&pool_local[(int)ids[j]];
+				parray[j] = (packet*)&pool_local[local_pool_index + (int)ids[j]];
 #else
 				parray[j] = (packet*)&pool_local[local_pool_index];
-#endif
 				if(SIZE_POOL <= ++local_pool_index) {
 					local_pool_index = 0;
 				}
+#endif
 			}
 
 			scring.pull(parray, pool, num_fin, is_stream);
+
+#ifdef RANDOM
+			local_pool_index += num_fin;
+			if(SIZE_POOL <= local_pool_index) {
+				local_pool_index = 0;
+			}
+#endif
+
 			// パケット検証
 			judge_packet(parray, num_fin);
 #endif
