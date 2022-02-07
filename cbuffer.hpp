@@ -1,7 +1,7 @@
 #pragma once
 
 inline void desc::delete_info() {
-	__atomic_store_n(&entry->len, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(entry->get_len_addr(), 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&id, -1, __ATOMIC_RELEASE);
 }
 
@@ -135,6 +135,10 @@ inline void ring::ipush(packet **parray, buf *pool, int_fast32_t num_fin, bool i
 
 			// パケットの紐づけ
 			memcpy((void*)p, (void*)parray[i], SIZE_PACKET);
+//			for(int_fast32_t j = 0; j < NUM_LOOP2; j++) {
+//				__asm__("cldemote (%0)" :: "r" ((int64_t*)&p + j));
+//				__asm__("cldemote (%0)" :: "r" ((int64_t*)&parray[i] + j));
+//			}
 			//descs[prev_idx].set_param(pool_idx, pool);
 
 			// index更新
@@ -375,12 +379,11 @@ inline void ring::move_packet(buf *pool, int_fast32_t num_fin) {
 		//std::cout << descs[prev_idx].id <<std::endl;
 
 		id[i] = descs[prev_idx].id;
-		while(0 <= __atomic_load_n(&ring_pair->descs[prev_idx2].id, __ATOMIC_ACQUIRE)) {
-			do_none();
-		}
+		ring_pair->wait_push(prev_idx2);
 
 #if !defined(READ_SRV) && !defined(AVOID_SRV)
 		p->set_verification();
+		//__asm__("cldemote (%0)" :: "r" (&p->verification));
 #endif
 
 		//ring_pair->descs[prev_idx2].set_param(id[i], pool);

@@ -6,13 +6,13 @@
 namespace {
 	inline void check_verification(packet* p) {
 #ifdef READ_SRV
-		if(unlikely(p->id == -1)) {
+		if(unlikely(p->get_id() == -1)) {
 #else
-		if(unlikely(p->id != static_cast<signed>(p->verification ^ 0xffffffff))) {
+		if(unlikely(p->get_id() != static_cast<signed>(p->get_verification() ^ 0xffffffff))) {
 #endif
 			std::printf("verification error\n");
 			p->print();
-			std::printf("not 0x%x\n", (p->id ^ 0xffffffff));
+			std::printf("not 0x%x\n", (p->get_id() ^ 0xffffffff));
 			exit(1);
 		}
 	}
@@ -22,7 +22,7 @@ namespace {
 			check_verification(parray[i]);
 
 #ifndef READ_SRV
-			if(unlikely((parray[i]->id & 8388607) == 0)) {
+			if(unlikely((parray[i]->get_id() & 8388607) == 0)) {
 #if INFO_CPU == PROC_CLT_R
 				std::printf("%g%%\n", getCurrentValue_p());
 #elif INFO_CPU == TOTAL_CLT
@@ -38,7 +38,7 @@ namespace {
 	
 	void recv_packet(ring &scring, buf pool[SIZE_POOL], info_opt opt) {
 #ifdef CPU_BIND
-		bind_core(6);
+		bind_core(2);
 #endif
 
 		int_fast32_t num_fin = opt.size_batch;
@@ -61,16 +61,22 @@ namespace {
 #else
 			for(int_fast32_t j = 0; j < num_fin; j++) {
 #ifdef RANDOM
-				parray[j] = (packet*)&pool_local[(int)ids[j]];
+				parray[j] = (packet*)&pool_local[local_pool_index + (int)ids[j]];
 #else
 				parray[j] = (packet*)&pool_local[local_pool_index];
-#endif
 				if(SIZE_POOL <= ++local_pool_index) {
 					local_pool_index = 0;
 				}
+#endif
 			}
 
 			scring.pull(parray, pool, num_fin, is_stream);
+#ifdef RANDOM
+			local_pool_index += num_fin;
+			if(SIZE_POOL <= local_pool_index) {
+				local_pool_index = 0;
+			}
+#endif
 			// パケット検証
 			judge_packet(parray, num_fin);
 #endif

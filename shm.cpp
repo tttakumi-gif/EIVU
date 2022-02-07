@@ -1,6 +1,6 @@
 #include "shm.hpp"
 
-int open_shmfile(std::string filename, uint32_t size, bool is_create) {
+int open_shmfile(std::string filename, uint64_t size, bool is_create) {
 	int fd;
 	if(is_create) {
 		fd = shm_open(filename.c_str(), O_CREAT | O_RDWR, FILE_MODE);

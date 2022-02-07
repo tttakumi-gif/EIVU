@@ -4,7 +4,7 @@
 namespace {
 	void rs_packet(ring &csring, ring &scring, buf *pool, info_opt opt) {
 #ifdef CPU_BIND
-		bind_core(7);
+		bind_core(1);
 #endif
 
 		if(opt.process == MOVE) {
