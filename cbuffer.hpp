@@ -1,7 +1,7 @@
 #pragma once
 
 inline void desc::delete_info() {
-	__atomic_store_n(entry->get_len_addr(), 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&entry->packet_len, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&id, -1, __ATOMIC_RELEASE);
 }
 
@@ -121,10 +121,11 @@ inline void ring::ipush(packet **parray, buf *pool, int_fast32_t num_fin, bool i
 	if(!is_stream) {
 		for(int_fast32_t i = 0; i < num_fin; i++) {
 #ifdef RANDOM
-			packet *p = (packet*)(&pool[pool_idx + ids[i]]);
+			buf* buffer = &pool[pool_idx + ids[i]];
 #else
-			packet *p = (packet*)(&pool[pool_idx + i]);
+			buf* buffer = &pool[pool_idx + i];
 #endif
+			packet* p = get_packet_addr(buffer);
 			
 			// ディスクリプタとパケットプールが確保できるまでwait
 #if defined(AVOID_CLT) || defined(SKIP_CLT)
@@ -134,6 +135,8 @@ inline void ring::ipush(packet **parray, buf *pool, int_fast32_t num_fin, bool i
 #endif
 
 			// パケットの紐づけ
+			set_id(buffer, p->packet_id);
+			set_len(buffer, p->packet_len);
 			memcpy((void*)p, (void*)parray[i], SIZE_PACKET);
 //			for(int_fast32_t j = 0; j < NUM_LOOP2; j++) {
 //				__asm__("cldemote (%0)" :: "r" ((int64_t*)&p + j));
@@ -164,10 +167,11 @@ inline void ring::ipush(packet **parray, buf *pool, int_fast32_t num_fin, bool i
 		for(int_fast32_t i = 0; i < num_fin; i++) {
 			// ディスクリプタとパケットプールが確保できるまでwait
 #ifdef RANDOM
-			packet* xmm01 = (packet*)(&pool[pool_idx + ids[i]]);
+			buf* buffer = &pool[pool_idx + ids[i]];
 #else
-			packet* xmm01 = (packet*)(&pool[pool_idx + i]);
+			buf* buffer = &pool[pool_idx + i];
 #endif
+			packet* xmm01 = get_packet_addr(buffer);
 			packet* xmm02 = parray[i];
 
 #if defined(AVOID_CLT) || defined(SKIP_CLT)
@@ -177,6 +181,8 @@ inline void ring::ipush(packet **parray, buf *pool, int_fast32_t num_fin, bool i
 #endif
 
 			// パケットの紐づけ
+			set_id(buffer, xmm01->packet_id);
+			set_len(buffer, xmm01->packet_len);
 			for(int_fast32_t j = 0; j < NUM_LOOP; j++) {
 				if(!IS_PSMALL) {
 					_mm256_stream_si256((__m256i*)xmm01 + j, _mm256_stream_load_si256((__m256i*)xmm02 + j));
@@ -284,9 +290,12 @@ inline void ring::pull(packet* parray[], buf *pool, int_fast32_t num_fin, bool i
 		for(int_fast32_t i = 0; i < num_fin; i++) {
 			// ディスクリプタにバッファが割り当てられるまでwait
 			wait_pull(prev_idx);
-			packet *p = (packet*)&pool[descs[prev_idx].id];
+			buf* buffer = &pool[descs[prev_idx].id];
+			packet* p = get_packet_addr(buffer);
 			//std::cout << descs[prev_idx].id << std::endl;
 
+			assert(get_id(buffer) > -1);
+			assert(get_len(buffer) > -1);
 			memcpy((void*)(parray[i]), (void*)p, SIZE_PACKET);
 
 			// パケットの取得, ディスクリプタの紐づけ解除
@@ -303,10 +312,12 @@ inline void ring::pull(packet* parray[], buf *pool, int_fast32_t num_fin, bool i
 		for(int_fast32_t i = 0; i < num_fin; i++) {
 			// ディスクリプタにバッファが割り当てられるまでwait
 			wait_pull(prev_idx);
-			packet *p = (packet*)&pool[descs[prev_idx].id];
+			buf* buffer = &pool[descs[prev_idx].id];
+			packet *p = get_packet_addr(buffer);
 
-			//parray[i] = *p;
-			//memcpy(parray + i, p, SIZE_PACKET);
+			assert(get_id(buffer) > -1);
+			assert(get_len(buffer) > -1);
+
 			auto* xmm01 = parray[i];
 			auto* xmm02 = p;
 			for(int_fast32_t j = 0; j < NUM_LOOP; j++) {
@@ -373,16 +384,20 @@ inline void ring::move_packet(buf *pool, int_fast32_t num_fin) {
 		wait_pull_avoid(prev_idx);
 #else
 		wait_pull(prev_idx);
-		packet *p = (packet*)&pool[descs[prev_idx].id];
+		buf* buffer = &pool[descs[prev_idx].id];
+		packet *p = get_packet_addr(buffer);
 #endif
-		p = (packet*)&pool[descs[prev_idx].id];
+		p = get_packet_addr(&pool[descs[prev_idx].id]);
 		//std::cout << descs[prev_idx].id <<std::endl;
 
 		id[i] = descs[prev_idx].id;
 		ring_pair->wait_push(prev_idx2);
 
+		assert(get_id(buffer) > -1);
+		assert(get_len(buffer) > -1);
+
 #if !defined(READ_SRV) && !defined(AVOID_SRV)
-		p->set_verification();
+		set_verification(p);
 		//__asm__("cldemote (%0)" :: "r" (&p->verification));
 #endif
 

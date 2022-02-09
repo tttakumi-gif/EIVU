@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 	ring *scring = (ring*)(csring + 1);
 	*scring = ring();
 	for(int i = 0; i < SIZE_POOL; i++) {
-		memset(&pool[i], 0, SIZE_PACKET);
+		memset(&pool[i], 0, SIZE_PACKET + HEADER_SIZE);
 	}
 
 	info_opt opt = get_opt(argc, argv);
