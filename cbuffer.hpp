@@ -1,21 +1,21 @@
 #pragma once
 
 inline void desc::delete_info() {
-	__atomic_store_n(&entry->packet_len, 0, __ATOMIC_RELEASE);
-	__atomic_store_n(&id, -1, __ATOMIC_RELEASE);
+	entry->packet_len = 0;
+	id = -1;
 }
 
 inline void desc::delete_info_avoid() {
-	__atomic_store_n(&id, -1, __ATOMIC_RELEASE);
+	id = -1;
 }
 
 inline void desc::set_param(int_fast32_t this_id, buf *pool) {
 	entry = (packet*)(pool + this_id);
-	__atomic_store_n(&id, this_id, __ATOMIC_RELEASE);
+	id = this_id;
 }
 
 inline void desc::set_param_avoid(int_fast32_t this_id) {
-	__atomic_store_n(&id, this_id, __ATOMIC_RELEASE);
+	id = this_id;
 }
 
 inline ring::ring() {
@@ -296,6 +296,11 @@ inline void ring::pull(packet* parray[], buf *pool, int_fast32_t num_fin, bool i
 
 			assert(get_id(buffer) > -1);
 			assert(get_len(buffer) > -1);
+			memcpy((void*)(parray[i]), (void*)buffer->id_addr, 64);
+			memcpy((void*)(parray[i]), (void*)buffer->len_addr, 64);
+			//set_id(buffer, 0);
+			//set_len(buffer, 0);
+
 			memcpy((void*)(parray[i]), (void*)p, SIZE_PACKET);
 
 			// パケットの取得, ディスクリプタの紐づけ解除
@@ -317,6 +322,8 @@ inline void ring::pull(packet* parray[], buf *pool, int_fast32_t num_fin, bool i
 
 			assert(get_id(buffer) > -1);
 			assert(get_len(buffer) > -1);
+			set_id(buffer, 0);
+			set_len(buffer, 0);
 
 			auto* xmm01 = parray[i];
 			auto* xmm02 = p;
@@ -395,6 +402,8 @@ inline void ring::move_packet(buf *pool, int_fast32_t num_fin) {
 
 		assert(get_id(buffer) > -1);
 		assert(get_len(buffer) > -1);
+		set_id(buffer, get_id(buffer));
+		set_len(buffer, get_len(buffer));
 
 #if !defined(READ_SRV) && !defined(AVOID_SRV)
 		set_verification(p);
@@ -414,7 +423,7 @@ inline void ring::move_packet(buf *pool, int_fast32_t num_fin) {
 		ring_pair->descs[prev_idx2_shadow].set_param(id[i], pool);
 #endif
 		prev_idx2_shadow = (prev_idx2_shadow + 1) % SIZE_RING;
-		__atomic_store_n(&descs[prev_idx_shadow].id, -1, __ATOMIC_RELEASE);
+		descs[prev_idx_shadow].id = -1;
 		prev_idx_shadow = (prev_idx_shadow + 1) % SIZE_RING;
 	}
 
