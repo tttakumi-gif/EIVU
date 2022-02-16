@@ -20,8 +20,7 @@
 
 constexpr int32_t SIZE_RING = 256;
 //constexpr int_fast32_t SIZE_POOL = 256;
-//constexpr int_fast32_t SIZE_POOL = 163456;
-constexpr int32_t SIZE_POOL = 326912;
+constexpr int32_t SIZE_POOL = 163456;
 //constexpr int_fast32_t NUM_PMOD = SIZE_POOL / 2;
 
 class desc {
@@ -43,14 +42,14 @@ private:
 	int32_t proc_idx;
 	int32_t size;
 public:
-	desc descs[SIZE_RING];
+	desc* descs;
 
 private:
-	void init_descs();
 	void wait_push(int32_t);
 	void wait_pull(int32_t);
 
 public:
+	void init_descs();
 	ring();
 	void operator=(ring&&);
 

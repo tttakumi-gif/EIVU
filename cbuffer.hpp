@@ -23,7 +23,6 @@ inline ring::ring() {
 	pindex = 0;
 	rsrv_idx = 0;
 	proc_idx = 0;
-	init_descs();
 }
 
 inline void ring::operator=(ring&& r) {
@@ -31,7 +30,7 @@ inline void ring::operator=(ring&& r) {
 	pindex = r.pindex;
 	rsrv_idx = r.rsrv_idx;
 	proc_idx = r.proc_idx;
-	memcpy(descs, r.descs, sizeof(desc) * SIZE_RING);
+//	memcpy(descs, r.descs, sizeof(desc) * SIZE_RING);
 }
 
 inline void ring::init_descs() {
