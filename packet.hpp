@@ -4,16 +4,16 @@
 
 #define DUMMY_FULL
 
-constexpr int_fast32_t HEADER_SIZE = 128;
-constexpr int_fast32_t SIZE_PACKET = 64;
+constexpr int32_t HEADER_SIZE = 128;
+constexpr int32_t SIZE_PACKET = 64;
 constexpr bool IS_PSMALL = SIZE_PACKET < 32;
-constexpr int_fast32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32) + (SIZE_PACKET % 32 == 0 ? 0 : 1);
-//constexpr int_fast32_t NUM_LOOP2 = SIZE_PACKET / 64;
+constexpr int32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32) + (SIZE_PACKET % 32 == 0 ? 0 : 1);
+//constexpr int32_t NUM_LOOP2 = SIZE_PACKET / 64;
 
 #if 1
-constexpr int_fast32_t NUM_PACKET = 100000000;
+constexpr int32_t NUM_PACKET = 100000000;
 #else
-constexpr int_fast32_t NUM_PACKET = 100000000000000000;
+constexpr int32_t NUM_PACKET = 100000000000000000;
 #endif
 
 struct packet {
@@ -24,9 +24,9 @@ struct packet {
 };
 
 #if 1 
-constexpr int_fast32_t SIZE_BUFFER = 2048;
+constexpr int32_t SIZE_BUFFER = 2048;
 #else
-constexpr int_fast32_t SIZE_BUFFER = sizeof(packet);
+constexpr int32_t SIZE_BUFFER = sizeof(packet);
 #endif
 
 struct buf {

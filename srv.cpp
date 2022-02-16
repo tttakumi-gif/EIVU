@@ -2,28 +2,25 @@
 #include "shm.hpp"
 
 namespace {
-	void rs_packet(ring &csring, ring &scring, buf *pool, info_opt opt) {
+	void rs_packet(ring *csring, ring *scring, buf *pool, info_opt opt) {
 #ifdef CPU_BIND
 		bind_core(1);
 #endif
 
 		if(opt.process == MOVE) {
-			csring.set_ringaddr(&scring);
-			assert(csring.ring_pair != nullptr);
+			int32_t num_fin = opt.size_batch;
 
-			int_fast32_t num_fin = opt.size_batch;
-
-			for(int_fast32_t i = NUM_PACKET; 0 < i; i -= num_fin) {
+			for(int i = NUM_PACKET; 0 < i; i -= num_fin) {
 				if(unlikely(i < num_fin)) {
 					num_fin = i;
 				}
 
 #ifdef SKIP_CLT
-				csring.pull_avoid(num_fin);
+				csring->pull_avoid(num_fin);
 #elif defined(AVOID_SRV)
-				csring.move_packet(num_fin);
+				csring->move_packet(scring, num_fin);
 #else
-				csring.move_packet(pool, num_fin);
+				csring->move_packet(scring, pool, num_fin);
 #endif
 			}
 		}
@@ -89,7 +86,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	// 送受信開始
-	rs_packet(*csring, *scring, pool, opt);
+	rs_packet(csring, scring, pool, opt);
 
 	shm_unlink("shm_buf");
 
