@@ -17,8 +17,8 @@ namespace {
 		}
 	}
 
-	inline void judge_packet(packet* parray[], int_fast32_t num_fin) {
-		for(volatile int_fast32_t i = 0; i < num_fin; i++) {
+	inline void judge_packet(packet* parray[], int32_t num_fin) {
+		for(int i = 0; i < num_fin; i++) {
 			check_verification(parray[i]);
 
 #ifndef READ_SRV
@@ -41,14 +41,14 @@ namespace {
 		bind_core(2);
 #endif
 
-		int_fast32_t num_fin = opt.size_batch;
+		int32_t num_fin = opt.size_batch;
 		bool is_stream = (opt.stream == ON) ? true : false;
 
 		int local_pool_index = 0;
 		buf* pool_local = new (std::align_val_t{64}) buf[SIZE_POOL];
 		packet** parray = new packet*[opt.size_batch];
 
-		for(int_fast32_t i = NUM_PACKET; 0 < i; i -= num_fin) {
+		for(int i = NUM_PACKET; 0 < i; i -= num_fin) {
 			// 受信パケット数の決定
 			if(unlikely(i < num_fin)) {
 				num_fin = i;
@@ -59,7 +59,7 @@ namespace {
 			scring.pull_avoid(num_fin);
 			//scring.pull_avoid(parray, pool, num_fin, is_stream);
 #else
-			for(int_fast32_t j = 0; j < num_fin; j++) {
+			for(int j = 0; j < num_fin; j++) {
 #ifdef RANDOM
 				parray[j] = get_packet_addr(&pool_local[local_pool_index + (int)ids[j]]);
 #else

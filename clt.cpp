@@ -8,8 +8,8 @@ namespace {
 #endif
 		assert((intptr_t(pool) & 63) == 0);
 
-		int_fast32_t i = NUM_PACKET;
-		int_fast32_t num_fin = opt.size_batch;
+		int32_t i = NUM_PACKET;
+		int32_t num_fin = opt.size_batch;
 		bool is_stream = (opt.stream == ON) ? true : false;
 
 #ifndef ZERO_COPY
@@ -25,7 +25,7 @@ namespace {
 			}
 
 #ifndef ZERO_COPY
-			for(int_fast32_t j = 0; j < num_fin; j++, i--) {
+			for(int j = 0; j < num_fin; j++, i--) {
 #ifdef RANDOM
 				parray[j] = get_packet_addr(&pool_local[local_pool_index + (int)ids[j]]);
 #else

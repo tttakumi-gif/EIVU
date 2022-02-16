@@ -11,9 +11,9 @@ namespace {
 			csring.set_ringaddr(&scring);
 			assert(csring.ring_pair != nullptr);
 
-			int_fast32_t num_fin = opt.size_batch;
+			int32_t num_fin = opt.size_batch;
 
-			for(int_fast32_t i = NUM_PACKET; 0 < i; i -= num_fin) {
+			for(int i = NUM_PACKET; 0 < i; i -= num_fin) {
 				if(unlikely(i < num_fin)) {
 					num_fin = i;
 				}
