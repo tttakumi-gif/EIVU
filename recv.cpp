@@ -18,8 +18,8 @@ namespace {
 	}
 
 	inline void judge_packet(packet* parray[], int32_t num_fin) {
-		for(int i = 0; i < num_fin; i++) {
-			check_verification(parray[i]);
+                for(int i = 0; i < num_fin; i++) {
+                        check_verification(parray[i]);
 
 #ifndef READ_SRV
 			if(unlikely((parray[i]->packet_id & 8388607) == 0)) {
@@ -31,10 +31,10 @@ namespace {
 #ifdef PRINT
 				print(parray[i]);
 #endif
-			}
+                       }
 #endif
-		}
-	}	
+                }
+        }
 	
 	void recv_packet(ring &scring, buf pool[SIZE_POOL], info_opt opt) {
 #ifdef CPU_BIND

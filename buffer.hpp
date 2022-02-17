@@ -22,14 +22,18 @@ constexpr int32_t SIZE_RING = 256;
 //constexpr int_fast32_t SIZE_POOL = 256;
 constexpr int32_t SIZE_POOL = 163456;
 //constexpr int_fast32_t NUM_PMOD = SIZE_POOL / 2;
+constexpr int32_t AVAIL_FLAG = 0b0000000100000000;
+constexpr int32_t USED_FLAG = 0b0000000000000001;
 
 class desc {
 public:
-	int32_t id;
-	packet *entry;
+	int64_t entry_index;
+	int32_t len;
+	int16_t id;
+	int16_t flags;
 
-	void set_param(int32_t, buf*);
-	void set_param_avoid(int32_t);
+	void set_param(int32_t);
+	void set_param_avoid(int16_t);
 	void delete_info();
 	void delete_info_avoid();
 };
@@ -37,10 +41,10 @@ public:
 class ring {
 private:
 	int32_t pindex;
-	int32_t rsrv_idx;
-	int32_t recv_idx;
-	int32_t proc_idx;
-	int32_t size;
+	int16_t size;
+	int16_t rsrv_idx;
+	int16_t recv_idx;
+	int16_t proc_idx;
 public:
 	desc* descs;
 

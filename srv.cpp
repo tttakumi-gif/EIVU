@@ -70,24 +70,19 @@ int main(int argc, char* argv[]) {
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
 	buf *pool = (buf*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 
-	puts("hi");
 	ring *csring = (ring*)(pool + SIZE_POOL);
 	*csring = ring();
-	puts("hi");
 	desc *csdesc = (desc*)(csring + 1);
 	csring->descs = csdesc;
 	csring->init_descs();
 
-	puts("hi");
 	ring *scring = (ring*)(csdesc + SIZE_RING);
 	*scring = ring();
 	desc *scdesc = (desc*)(scring + 1);
 	scring->descs = scdesc;
 	scring->init_descs();
 
-	for(int i = 0; i < SIZE_POOL; i++) {
-		memset(&pool[i], 0, SIZE_PACKET + HEADER_SIZE);
-	}
+	memset(pool, 0, sizeof(buf) * SIZE_POOL);
 
 	info_opt opt = get_opt(argc, argv);
 	
