@@ -32,39 +32,13 @@ struct desc {
 	int16_t flags;
 };
 
-class ring {
-private:
+struct ring {
 	int32_t pool_index;
 	int16_t size;
 	int16_t rsrv_idx;
 	int16_t recv_idx;
 	int16_t proc_idx;
-public:
 	desc* descs;
-
-private:
-	void wait_push(int);
-	void wait_pull(int);
-
-public:
-	void init_descs();
-	ring();
-	void operator=(ring&&);
-
-	void zero_push(buf*, int, bool);
-
-	void ipush(packet**, buf*, int, bool);
-	void ipush_avoid(int, bool);
-	void pull(packet**, buf*, int, bool);
-	void pull_avoid(int);
-#if defined(AVOID_SRV)
-	void move_packet(ring*, int);
-#else
-	void move_packet(ring*, buf*, int);
-#endif
-	void move_packet_read(ring*, packet[], int);
-	void set_ringaddr(ring*);
-	void set_pooladdr(packet*);
 };
 
 #include "cbuffer.hpp"

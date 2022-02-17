@@ -36,7 +36,7 @@ namespace {
                 }
         }
 	
-	void recv_packet(ring &scring, buf pool[SIZE_POOL], info_opt opt) {
+	void recv_packet(ring *scring, buf pool[SIZE_POOL], info_opt opt) {
 #ifdef CPU_BIND
 		bind_core(2);
 #endif
@@ -56,8 +56,7 @@ namespace {
 			
 			// パケット受信
 #ifdef AVOID_CLT
-			scring.pull_avoid(num_fin);
-			//scring.pull_avoid(parray, pool, num_fin, is_stream);
+			pull_avoid(scring, num_fin);
 #else
 			for(int j = 0; j < num_fin; j++) {
 #ifdef RANDOM
@@ -70,7 +69,7 @@ namespace {
 #endif
 			}
 
-			scring.pull(parray, pool, num_fin, is_stream);
+			pull(scring, parray, pool, num_fin, is_stream);
 #ifdef RANDOM
 			local_pool_index += num_fin;
 			if(SIZE_POOL <= local_pool_index) {
@@ -111,7 +110,7 @@ int main(int argc, char **argv) {
 	std::chrono::system_clock::time_point start, end;
 	start = std::chrono::system_clock::now();
 
-	recv_packet(*scring, pool, opt);
+	recv_packet(scring, pool, opt);
 
 	// 計測終了
 	end = std::chrono::system_clock::now();

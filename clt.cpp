@@ -2,7 +2,7 @@
 #include "shm.hpp"
 
 namespace {
-	void send_packet(ring &csring, buf *pool, info_opt opt) {
+	void send_packet(ring* csring, buf *pool, info_opt opt) {
 #ifdef CPU_BIND
 		bind_core(0);
 #endif
@@ -37,7 +37,7 @@ namespace {
 				parray[j]->packet_id = i;
 				parray[j]->packet_len = SIZE_PACKET;
 			}
-			csring.ipush(parray, pool, num_fin, is_stream);
+			ipush(csring, parray, pool, num_fin, is_stream);
 #ifdef RANDOM
 			local_pool_index += num_fin;
 			if(SIZE_POOL <= local_pool_index) {
@@ -46,7 +46,7 @@ namespace {
 #endif
 
 #else
-			csring.zero_push(pool, num_fin, is_stream);
+			zero_push(csring, pool, num_fin, is_stream);
 			i -= num_fin;
 #endif
 		}
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 	}
 
 	// 送受信開始
-	send_packet(*csring, pool, opt);
+	send_packet(csring, pool, opt);
 
 	shm_unlink("shm_buf");
 

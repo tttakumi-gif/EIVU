@@ -18,9 +18,9 @@ namespace {
 #ifdef SKIP_CLT
 				csring->pull_avoid(num_fin);
 #elif defined(AVOID_SRV)
-				csring->move_packet(scring, num_fin);
+				move_packet(csring, scring, num_fin);
 #else
-				csring->move_packet(scring, pool, num_fin);
+				move_packet(csring, scring, pool, num_fin);
 #endif
 			}
 		}
@@ -71,16 +71,16 @@ int main(int argc, char* argv[]) {
 	buf *pool = (buf*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 
 	ring *csring = (ring*)(pool + SIZE_POOL);
-	*csring = ring();
+	//*csring = ring();
 	desc *csdesc = (desc*)(csring + 1);
 	csring->descs = csdesc;
-	csring->init_descs();
+	init_ring(csring);
 
 	ring *scring = (ring*)(csdesc + SIZE_RING);
-	*scring = ring();
+	//*scring = ring();
 	desc *scdesc = (desc*)(scring + 1);
 	scring->descs = scdesc;
-	scring->init_descs();
+	init_ring(scring);
 
 	memset(pool, 0, sizeof(buf) * SIZE_POOL);
 

@@ -8,7 +8,7 @@ constexpr int32_t HEADER_SIZE = 128;
 constexpr int32_t SIZE_PACKET = 64;
 constexpr bool IS_PSMALL = SIZE_PACKET < 32;
 constexpr int32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32) + (SIZE_PACKET % 32 == 0 ? 0 : 1);
-//constexpr int32_t NUM_LOOP2 = SIZE_PACKET / 64;
+constexpr int32_t NUM_LOOP2 = SIZE_PACKET / 64;
 
 #if 1
 constexpr int32_t NUM_PACKET = 100000000;
