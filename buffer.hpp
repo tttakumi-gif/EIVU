@@ -22,8 +22,8 @@ constexpr int SIZE_RING = 256;
 //constexpr int_fast32_t SIZE_POOL = 256;
 constexpr int SIZE_POOL = 163456;
 //constexpr int_fast32_t NUM_PMOD = SIZE_POOL / 2;
-constexpr int AVAIL_FLAG = 0b0000000100000000;
-constexpr int USED_FLAG = 0b0000000000000001;
+constexpr int AVAIL_FLAG = 0b1 << 7;
+constexpr int USED_FLAG = 0b1 << 15;
 
 struct desc {
 	int64_t entry_index;

@@ -148,10 +148,10 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 //			_mm_clflushopt(buffer->len_addr);
 
 			memcpy((void*)p, (void*)parray[i], SIZE_PACKET);
-			for(int j = 0; j < NUM_LOOP2; j++) {
-				__asm__("cldemote (%0)" :: "r" ((int64_t*)&p + j));
-				__asm__("cldemote (%0)" :: "r" ((int64_t*)&parray[i] + j));
-			}
+//			for(int j = 0; j < NUM_LOOP2; j++) {
+//				__asm__("cldemote (%0)" :: "r" ((int64_t*)&p + j));
+//				__asm__("cldemote (%0)" :: "r" ((int64_t*)&parray[i] + j));
+//			}
 
 			// index更新
 			if(SIZE_RING <= ++(r->recv_idx)) {
