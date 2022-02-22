@@ -71,22 +71,16 @@ int main(int argc, char* argv[]) {
 	buf *pool = (buf*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 
 	ring *csring = (ring*)(pool + SIZE_POOL);
-	//*csring = ring();
-	desc *csdesc = (desc*)(csring + 1);
-	csring->descs = csdesc;
 	init_ring(csring);
 
-	ring *scring = (ring*)(csdesc + SIZE_RING);
-	//*scring = ring();
-	desc *scdesc = (desc*)(scring + 1);
-	scring->descs = scdesc;
+	ring *scring = (ring*)(csring + 1);
 	init_ring(scring);
 
 	memset(pool, 0, sizeof(buf) * SIZE_POOL);
 
 	info_opt opt = get_opt(argc, argv);
 	
-	volatile bool *flag = (volatile bool*)(scdesc + SIZE_RING);
+	volatile bool *flag = (volatile bool*)(scring + 1);
 	*flag = false;
 	while(!*flag) {
 	}

@@ -82,14 +82,11 @@ int main(int argc, char **argv) {
 	int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
 	buf *pool = (buf*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 	ring *csring = (ring*)(pool + SIZE_POOL);
-	desc *csdesc = (desc*)(csring + 1);
-	ring *scring = (ring*)(csdesc + SIZE_RING);
-	desc *scdesc = (desc*)(scring + 1);
+	ring *scring = (ring*)(csring + 1);
 
 	info_opt opt = get_opt(argc, argv);
-//	assert(opt.size_batch < SIZE_POOL);
 
-	volatile bool *flag = (volatile bool*)(scdesc + SIZE_RING);
+	volatile bool *flag = (volatile bool*)(scring + 1);
 	*flag = false;
 	init_resource();
 

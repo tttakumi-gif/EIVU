@@ -33,12 +33,12 @@ struct desc {
 };
 
 struct ring {
-	int32_t pool_index;
 	int16_t size;
 	int16_t rsrv_idx;
 	int16_t recv_idx;
 	int16_t proc_idx;
-	desc* descs;
+	int32_t pool_index;
+	desc descs[SIZE_RING];
 };
 
 #include "cbuffer.hpp"
