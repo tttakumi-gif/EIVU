@@ -45,14 +45,13 @@ void init_descs(ring* r) {
 void init_ring(ring* r) {
 	r->pool_index = 0;
 	r->size = SIZE_RING;
-	r->rsrv_idx = 0;
-	r->recv_idx = 0;
-	r->proc_idx = 0;
+	r->last_avail_idx = 0;
+	r->last_used_idx = 0;
 	init_descs(r);
 }
 
 void zero_push(ring* r, buf *pool, int num_fin, bool is_stream) {
-	int prev_idx = r->rsrv_idx;
+	int prev_idx = r->last_avail_idx;
 	int pool_idx = r->pool_index;
 
 #if 1
@@ -105,8 +104,7 @@ void zero_push(ring* r, buf *pool, int num_fin, bool is_stream) {
 	}
 #endif
 
-	r->rsrv_idx = prev_idx;
-	r->recv_idx = prev_idx;
+	r->last_avail_idx = prev_idx;
 
 	// 共有変数に反映
 	r->pool_index = pool_idx % SIZE_POOL;
@@ -117,7 +115,7 @@ char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 
 #endif
 
 void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
-	int recv_idx_shadow = r->recv_idx;
+	int last_avail_idx_shadow = r->last_avail_idx;
 
 	if(!is_stream) {
 		for(int i = 0; i < num_fin; i++) {
@@ -130,13 +128,10 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 			
 			// ディスクリプタとパケットプールが確保できるまでwait
 #if defined(AVOID_CLT) || defined(SKIP_CLT)
-			wait_push(r, r->rsrv_idx);
+			wait_push(r, r->last_avail_idx);
 #else
-			wait_push(r, r->rsrv_idx);
+			wait_push(r, r->last_avail_idx);
 #endif
-			if(SIZE_RING <= ++(r->rsrv_idx)) {
-				r->rsrv_idx = 0;
-			}
 
 			// パケットの紐づけ
 			while(*(volatile int*)buffer->len_addr > 0) {
@@ -154,22 +149,22 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 //			}
 
 			// index更新
-			if(SIZE_RING <= ++(r->recv_idx)) {
-				r->recv_idx = 0;
+			if(SIZE_RING <= ++(r->last_avail_idx)) {
+				r->last_avail_idx = 0;
 			}
 
 		}
 
 		for(int i = 0; i < num_fin; i++) {
 #ifdef RANDOM
-			set_param(&r->descs[recv_idx_shadow], r->pool_index + ids[i]);
+			set_param(&r->descs[last_avail_idx_shadow], r->pool_index + ids[i]);
 #else
-			set_param(&r->descs[recv_idx_shadow], r->pool_index + i);
+			set_param(&r->descs[last_avail_idx_shadow], r->pool_index + i);
 #endif
 
 			// index更新
-			if(SIZE_RING <= ++recv_idx_shadow) {
-				recv_idx_shadow = 0;
+			if(SIZE_RING <= ++last_avail_idx_shadow) {
+				last_avail_idx_shadow = 0;
 			}
 		}
 	}
@@ -185,13 +180,10 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 			packet* xmm02 = parray[i];
 
 #if defined(AVOID_CLT) || defined(SKIP_CLT)
-			wait_push(r, r->rsrv_idx);
+			wait_push(r, r->last_avail_idx);
 #else
-			wait_push(r, r->rsrv_idx);
+			wait_push(r, r->last_avail_idx);
 #endif
-			if(SIZE_RING <= ++(r->rsrv_idx)) {
-				r->rsrv_idx = 0;
-			}
 
 			// パケットの紐づけ
 			while(*(volatile int32_t*)buffer->len_addr > 0) {
@@ -210,21 +202,21 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 			}
 
 			// index更新
-			if(SIZE_RING <= ++(r->recv_idx)) {
-				r->recv_idx = 0;
+			if(SIZE_RING <= ++(r->last_avail_idx)) {
+				r->last_avail_idx = 0;
 			}
 		}
 
 		for(int i = 0; i < num_fin; i++) {
 #ifdef RANDOM
-			set_param(&r->descs[recv_idx_shadow], r->pool_index + ids[i]);
+			set_param(&r->descs[last_avail_idx_shadow], r->pool_index + ids[i]);
 #else
-			set_param(&r->descs[recv_idx_shadow], r->pool_index + i);
+			set_param(&r->descs[last_avail_idx_shadow], r->pool_index + i);
 #endif
 
 			// index更新
-			if(SIZE_RING <= ++recv_idx_shadow) {
-				recv_idx_shadow = 0;
+			if(SIZE_RING <= ++last_avail_idx_shadow) {
+				last_avail_idx_shadow = 0;
 			}
 		}
 	}
@@ -234,7 +226,7 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 }
 
 void ipush_avoid(ring* r, int num_fin, bool is_stream) {
-	int prev_idx = r->rsrv_idx;
+	int prev_idx = r->last_avail_idx;
 	int prev_idx_shadow = prev_idx;
 	int pool_idx = r->pool_index;
 	int pool_idx_shadow = pool_idx;
@@ -256,8 +248,7 @@ void ipush_avoid(ring* r, int num_fin, bool is_stream) {
 			}
 		}
 
-		r->rsrv_idx = prev_idx;
-		r->recv_idx = prev_idx;
+		r->last_avail_idx = prev_idx;
 	}
 	else {
 		for(int i = 0; i < num_fin; i++) {
@@ -289,8 +280,7 @@ void ipush_avoid(ring* r, int num_fin, bool is_stream) {
 			}
 		}
 
-		r->rsrv_idx = prev_idx;
-		r->recv_idx = prev_idx;
+		r->last_avail_idx = prev_idx;
 	}
 
 	// 共有変数に反映
@@ -301,15 +291,15 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 	if(!is_stream) {
 		for(int i = 0; i < num_fin; i++) {
 			// ディスクリプタにバッファが割り当てられるまでwait
-			wait_pull(r, r->proc_idx);
-			buf* buffer = &pool[r->descs[r->proc_idx].entry_index];
+			wait_pull(r, r->last_used_idx);
+			buf* buffer = &pool[r->descs[r->last_used_idx].entry_index];
 			packet* p = get_packet_addr(buffer);
 			//std::cout << descs[prev_idx].id << std::endl;
 
 			memcpy((void*)(parray[i]), (void*)p, SIZE_PACKET);
 
 			// パケットの取得, ディスクリプタの紐づけ解除
-			delete_info(&r->descs[r->proc_idx]);
+			delete_info(&r->descs[r->last_used_idx]);
 
 			//memcpy((void*)(parray[i]), (void*)buffer->id_addr, 64);
 			//memcpy((void*)(parray[i]), (void*)buffer->len_addr, 64);
@@ -319,16 +309,16 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 			//_mm_clflushopt(buffer->len_addr);
 
 			// index更新
-			if(SIZE_RING <= ++(r->proc_idx)) {
-				r->proc_idx = 0;
+			if(SIZE_RING <= ++(r->last_used_idx)) {
+				r->last_used_idx = 0;
 			}
 		}
 	}
 	else {
 		for(int i = 0; i < num_fin; i++) {
 			// ディスクリプタにバッファが割り当てられるまでwait
-			wait_pull(r, r->proc_idx);
-			buf* buffer = &pool[r->descs[r->proc_idx].entry_index];
+			wait_pull(r, r->last_used_idx);
+			buf* buffer = &pool[r->descs[r->last_used_idx].entry_index];
 			packet *p = get_packet_addr(buffer);
 
 			auto* xmm01 = parray[i];
@@ -346,21 +336,21 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 			}
 
 			// パケットの取得, ディスクリプタの紐づけ解除
-			delete_info(&r->descs[r->proc_idx]);
+			delete_info(&r->descs[r->last_used_idx]);
 
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
 			set_len(buffer, 0);
 
 			// index更新
-			if(SIZE_RING <= ++(r->proc_idx)) {
-				r->proc_idx = 0;
+			if(SIZE_RING <= ++(r->last_used_idx)) {
+				r->last_used_idx = 0;
 			}
 		}
 	}
 }
 
 void pull_avoid(ring* r, int num_fin) {
-	int prev_idx = r->proc_idx;
+	int prev_idx = r->last_used_idx;
 
 	for(int i = 0; i < num_fin; i++) {
 		// ディスクリプタにバッファが割り当てられるまでwait
@@ -376,7 +366,7 @@ void pull_avoid(ring* r, int num_fin) {
 	}
 
 	// 共有変数に反映
-	r->proc_idx = prev_idx;
+	r->last_used_idx = prev_idx;
 }
 
 #ifdef AVOID_SRV
@@ -385,26 +375,26 @@ void move_packet(ring* r, ring* ring_pair, int num_fin) {
 void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 #endif
 	int id[32];
-	int proc_idx_shadow = r->proc_idx;
-	int rsrv_idx_shadow = ring_pair->rsrv_idx; 
+	int last_used_idx_shadow = r->last_used_idx;
+	int last_avail_idx_shadow = ring_pair->last_avail_idx; 
 
 	for(int i = 0; i < num_fin; i++) {
 
 #ifdef AVOID_SRV
-		wait_pull_avoid(r->proc_idx);
+		wait_pull_avoid(r->last_used_idx);
 #else
-		wait_pull(r, r->proc_idx);
-		id[i] = r->descs[r->proc_idx].entry_index;
+		wait_pull(r, r->last_used_idx);
+		id[i] = r->descs[r->last_used_idx].entry_index;
 		buf* buffer = &pool[id[i]];
 		packet *p = get_packet_addr(buffer);
 #endif
 		p = get_packet_addr(&pool[id[i]]);
 		//std::cout << descs[prev_idx].id <<std::endl;
 
-		r->proc_idx = (r->proc_idx + 1) % SIZE_RING;
+		r->last_used_idx = (r->last_used_idx + 1) % SIZE_RING;
 
-		wait_push(ring_pair, ring_pair->rsrv_idx);
-		ring_pair->rsrv_idx = (ring_pair->rsrv_idx + 1) % SIZE_RING;
+		wait_push(ring_pair, ring_pair->last_avail_idx);
+		ring_pair->last_avail_idx = (ring_pair->last_avail_idx + 1) % SIZE_RING;
 
 		set_id(buffer, (get_id(buffer) + 1) & 2047);
 		set_len(buffer, 2);
@@ -419,14 +409,14 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 
 	for(int i = 0; i < num_fin; i++) {
 #ifdef AVOID_SRV
-		set_param_avoid(&ring_pair->descs[rsrv_idx_shadow], id[i]);
+		set_param_avoid(&ring_pair->descs[last_avail_idx_shadow], id[i]);
 #else
-		set_param(&ring_pair->descs[rsrv_idx_shadow], id[i]);
+		set_param(&ring_pair->descs[last_avail_idx_shadow], id[i]);
 #endif
-		rsrv_idx_shadow = (rsrv_idx_shadow + 1) % SIZE_RING;
+		last_avail_idx_shadow = (last_avail_idx_shadow + 1) % SIZE_RING;
 
-		delete_info(&r->descs[proc_idx_shadow]);
-		proc_idx_shadow = (proc_idx_shadow + 1) % SIZE_RING;
+		delete_info(&r->descs[last_used_idx_shadow]);
+		last_used_idx_shadow = (last_used_idx_shadow + 1) % SIZE_RING;
 	}
 }
 

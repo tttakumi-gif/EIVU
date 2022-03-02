@@ -34,11 +34,10 @@ struct desc {
 
 struct ring {
 	int16_t size;
-	int16_t rsrv_idx;
-	int16_t recv_idx;
-	int16_t proc_idx;
+	int16_t last_avail_idx;
+	int16_t last_used_idx;
 	int32_t pool_index;
 	desc descs[SIZE_RING];
-};
+}__attribute__((__aligned__(64)));
 
 #include "cbuffer.hpp"
