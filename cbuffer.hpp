@@ -134,7 +134,7 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 #endif
 
 			// パケットの紐づけ
-			while(*(volatile int*)buffer->len_addr > 0) {
+			while(*(volatile int*)buffer->header.len_addr > 0) {
 				do_none();
 			}
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
@@ -186,7 +186,7 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 #endif
 
 			// パケットの紐づけ
-			while(*(volatile int32_t*)buffer->len_addr > 0) {
+			while(*(volatile int32_t*)buffer->header.len_addr > 0) {
 				do_none();
 			}
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
@@ -386,10 +386,7 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 		wait_pull(r, r->last_used_idx);
 		id[i] = r->descs[r->last_used_idx].entry_index;
 		buf* buffer = &pool[id[i]];
-		packet *p = get_packet_addr(buffer);
 #endif
-		p = get_packet_addr(&pool[id[i]]);
-		//std::cout << descs[prev_idx].id <<std::endl;
 
 		r->last_used_idx = (r->last_used_idx + 1) % SIZE_RING;
 
@@ -401,7 +398,8 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 //		_mm_clflushopt(buffer->id_addr);
 //		_mm_clflushopt(buffer->len_addr);
 
-#if !defined(READ_SRV) && !defined(AVOID_SRV)
+#if !defined(READ_SRV) && !defined(AVOID_SRV) && defined(VERIFICATION)
+		packet* p = get_packet_addr(&pool[id[i]]);
 		set_verification(p);
 		//__asm__("cldemote (%0)" :: "r" (&p->verification));
 #endif

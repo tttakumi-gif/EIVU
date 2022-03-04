@@ -44,3 +44,4 @@
 #define AVOID_CLT
 #endif
 
+//#define VERIFICATION

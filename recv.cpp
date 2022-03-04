@@ -4,12 +4,14 @@
 #define PRINT
 
 namespace {
+
+#ifdef VERIFICATION
 	inline void check_verification(packet* p) {
-#ifdef READ_SRV
+  #ifdef READ_SRV
 		if(unlikely(p->packet_id == -1)) {
-#else
+  #else
 		if(unlikely(p->packet_id != static_cast<signed>(p->verification ^ 0xffffffff))) {
-#endif
+  #endif
 			std::printf("verification error\n");
 			print(p);
 			std::printf("not 0x%x\n", (p->packet_id ^ 0xffffffff));
@@ -18,23 +20,24 @@ namespace {
 	}
 
 	inline void judge_packet(packet* parray[], int32_t num_fin) {
-                for(int i = 0; i < num_fin; i++) {
-                        check_verification(parray[i]);
+		for(int i = 0; i < num_fin; i++) {
+			check_verification(parray[i]);
 
-#ifndef READ_SRV
+  #ifndef READ_SRV
 			if(unlikely((parray[i]->packet_id & 8388607) == 0)) {
-#if INFO_CPU == PROC_CLT_R
+    #if INFO_CPU == PROC_CLT_R
 				std::printf("%g%%\n", getCurrentValue_p());
-#elif INFO_CPU == TOTAL_CLT
+    #elif INFO_CPU == TOTAL_CLT
 				std::printf("%g%%\n", getCurrentValue_t());
-#endif
-#ifdef PRINT
+    #endif
+    #ifdef PRINT
 				print(parray[i]);
+    #endif
+			}
+  #endif
+		}
+	}
 #endif
-                       }
-#endif
-                }
-        }
 	
 	void recv_packet(ring *scring, buf pool[SIZE_POOL], info_opt opt) {
 #ifdef CPU_BIND
@@ -59,25 +62,32 @@ namespace {
 			pull_avoid(scring, num_fin);
 #else
 			for(int j = 0; j < num_fin; j++) {
-#ifdef RANDOM
+  #ifdef RANDOM
 				parray[j] = get_packet_addr(&pool_local[local_pool_index + (int)ids[j]]);
-#else
+  #else
 				parray[j] = get_packet_addr(&pool_local[local_pool_index]);
 				if(SIZE_POOL <= ++local_pool_index) {
 					local_pool_index = 0;
 				}
-#endif
+  #endif
 			}
 
 			pull(scring, parray, pool, num_fin, is_stream);
-#ifdef RANDOM
+  #ifdef RANDOM
 			local_pool_index += num_fin;
 			if(SIZE_POOL <= local_pool_index) {
 				local_pool_index = 0;
 			}
-#endif
+  #endif
+
+  #ifdef VERIFICATION
 			// パケット検証
 			judge_packet(parray, num_fin);
+  #else
+			if(unlikely((i & 8388607) == 0)) {
+				print(parray[0]);
+			}
+  #endif
 #endif
 		}
 
@@ -86,8 +96,6 @@ namespace {
 		delete(pool_local);
 #endif
 	}
-
-
 }
 
 int main(int argc, char **argv) {
