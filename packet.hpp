@@ -30,7 +30,7 @@ struct packet {
 };
 
 #if 1 
-constexpr int32_t SIZE_BUFFER = 2048;
+constexpr int32_t SIZE_BUFFER = 2176;
 #else
 constexpr int32_t SIZE_BUFFER = sizeof(packet);
 #endif

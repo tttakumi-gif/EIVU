@@ -96,7 +96,7 @@ void zero_push(ring* r, buf *pool, int num_fin, bool is_stream) {
 	}
 	if(is_stream) {
 		for(int i = 0; i < num_fin; i++) {
-			_mm_clflushopt((void*)(pool + pool_idx_shadow2));
+			//_mm_clflushopt((void*)(pool + pool_idx_shadow2));
 			if(++pool_idx_shadow2 % SIZE_POOL == 0) {
 				pool_idx_shadow2 = 0;
 			}
