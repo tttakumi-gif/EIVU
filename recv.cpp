@@ -109,6 +109,10 @@ int main(int argc, char **argv) {
 	info_opt opt = get_opt(argc, argv);
 
 	bool *flag = (bool*)(scring + 1);
+
+	std::printf("recv: \n  - pool: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool, csring, scring, flag);
+	//std::printf("recv: \n  - pool: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", &scring->size, &scring->last_avail_idx, &scring->last_used_idx, &scring->pool_index);
+
 	*flag = true;
 
 	// 計測開始

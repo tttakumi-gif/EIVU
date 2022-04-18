@@ -19,8 +19,12 @@
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
 constexpr int SIZE_RING = 256;
-//constexpr int_fast32_t SIZE_POOL = 256;
+#if 1
+constexpr int SIZE_POOL = 64;
+#else
 constexpr int SIZE_POOL = 163456;
+#endif
+
 //constexpr int_fast32_t NUM_PMOD = SIZE_POOL / 2;
 constexpr int AVAIL_FLAG = 0b1 << 7;
 constexpr int USED_FLAG = 0b1 << 15;
@@ -62,9 +66,9 @@ struct ring {
 	int16_t last_used_idx;
 	int32_t pool_index;
 	desc descs[SIZE_RING];
-	vring_desc vdesc[SIZE_RING];
-	vring_avail vavail[SIZE_RING];
-	vring_used vused[SIZE_RING];
-}__attribute__((__aligned__(64)));
+//	vring_desc vdesc[SIZE_RING];
+//	vring_avail vavail[SIZE_RING];
+//	vring_used vused[SIZE_RING];
+};//__attribute__((__aligned__(64)));
 
 #include "cbuffer.hpp"

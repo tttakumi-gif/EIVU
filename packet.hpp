@@ -12,8 +12,8 @@ constexpr int32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32) + (SIZE_PACKET 
 constexpr int32_t NUM_LOOP2 = SIZE_PACKET / 64;
 
 #if 1
+//constexpr int32_t NUM_PACKET = 1024;
 constexpr int32_t NUM_PACKET = 100000000;
-//constexpr int32_t NUM_PACKET = 100000000;
 #else
 constexpr int32_t NUM_PACKET = 100000000000000000;
 #endif

@@ -294,7 +294,7 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 			wait_pull(r, r->last_used_idx);
 			buf* buffer = &pool[r->descs[r->last_used_idx].entry_index];
 			packet* p = get_packet_addr(buffer);
-			//std::cout << descs[prev_idx].id << std::endl;
+			//std::cout << r->descs[r->last_used_idx].flags << std::endl;
 
 			memcpy((void*)(parray[i]), (void*)p, SIZE_PACKET);
 
