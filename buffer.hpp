@@ -61,7 +61,7 @@ struct vring_used {
 };
 
 struct ring {
-	//int16_t size;
+	int16_t size;
 	int16_t last_avail_idx;
 	int16_t last_used_idx;
 	int32_t pool_index;
