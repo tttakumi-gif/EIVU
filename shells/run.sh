@@ -1,9 +1,10 @@
 #!/bin/bash
 
-opt_perf="-e l1d.replacement,l1d_pend_miss.fb_full,l1d_pend_miss.pending,l2_lines_in.all,L1-dcache-loads,L1-dcache-load-misses,L1-dcache-stores,L1-dcache-store-misses,LLC-loads,LLC-load-misses,LLC-stores,LLC-store-misses,l2_rqsts.all_rfo,l2_rqsts.rfo_hit,l2_rqsts.rfo_miss,offcore_response.demand_rfo.l3_hit.hit_other_core_no_fwd"
+#opt_perf="-e l1d.replacement,l1d_pend_miss.fb_full,l1d_pend_miss.pending,l2_lines_in.all,L1-dcache-loads,L1-dcache-load-misses,L1-dcache-stores,L1-dcache-store-misses,LLC-loads,LLC-load-misses,LLC-stores,LLC-store-misses,l2_rqsts.all_rfo,l2_rqsts.rfo_hit,l2_rqsts.rfo_miss,offcore_response.demand_rfo.l3_hit.hit_other_core_no_fwd"
 #l2_rqsts.all_rfo,l2_rqsts.rfo_hit,l2_rqsts.rfo_miss,offcore_requests.demand_rfo,offcore_requests_outstanding.demand_rfo,mem_inst_retired.all_loads,mem_inst_retired.all_stores
 
-#opt_perf="-e cache-misses,L1-dcache-load-misses,L1-dcache-loads,L1-dcache-stores,LLC-loads,LLC-stores,LLC-load-misses,LLC-store-misses,cpu/event=0xA3,umask=0x06,cmask=0x06,name=STALLS_L3_MISS/"
+opt_perf="-e cache-misses,cache-references,L1-dcache-load-misses,L1-dcache-loads,L1-dcache-stores,LLC-loads,LLC-stores,LLC-load-misses,LLC-store-misses,cpu/event=0xA3,umask=0x06,cmask=0x06,name=STALLS_L3_MISS/"
+#opt_perf="-e cpu/cmask=0x1,umask=0x4,event=0x60,name=hello/"
 #opt_perf="-e cpu/event=0xA3,umask=0x06,cmask=0x06,name=STALLS_L3_MISS/,cycle_activity.stalls_l3_miss,cpu/event=0x60,umask=0x10,name=OUT_L3miss_Dem_RD/"
 
 i="-I 1000"

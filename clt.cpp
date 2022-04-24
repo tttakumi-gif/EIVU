@@ -74,6 +74,7 @@ int main(int argc, char **argv) {
 		std::cout << "size: " << size << std::endl;
 		static_assert(size <= SIZE_SHM, "over packet size");
 		std::cout << "packet size: " << sizeof(packet) << ", " << SIZE_PACKET << std::endl;
+		std::cout << "packet buffer size: " << sizeof(buf) << std::endl;
 		std::cout << "desc size: " << sizeof(desc) << std::endl;
 		std::cout << "ring size: " << sizeof(ring) << std::endl;
 	}

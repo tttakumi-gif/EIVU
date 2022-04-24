@@ -133,12 +133,14 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 			wait_push(r, r->last_avail_idx);
 #endif
 
+#if HEADER_SIZE > 0
 			// パケットの紐づけ
 			while(*(volatile int*)buffer->header.len_addr > 0) {
 				do_none();
 			}
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
 			set_len(buffer, 1);
+#endif
 //			_mm_clflushopt(buffer->id_addr);
 //			_mm_clflushopt(buffer->len_addr);
 
@@ -185,12 +187,14 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 			wait_push(r, r->last_avail_idx);
 #endif
 
+#if HEADER_SIZE > 0
 			// パケットの紐づけ
 			while(*(volatile int32_t*)buffer->header.len_addr > 0) {
 				do_none();
 			}
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
 			set_len(buffer, 1);
+#endif
 
 			for(int j = 0; j < NUM_LOOP; j++) {
 				if(!IS_PSMALL) {
@@ -303,8 +307,10 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 
 			//memcpy((void*)(parray[i]), (void*)buffer->id_addr, 64);
 			//memcpy((void*)(parray[i]), (void*)buffer->len_addr, 64);
+#if HEADER_SIZE > 0
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
 			set_len(buffer, 0);
+#endif
 			//_mm_clflushopt(buffer->id_addr);
 			//_mm_clflushopt(buffer->len_addr);
 
@@ -338,8 +344,10 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 			// パケットの取得, ディスクリプタの紐づけ解除
 			delete_info(&r->descs[r->last_used_idx]);
 
+#if HEADER_SIZE > 0
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
 			set_len(buffer, 0);
+#endif
 
 			// index更新
 			if(SIZE_RING <= ++(r->last_used_idx)) {
@@ -393,8 +401,10 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 		wait_push(ring_pair, ring_pair->last_avail_idx);
 		ring_pair->last_avail_idx = (ring_pair->last_avail_idx + 1) % SIZE_RING;
 
+#if HEADER_SIZE > 0
 		set_id(buffer, (get_id(buffer) + 1) & 2047);
 		set_len(buffer, 2);
+#endif
 //		_mm_clflushopt(buffer->id_addr);
 //		_mm_clflushopt(buffer->len_addr);
 
