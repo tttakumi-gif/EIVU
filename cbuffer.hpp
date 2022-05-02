@@ -214,11 +214,7 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 		}
 	}
 
-	//for(int i = 0; i < num_fin; i++) {
-	int i = 1;
-	int a = last_avail_idx_shadow;
-	last_avail_idx_shadow = (last_avail_idx_shadow + 1) % SIZE_RING;
-	for(; i < num_fin; i++) {
+	for(int i = 0; i < num_fin; i++) {
 #ifdef RANDOM
 		set_param(&r->descs[last_avail_idx_shadow], r->pool_index + ids[i]);
 #else
@@ -238,7 +234,6 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 		}
 #endif
 	}
-	set_param(&r->descs[a], r->pool_index + ids[0]);
 
 	// 共有変数に反映
 	r->pool_index = (r->pool_index + num_fin) % SIZE_POOL;
@@ -382,11 +377,7 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 		}
 	}
 
-	//for(int i = 0; i < num_fin; i++) {
-	int i = 1;
-	int a = last_used_idx_shadow;
-	last_used_idx_shadow = (last_used_idx_shadow + 1) % SIZE_RING;
-	for(; i < num_fin; i++) {
+	for(int i = 0; i < num_fin; i++) {
 		// パケットの取得, ディスクリプタの紐づけ解除
 		delete_info(&r->descs[last_used_idx_shadow]);
 
@@ -403,7 +394,6 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 		}
 #endif
 	}
-	delete_info(&r->descs[a]);
 }
 
 void pull_avoid(ring* r, int num_fin) {
@@ -485,13 +475,7 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 #endif
 	}
 
-	//for(int i = 0; i < num_fin; i++) {
-	int i = 1;
-	int a = last_avail_idx_shadow;
-	int b = last_used_idx_shadow;
-	last_avail_idx_shadow = (last_avail_idx_shadow + 1) % SIZE_RING;
-	last_used_idx_shadow = (last_used_idx_shadow + 1) % SIZE_RING;
-	for(; i < num_fin; i++) {
+	for(int i = 0; i < num_fin; i++) {
 #ifdef AVOID_SRV
 		set_param_avoid(&ring_pair->descs[last_avail_idx_shadow], id[i]);
 #else
@@ -522,7 +506,5 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 		}
 #endif
 	}
-	set_param(&ring_pair->descs[a], id[0]);
-	delete_info(&r->descs[b]);
 }
 
