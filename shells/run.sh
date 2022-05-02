@@ -29,7 +29,7 @@ sudo ${perf} ../build/srv.out --stream=off --process=move --batch=32 &
 sleep 0.5
 #sudo ${perf} ../build/clt.out --batch=$batch --process=copy --stream=$1 &
 sudo ../build/clt.out --batch=$batch --process=copy --stream=$1 &
-sleep 0.5
+sleep 0.5 
 #sudo ${perf} ../build/recv.out --stream=$2 --process=copy --batch=32
 sudo ../build/recv.out --stream=$2 --process=copy --batch=32
 

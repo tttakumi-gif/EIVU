@@ -28,6 +28,13 @@
 #include <iostream>
 #include <chrono>
 
+//#define HEADER_SIZE 0
+#define HEADER_SIZE 128
+//#define HEADER_SIZE 1024
+
+//constexpr int32_t SIZE_PADDING = 0;
+constexpr int32_t SIZE_PADDING = 128;
+
 //#define SKIP_CLT
 #if 0
 #if 1
@@ -39,6 +46,7 @@
 #endif
 
 #define RANDOM
+//#define STRIDE_VQ 
 //#define ZERO_COPY
 #ifdef ZERO_COPY
 #define AVOID_CLT

@@ -151,23 +151,17 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 //			}
 
 			// index更新
-			if(SIZE_RING <= ++(r->last_avail_idx)) {
+#ifdef STRIDE_VQ
+			r->last_avail_idx += 4;
+			if(SIZE_RING <= r->last_avail_idx) {
+				r->last_avail_idx = r->last_avail_idx % 4 + 1;
+			}
+#else
+			r->last_avail_idx += 1;
+			if(SIZE_RING <= r->last_avail_idx) {
 				r->last_avail_idx = 0;
 			}
-
-		}
-
-		for(int i = 0; i < num_fin; i++) {
-#ifdef RANDOM
-			set_param(&r->descs[last_avail_idx_shadow], r->pool_index + ids[i]);
-#else
-			set_param(&r->descs[last_avail_idx_shadow], r->pool_index + i);
 #endif
-
-			// index更新
-			if(SIZE_RING <= ++last_avail_idx_shadow) {
-				last_avail_idx_shadow = 0;
-			}
 		}
 	}
 	else {
@@ -206,24 +200,45 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 			}
 
 			// index更新
-			if(SIZE_RING <= ++(r->last_avail_idx)) {
+#ifdef STRIDE_VQ
+			r->last_avail_idx += 4;
+			if(SIZE_RING <= r->last_avail_idx) {
+				r->last_avail_idx = r->last_avail_idx % 4 + 1;
+			}
+#else
+			r->last_avail_idx += 1;
+			if(SIZE_RING <= r->last_avail_idx) {
 				r->last_avail_idx = 0;
 			}
-		}
-
-		for(int i = 0; i < num_fin; i++) {
-#ifdef RANDOM
-			set_param(&r->descs[last_avail_idx_shadow], r->pool_index + ids[i]);
-#else
-			set_param(&r->descs[last_avail_idx_shadow], r->pool_index + i);
 #endif
-
-			// index更新
-			if(SIZE_RING <= ++last_avail_idx_shadow) {
-				last_avail_idx_shadow = 0;
-			}
 		}
 	}
+
+	//for(int i = 0; i < num_fin; i++) {
+	int i = 1;
+	int a = last_avail_idx_shadow;
+	last_avail_idx_shadow = (last_avail_idx_shadow + 1) % SIZE_RING;
+	for(; i < num_fin; i++) {
+#ifdef RANDOM
+		set_param(&r->descs[last_avail_idx_shadow], r->pool_index + ids[i]);
+#else
+		set_param(&r->descs[last_avail_idx_shadow], r->pool_index + i);
+#endif
+
+		// index更新
+#ifdef STRIDE_VQ
+		last_avail_idx_shadow += 4;
+		if(SIZE_RING <= last_avail_idx_shadow) {
+			last_avail_idx_shadow = last_avail_idx_shadow % 4 + 1;
+		}
+#else
+		last_avail_idx_shadow += 1;
+		if(SIZE_RING <= last_avail_idx_shadow) {
+			last_avail_idx_shadow = 0;
+		}
+#endif
+	}
+	set_param(&r->descs[a], r->pool_index + ids[0]);
 
 	// 共有変数に反映
 	r->pool_index = (r->pool_index + num_fin) % SIZE_POOL;
@@ -292,6 +307,7 @@ void ipush_avoid(ring* r, int num_fin, bool is_stream) {
 }
 
 void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
+	int last_used_idx_shadow = r->last_used_idx;
 	if(!is_stream) {
 		for(int i = 0; i < num_fin; i++) {
 			// ディスクリプタにバッファが割り当てられるまでwait
@@ -301,9 +317,6 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 			//std::cout << r->descs[r->last_used_idx].flags << std::endl;
 
 			memcpy((void*)(parray[i]), (void*)p, SIZE_PACKET);
-
-			// パケットの取得, ディスクリプタの紐づけ解除
-			delete_info(&r->descs[r->last_used_idx]);
 
 			//memcpy((void*)(parray[i]), (void*)buffer->id_addr, 64);
 			//memcpy((void*)(parray[i]), (void*)buffer->len_addr, 64);
@@ -315,9 +328,17 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 			//_mm_clflushopt(buffer->len_addr);
 
 			// index更新
-			if(SIZE_RING <= ++(r->last_used_idx)) {
+#ifdef STRIDE_VQ
+			r->last_used_idx += 4;
+			if(SIZE_RING <= r->last_used_idx) {
+				r->last_used_idx = r->last_used_idx % 4 + 1;
+			}
+#else
+			r->last_used_idx += 1;
+			if(SIZE_RING <= r->last_used_idx) {
 				r->last_used_idx = 0;
 			}
+#endif
 		}
 	}
 	else {
@@ -341,20 +362,48 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 				}
 			}
 
-			// パケットの取得, ディスクリプタの紐づけ解除
-			delete_info(&r->descs[r->last_used_idx]);
-
 #if HEADER_SIZE > 0
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
 			set_len(buffer, 0);
 #endif
 
 			// index更新
-			if(SIZE_RING <= ++(r->last_used_idx)) {
+#ifdef STRIDE_VQ
+			r->last_used_idx += 4;
+			if(SIZE_RING <= r->last_used_idx) {
+				r->last_used_idx = r->last_used_idx % 4 + 1;
+			}
+#else
+			r->last_used_idx += 1;
+			if(SIZE_RING <= r->last_used_idx) {
 				r->last_used_idx = 0;
 			}
+#endif
 		}
 	}
+
+	//for(int i = 0; i < num_fin; i++) {
+	int i = 1;
+	int a = last_used_idx_shadow;
+	last_used_idx_shadow = (last_used_idx_shadow + 1) % SIZE_RING;
+	for(; i < num_fin; i++) {
+		// パケットの取得, ディスクリプタの紐づけ解除
+		delete_info(&r->descs[last_used_idx_shadow]);
+
+		// index更新
+#ifdef STRIDE_VQ
+		last_used_idx_shadow += 4;
+		if(SIZE_RING <= last_used_idx_shadow) {
+			last_used_idx_shadow = last_used_idx_shadow % 4 + 1;
+		}
+#else
+		last_used_idx_shadow += 1;
+		if(SIZE_RING <= last_used_idx_shadow) {
+			last_used_idx_shadow = 0;
+		}
+#endif
+	}
+	delete_info(&r->descs[a]);
 }
 
 void pull_avoid(ring* r, int num_fin) {
@@ -396,10 +445,31 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 		buf* buffer = &pool[id[i]];
 #endif
 
-		r->last_used_idx = (r->last_used_idx + 1) % SIZE_RING;
+#ifdef STRIDE_VQ
+		r->last_used_idx += 4;
+		if(SIZE_RING <= r->last_used_idx) {
+			r->last_used_idx = r->last_used_idx % 4 + 1;
+		}
+#else
+		r->last_used_idx += 1;
+		if(SIZE_RING <= r->last_used_idx) {
+			r->last_used_idx = 0;
+		}
+#endif
 
 		wait_push(ring_pair, ring_pair->last_avail_idx);
-		ring_pair->last_avail_idx = (ring_pair->last_avail_idx + 1) % SIZE_RING;
+#ifdef STRIDE_VQ
+		ring_pair->last_avail_idx += 4;
+		if(SIZE_RING <= ring_pair->last_avail_idx) {
+			ring_pair->last_avail_idx = ring_pair->last_avail_idx % 4 + 1;
+		}
+#else
+		ring_pair->last_avail_idx += 1;
+		if(SIZE_RING <= ring_pair->last_avail_idx) {
+			ring_pair->last_avail_idx = 0;
+		}
+#endif
+
 
 #if HEADER_SIZE > 0
 		set_id(buffer, (get_id(buffer) + 1) & 2047);
@@ -415,16 +485,44 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 #endif
 	}
 
-	for(int i = 0; i < num_fin; i++) {
+	//for(int i = 0; i < num_fin; i++) {
+	int i = 1;
+	int a = last_avail_idx_shadow;
+	int b = last_used_idx_shadow;
+	last_avail_idx_shadow = (last_avail_idx_shadow + 1) % SIZE_RING;
+	last_used_idx_shadow = (last_used_idx_shadow + 1) % SIZE_RING;
+	for(; i < num_fin; i++) {
 #ifdef AVOID_SRV
 		set_param_avoid(&ring_pair->descs[last_avail_idx_shadow], id[i]);
 #else
 		set_param(&ring_pair->descs[last_avail_idx_shadow], id[i]);
 #endif
-		last_avail_idx_shadow = (last_avail_idx_shadow + 1) % SIZE_RING;
+#ifdef STRIDE_VQ
+		last_avail_idx_shadow += 4;
+		if(SIZE_RING <= last_avail_idx_shadow) {
+			last_avail_idx_shadow = last_avail_idx_shadow % 4 + 1;
+		}
+#else
+		last_avail_idx_shadow += 1;
+		if(SIZE_RING <= last_avail_idx_shadow) {
+			last_avail_idx_shadow = 0;
+		}
+#endif
 
 		delete_info(&r->descs[last_used_idx_shadow]);
-		last_used_idx_shadow = (last_used_idx_shadow + 1) % SIZE_RING;
+#ifdef STRIDE_VQ
+		last_used_idx_shadow += 4;
+		if(SIZE_RING <= last_used_idx_shadow) {
+			last_used_idx_shadow = last_used_idx_shadow % 4 + 1;
+		}
+#else
+		last_used_idx_shadow += 1;
+		if(SIZE_RING <= last_used_idx_shadow) {
+			last_used_idx_shadow = 0;
+		}
+#endif
 	}
+	set_param(&ring_pair->descs[a], id[0]);
+	delete_info(&r->descs[b]);
 }
 

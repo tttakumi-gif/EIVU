@@ -4,11 +4,6 @@
 
 #define DUMMY_FULL
 
-//constexpr int32_t HEADER_SIZE = 0;
-//constexpr int32_t SIZE_PADDING = 0;
-constexpr int32_t HEADER_SIZE = 128;
-constexpr int32_t SIZE_PADDING = 128;
-
 constexpr int32_t SIZE_PACKET = 64;
 constexpr bool IS_PSMALL = SIZE_PACKET < 32;
 constexpr int32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32) + (SIZE_PACKET % 32 == 0 ? 0 : 1);
@@ -76,6 +71,11 @@ packet* get_packet_addr(buf* buffer) {
 
 void set_id(buf* buffer, int32_t id) {
 	*(int32_t*)buffer->header.id_addr = id;
+
+	int loop_num = HEADER_SIZE / 2 - 64;
+	for(int i = 64; i < loop_num; i += 64) {
+		((char*)buffer->header.id_addr)[i]++; 
+	}
 }
 
 int32_t get_id(buf* buffer) {
@@ -84,6 +84,11 @@ int32_t get_id(buf* buffer) {
 
 void set_len(buf* buffer, int32_t len) {
 	*(int32_t*)buffer->header.len_addr = len;
+
+	int loop_num = HEADER_SIZE / 2 - 64;
+	for(int i = 64; i < loop_num; i += 64) {
+		((char*)buffer->header.len_addr)[i]++; 
+	}
 }
 
 int32_t get_len(buf* buffer) {
