@@ -6,10 +6,6 @@ void delete_info(desc* d) {
 	d->flags = d->flags & ~AVAIL_FLAG;
 }
 
-void delete_info_avoid(desc* d) {
-	d->id = -1;
-}
-
 void set_param(desc* d, int this_id) {
 	d->entry_index = this_id;
 	d->flags = d->flags & ~USED_FLAG;
@@ -50,66 +46,6 @@ void init_ring(ring* r) {
 	init_descs(r);
 }
 
-void zero_push(ring* r, buf *pool, int num_fin, bool is_stream) {
-	int prev_idx = r->last_avail_idx;
-	int pool_idx = r->pool_index;
-
-#if 1
-	int prev_idx_shadow = prev_idx;
-	int pool_idx_shadow = pool_idx;
-	int pool_idx_shadow2 = pool_idx;
-#endif
-
-	for(int i = 0; i < num_fin; i++) {
-		// ディスクリプタとパケットプールが確保できるまでwait
-#if defined(AVOID_CLT) || defined(SKIP_CLT)
-		wait_push(r, prev_idx);
-#else
-		//packet *p = (packet*)(pool + pool_idx);
-		wait_push(r, prev_idx);
-#endif
-
-//		packet *p = (packet*)(pool + pool_idx);
-//		//memcpy(p, p + 1, SIZE_PACKET);
-//		for(int j = 0; j < NUM_LOOP; j++) {
-//			_mm256_stream_si256((__m256i*)p + j, _mm256_stream_load_si256((__m256i*)(p + 1) + j));
-//		}
-
-		// index更新
-		if(++pool_idx % SIZE_POOL == 0) {
-			pool_idx = 0;
-		}
-		if(SIZE_RING <= ++prev_idx) {
-			prev_idx = 0;
-		}
-	}
-#if 1
-	for(int i = 0; i < num_fin; i++) {
-		set_param(&r->descs[prev_idx_shadow], pool_idx_shadow);
-		// index更新
-		if(++pool_idx_shadow % SIZE_POOL == 0) {
-			pool_idx_shadow = 0;
-		}
-		if(SIZE_RING <= ++prev_idx_shadow) {
-			prev_idx_shadow = 0;
-		}
-	}
-	if(is_stream) {
-		for(int i = 0; i < num_fin; i++) {
-			//_mm_clflushopt((void*)(pool + pool_idx_shadow2));
-			if(++pool_idx_shadow2 % SIZE_POOL == 0) {
-				pool_idx_shadow2 = 0;
-			}
-		}
-	}
-#endif
-
-	r->last_avail_idx = prev_idx;
-
-	// 共有変数に反映
-	r->pool_index = pool_idx % SIZE_POOL;
-}
-
 #ifdef RANDOM
 char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 17, 4, 16, 26, 19, 5, 28, 20, 6, 27, 7, 8, 18, 29, 9};
 #endif
@@ -144,7 +80,9 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 //			_mm_clflushopt(buffer->id_addr);
 //			_mm_clflushopt(buffer->len_addr);
 
+#ifndef ZERO_COPY
 			memcpy((void*)p, (void*)parray[i], SIZE_PACKET);
+#endif
 //			for(int j = 0; j < NUM_LOOP2; j++) {
 //				__asm__("cldemote (%0)" :: "r" ((int64_t*)&p + j));
 //				__asm__("cldemote (%0)" :: "r" ((int64_t*)&parray[i] + j));
@@ -307,14 +245,13 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 		for(int i = 0; i < num_fin; i++) {
 			// ディスクリプタにバッファが割り当てられるまでwait
 			wait_pull(r, r->last_used_idx);
+
 			buf* buffer = &pool[r->descs[r->last_used_idx].entry_index];
+#ifndef AVOID_CLT
 			packet* p = get_packet_addr(buffer);
-			//std::cout << r->descs[r->last_used_idx].flags << std::endl;
-
 			memcpy((void*)(parray[i]), (void*)p, SIZE_PACKET);
+#endif
 
-			//memcpy((void*)(parray[i]), (void*)buffer->id_addr, 64);
-			//memcpy((void*)(parray[i]), (void*)buffer->len_addr, 64);
 #if HEADER_SIZE > 0
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
 			set_len(buffer, 0);
@@ -404,7 +341,7 @@ void pull_avoid(ring* r, int num_fin) {
 		wait_pull(r, prev_idx);
 
 		// パケットの取得, ディスクリプタの紐づけ解除
-		delete_info_avoid(&r->descs[prev_idx]);
+		delete_info(&r->descs[prev_idx]);
 
 		// index更新
 		if(SIZE_RING <= ++prev_idx) {
@@ -416,24 +353,16 @@ void pull_avoid(ring* r, int num_fin) {
 	r->last_used_idx = prev_idx;
 }
 
-#ifdef AVOID_SRV
-void move_packet(ring* r, ring* ring_pair, int num_fin) {
-#else 
 void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
-#endif
-	int id[32];
+	//int id[num_fin];
+	int id[num_fin];
 	int last_used_idx_shadow = r->last_used_idx;
 	int last_avail_idx_shadow = ring_pair->last_avail_idx; 
 
 	for(int i = 0; i < num_fin; i++) {
-
-#ifdef AVOID_SRV
-		wait_pull_avoid(r->last_used_idx);
-#else
 		wait_pull(r, r->last_used_idx);
 		id[i] = r->descs[r->last_used_idx].entry_index;
 		buf* buffer = &pool[id[i]];
-#endif
 
 #ifdef STRIDE_VQ
 		r->last_used_idx += 4;
@@ -476,11 +405,7 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 	}
 
 	for(int i = 0; i < num_fin; i++) {
-#ifdef AVOID_SRV
-		set_param_avoid(&ring_pair->descs[last_avail_idx_shadow], id[i]);
-#else
 		set_param(&ring_pair->descs[last_avail_idx_shadow], id[i]);
-#endif
 #ifdef STRIDE_VQ
 		last_avail_idx_shadow += 4;
 		if(SIZE_RING <= last_avail_idx_shadow) {

@@ -58,37 +58,37 @@ namespace {
 			}
 			
 			// パケット受信
-#ifdef AVOID_CLT
-			pull_avoid(scring, num_fin);
-#else
+//#ifdef AVOID_CLT
+//			pull_avoid(scring, num_fin);
+//#else
 			for(int j = 0; j < num_fin; j++) {
-  #ifdef RANDOM
+#ifdef RANDOM
 				parray[j] = get_packet_addr(&pool_local[local_pool_index + (int)ids[j]]);
-  #else
+#else
 				parray[j] = get_packet_addr(&pool_local[local_pool_index]);
 				if(SIZE_POOL <= ++local_pool_index) {
 					local_pool_index = 0;
 				}
-  #endif
+#endif
 			}
 
 			pull(scring, parray, pool, num_fin, is_stream);
-  #ifdef RANDOM
+#ifdef RANDOM
 			local_pool_index += num_fin;
 			if(SIZE_POOL <= local_pool_index) {
 				local_pool_index = 0;
 			}
-  #endif
+#endif
 
-  #ifdef VERIFICATION
+#ifdef VERIFICATION
 			// パケット検証
 			judge_packet(parray, num_fin);
-  #else
+#else
 			if(unlikely((i & 8388607) == 0)) {
 				print(parray[0]);
 			}
-  #endif
 #endif
+//#endif
 		}
 
 #ifndef AVOID_CLT

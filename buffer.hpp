@@ -18,10 +18,12 @@
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
+//constexpr int SIZE_RING = 64;
 constexpr int SIZE_RING = 256;
+//constexpr int SIZE_RING = 4096;
 //constexpr int SIZE_RING = 32768;
 #if 0 
-constexpr int SIZE_POOL = 128;
+constexpr int SIZE_POOL = 1024;
 #else
 constexpr int SIZE_POOL = 163456;
 #endif
@@ -31,11 +33,12 @@ constexpr int AVAIL_FLAG = 0b1 << 7;
 constexpr int USED_FLAG = 0b1 << 15;
 
 struct desc {
+	//int32_t entry_index;
+	//char padding[48];
 	int64_t entry_index;
 	int32_t len;
 	int16_t id;
 	int16_t flags;
-	//char padding[48];
 };// __attribute__((__aligned__(16)));
 
 struct vring_desc {

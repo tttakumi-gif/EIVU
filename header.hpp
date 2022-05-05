@@ -36,10 +36,11 @@
 constexpr int32_t SIZE_PADDING = 128;
 
 //#define SKIP_CLT
-#if 0
+#if 0 
 #if 1
+#define ZERO_COPY
 #define AVOID_CLT
-#define AVOID_SRV
+//#define AVOID_SRV
 #else 
 #define READ_SRV
 #endif
@@ -47,9 +48,5 @@ constexpr int32_t SIZE_PADDING = 128;
 
 #define RANDOM
 //#define STRIDE_VQ 
-//#define ZERO_COPY
-#ifdef ZERO_COPY
-#define AVOID_CLT
-#endif
 
 //#define VERIFICATION

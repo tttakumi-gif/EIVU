@@ -12,11 +12,9 @@ namespace {
 		int32_t num_fin = opt.size_batch;
 		bool is_stream = (opt.stream == ON) ? true : false;
 
-#ifndef ZERO_COPY
 		int local_pool_index = 0;
 		buf* pool_local = new (std::align_val_t{64}) buf[SIZE_POOL];
 		packet** parray = new packet*[opt.size_batch];
-#endif
 
 		while(0 < i) {
 			// 受信パケット数の決定
@@ -24,7 +22,6 @@ namespace {
 				num_fin = i;
 			}
 
-#ifndef ZERO_COPY
 			for(int j = 0; j < num_fin; j++, i--) {
 #ifdef RANDOM
 				parray[j] = get_packet_addr(&pool_local[local_pool_index + (int)ids[j]]);
@@ -43,11 +40,6 @@ namespace {
 			if(SIZE_POOL <= local_pool_index) {
 				local_pool_index = 0;
 			}
-#endif
-
-#else
-			zero_push(csring, pool, num_fin, is_stream);
-			i -= num_fin;
 #endif
 		}
 

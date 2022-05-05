@@ -17,8 +17,6 @@ namespace {
 
 #ifdef SKIP_CLT
 				csring->pull_avoid(num_fin);
-#elif defined(AVOID_SRV)
-				move_packet(csring, scring, num_fin);
 #else
 				move_packet(csring, scring, pool, num_fin);
 #endif
