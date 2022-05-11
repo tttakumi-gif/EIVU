@@ -52,6 +52,11 @@ constexpr int32_t SIZE_PADDING = 128;
 #endif
 
 #define RANDOM
+
+#if 0
 //#define STRIDE_VQ 
+#else
+//#define SKIP_INDEX 
+#endif
 
 //#define VERIFICATION

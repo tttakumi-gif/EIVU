@@ -150,11 +150,14 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 		}
 	}
 
+#ifdef SKIP_INDEX
 	int skipped_index = 64 / VQENTRY_SIZE;
 	int a = last_avail_idx_shadow;
 	last_avail_idx_shadow = (last_avail_idx_shadow + skipped_index) % SIZE_RING;
 	for(int i = skipped_index; i < num_fin; i++) {
-	//for(int i = 0; i < num_fin; i++) {
+#else
+	for(int i = 0; i < num_fin; i++) {
+#endif
 #ifdef RANDOM
 		set_param(&r->descs[last_avail_idx_shadow], r->pool_index + ids[i]);
 #else
@@ -175,9 +178,11 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 #endif
 	}
 
+#ifdef SKIP_INDEX
 	for(int i = 0; i < skipped_index; i++) {
 		set_param(&r->descs[a + i], r->pool_index + ids[i]);
 	}
+#endif
 
 	// 共有変数に反映
 	r->pool_index = (r->pool_index + num_fin) % SIZE_POOL;
@@ -260,11 +265,14 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 		}
 	}
 
+#ifdef SKIP_INDEX
 	int skipped_index = 64 / VQENTRY_SIZE;
 	int a = last_used_idx_shadow;
 	last_used_idx_shadow = (last_used_idx_shadow + skipped_index) % SIZE_RING;
 	for(int i = skipped_index; i < num_fin; i++) {
-	//for(int i = 0; i < num_fin; i++) {
+#else
+	for(int i = 0; i < num_fin; i++) {
+#endif
 		// パケットの取得, ディスクリプタの紐づけ解除
 		delete_info(&r->descs[last_used_idx_shadow]);
 
@@ -282,21 +290,14 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 #endif
 	}
 
+#ifdef SKIP_INDEX
 	for(int i = 0; i < skipped_index; i++) {
 		delete_info(&r->descs[a + i]);
 	}
+#endif
 }
 
-char dummy0[256][64];
-char dummy1[256][64];
-char dummy2[256][64];
-char dummy3[256][64];
-char dummy4[256][64];
-char dummy5[256][64];
-char dummy6[256][64];
-char dummy7[256][64];
 void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
-	//int id[num_fin];
 	int id[num_fin];
 	int last_used_idx_shadow = r->last_used_idx;
 	int last_avail_idx_shadow = ring_pair->last_avail_idx; 
@@ -306,18 +307,6 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 		id[i] = r->descs[r->last_used_idx].entry_index;
 		buf* buffer = &pool[id[i]];
 
-		//dummy0[r->last_used_idx][0] = dummy1[r->last_used_idx][0];
-		//dummy1[r->last_used_idx][0] = dummy0[r->last_used_idx][0];
-		//dummy2[r->last_used_idx][0] = dummy3[r->last_used_idx][0];
-		//dummy3[r->last_used_idx][0] = dummy2[r->last_used_idx][0];
-		//volatile char a = dummy0[r->last_used_idx][0];
-		//volatile char b = dummy1[r->last_used_idx][0];
-		//volatile char c = dummy2[r->last_used_idx][0];
-		//volatile char d = dummy3[r->last_used_idx][0];
-		//volatile char e = dummy4[r->last_used_idx][0];
-		//volatile char f = dummy5[r->last_used_idx][0];
-		//volatile char g = dummy6[r->last_used_idx][0];
-		//volatile char h = dummy7[r->last_used_idx][0];
 #ifdef STRIDE_VQ
 		r->last_used_idx += 4;
 		if(SIZE_RING <= r->last_used_idx) {
@@ -359,13 +348,16 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 #endif
 	}
 
+#ifdef SKIP_INDEX
 	int skipped_index = 64 / VQENTRY_SIZE;
 	int a = last_avail_idx_shadow;
 	int b = last_used_idx_shadow;
 	last_avail_idx_shadow = (last_avail_idx_shadow + skipped_index) % SIZE_RING;
 	last_used_idx_shadow = (last_used_idx_shadow + skipped_index) % SIZE_RING;
 	for(int i = skipped_index; i < num_fin; i++) {
-	//for(int i = 0; i < num_fin; i++) {
+#else
+	for(int i = 0; i < num_fin; i++) {
+#endif
 		set_param(&ring_pair->descs[last_avail_idx_shadow], id[i]);
 #ifdef STRIDE_VQ
 		last_avail_idx_shadow += 4;
@@ -393,9 +385,11 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 #endif
 	}
 
+#ifdef SKIP_INDEX
 	for(int i = 0; i < skipped_index; i++) {
 		set_param(&ring_pair->descs[a + i], id[i]);
 		delete_info(&r->descs[b + i]);
 	}
+#endif
 }
 
