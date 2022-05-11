@@ -33,13 +33,18 @@ constexpr int AVAIL_FLAG = 0b1 << 7;
 constexpr int USED_FLAG = 0b1 << 15;
 
 struct desc {
-	//int32_t entry_index;
-	//char padding[48];
+#if VQENTRY_SIZE == 8
+	int32_t entry_index;
+#else
 	int64_t entry_index;
 	int32_t len;
+#endif
 	int16_t id;
 	int16_t flags;
-};// __attribute__((__aligned__(16)));
+#if VQENTRY_SIZE == 64 
+	char padding[48];
+#endif
+};// __attribute__((__aligned__(2)));
 
 struct vring_desc {
 	uint64_t addr;

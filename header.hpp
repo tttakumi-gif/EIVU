@@ -28,7 +28,12 @@
 #include <iostream>
 #include <chrono>
 
+//#define VQENTRY_SIZE 8 
+#define VQENTRY_SIZE 16
+//#define VQENTRY_SIZE 64
+
 //#define HEADER_SIZE 0
+//#define HEADER_SIZE 64
 #define HEADER_SIZE 128
 //#define HEADER_SIZE 1024
 

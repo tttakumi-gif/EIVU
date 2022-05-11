@@ -12,10 +12,6 @@ void set_param(desc* d, int this_id) {
 	d->flags = d->flags | AVAIL_FLAG;
 }
 
-void set_param_avoid(desc* d, int16_t this_id) {
-	d->id = this_id;
-}
-
 void wait_push(ring* r, int prev_idx) {
 	// ディスクリプタが空くまでwait
 	while((*(volatile int16_t*)&r->descs[prev_idx].flags & USED_FLAG) == 0) {
@@ -71,14 +67,16 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 
 #if HEADER_SIZE > 0
 			// パケットの紐づけ
+			//volatile int id = get_id(buffer);
+			//volatile int len = get_len(buffer);
 			while(*(volatile int*)buffer->header.len_addr > 0) {
 				do_none();
 			}
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
 			set_len(buffer, 1);
+			//_mm_clflushopt(buffer->header.id_addr);
+			//_mm_clflushopt(buffer->header.len_addr);
 #endif
-//			_mm_clflushopt(buffer->id_addr);
-//			_mm_clflushopt(buffer->len_addr);
 
 #ifndef ZERO_COPY
 			memcpy((void*)p, (void*)parray[i], SIZE_PACKET);
@@ -152,7 +150,11 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 		}
 	}
 
-	for(int i = 0; i < num_fin; i++) {
+	int skipped_index = 64 / VQENTRY_SIZE;
+	int a = last_avail_idx_shadow;
+	last_avail_idx_shadow = (last_avail_idx_shadow + skipped_index) % SIZE_RING;
+	for(int i = skipped_index; i < num_fin; i++) {
+	//for(int i = 0; i < num_fin; i++) {
 #ifdef RANDOM
 		set_param(&r->descs[last_avail_idx_shadow], r->pool_index + ids[i]);
 #else
@@ -173,70 +175,12 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 #endif
 	}
 
+	for(int i = 0; i < skipped_index; i++) {
+		set_param(&r->descs[a + i], r->pool_index + ids[i]);
+	}
+
 	// 共有変数に反映
 	r->pool_index = (r->pool_index + num_fin) % SIZE_POOL;
-}
-
-void ipush_avoid(ring* r, int num_fin, bool is_stream) {
-	int prev_idx = r->last_avail_idx;
-	int prev_idx_shadow = prev_idx;
-	int pool_idx = r->pool_index;
-	int pool_idx_shadow = pool_idx;
-
-	if(!is_stream) {
-		for(int i = 0; i < num_fin; i++) {
-			// ディスクリプタとパケットプールが確保できるまでwait
-			wait_push(r, prev_idx);
-
-			// パケットの紐づけ
-			set_param_avoid(&r->descs[prev_idx], pool_idx);
-
-			// index更新
-			if(++pool_idx % SIZE_POOL == 0) {
-				pool_idx = 0;
-			}
-			if(SIZE_RING <= ++prev_idx) {
-				prev_idx = 0;
-			}
-		}
-
-		r->last_avail_idx = prev_idx;
-	}
-	else {
-		for(int i = 0; i < num_fin; i++) {
-			// ディスクリプタとパケットプールが確保できるまでwait
-			wait_push(r, prev_idx);
-
-			// パケットの紐づけ
-			//for(volatile int j = 0; j < NUM_LOOP; j++) {
-			//	;
-			//}
-
-			// index更新
-			if(++pool_idx % SIZE_POOL == 0) {
-				pool_idx = 0;
-			}
-			if(SIZE_RING <= ++prev_idx) {
-				prev_idx = 0;
-			}
-		}
-
-		for(int i = 0; i < num_fin; i++) {
-			set_param_avoid(&r->descs[prev_idx_shadow], pool_idx_shadow);
-			// index更新
-			if(++pool_idx_shadow % SIZE_POOL == 0) {
-				pool_idx_shadow = 0;
-			}
-			if(SIZE_RING <= ++prev_idx_shadow) {
-				prev_idx_shadow = 0;
-			}
-		}
-
-		r->last_avail_idx = prev_idx;
-	}
-
-	// 共有変数に反映
-	r->pool_index = pool_idx % SIZE_POOL;
 }
 
 void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
@@ -253,11 +197,13 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 #endif
 
 #if HEADER_SIZE > 0
+			//volatile int id = get_id(buffer);
+			//volatile int len = get_len(buffer);
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
 			set_len(buffer, 0);
+			//_mm_clflushopt(buffer->header.id_addr);
+			//_mm_clflushopt(buffer->header.len_addr);
 #endif
-			//_mm_clflushopt(buffer->id_addr);
-			//_mm_clflushopt(buffer->len_addr);
 
 			// index更新
 #ifdef STRIDE_VQ
@@ -314,7 +260,11 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 		}
 	}
 
-	for(int i = 0; i < num_fin; i++) {
+	int skipped_index = 64 / VQENTRY_SIZE;
+	int a = last_used_idx_shadow;
+	last_used_idx_shadow = (last_used_idx_shadow + skipped_index) % SIZE_RING;
+	for(int i = skipped_index; i < num_fin; i++) {
+	//for(int i = 0; i < num_fin; i++) {
 		// パケットの取得, ディスクリプタの紐づけ解除
 		delete_info(&r->descs[last_used_idx_shadow]);
 
@@ -331,28 +281,20 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 		}
 #endif
 	}
-}
 
-void pull_avoid(ring* r, int num_fin) {
-	int prev_idx = r->last_used_idx;
-
-	for(int i = 0; i < num_fin; i++) {
-		// ディスクリプタにバッファが割り当てられるまでwait
-		wait_pull(r, prev_idx);
-
-		// パケットの取得, ディスクリプタの紐づけ解除
-		delete_info(&r->descs[prev_idx]);
-
-		// index更新
-		if(SIZE_RING <= ++prev_idx) {
-			prev_idx = 0;
-		}
+	for(int i = 0; i < skipped_index; i++) {
+		delete_info(&r->descs[a + i]);
 	}
-
-	// 共有変数に反映
-	r->last_used_idx = prev_idx;
 }
 
+char dummy0[256][64];
+char dummy1[256][64];
+char dummy2[256][64];
+char dummy3[256][64];
+char dummy4[256][64];
+char dummy5[256][64];
+char dummy6[256][64];
+char dummy7[256][64];
 void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 	//int id[num_fin];
 	int id[num_fin];
@@ -364,6 +306,18 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 		id[i] = r->descs[r->last_used_idx].entry_index;
 		buf* buffer = &pool[id[i]];
 
+		//dummy0[r->last_used_idx][0] = dummy1[r->last_used_idx][0];
+		//dummy1[r->last_used_idx][0] = dummy0[r->last_used_idx][0];
+		//dummy2[r->last_used_idx][0] = dummy3[r->last_used_idx][0];
+		//dummy3[r->last_used_idx][0] = dummy2[r->last_used_idx][0];
+		//volatile char a = dummy0[r->last_used_idx][0];
+		//volatile char b = dummy1[r->last_used_idx][0];
+		//volatile char c = dummy2[r->last_used_idx][0];
+		//volatile char d = dummy3[r->last_used_idx][0];
+		//volatile char e = dummy4[r->last_used_idx][0];
+		//volatile char f = dummy5[r->last_used_idx][0];
+		//volatile char g = dummy6[r->last_used_idx][0];
+		//volatile char h = dummy7[r->last_used_idx][0];
 #ifdef STRIDE_VQ
 		r->last_used_idx += 4;
 		if(SIZE_RING <= r->last_used_idx) {
@@ -389,13 +343,14 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 		}
 #endif
 
-
 #if HEADER_SIZE > 0
+		//volatile int id = get_id(buffer);
+		//volatile int len = get_len(buffer);
 		set_id(buffer, (get_id(buffer) + 1) & 2047);
 		set_len(buffer, 2);
+		//_mm_clflushopt(buffer->header.id_addr);
+		//_mm_clflushopt(buffer->header.len_addr);
 #endif
-//		_mm_clflushopt(buffer->id_addr);
-//		_mm_clflushopt(buffer->len_addr);
 
 #if !defined(READ_SRV) && !defined(AVOID_SRV) && defined(VERIFICATION)
 		packet* p = get_packet_addr(&pool[id[i]]);
@@ -404,7 +359,13 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 #endif
 	}
 
-	for(int i = 0; i < num_fin; i++) {
+	int skipped_index = 64 / VQENTRY_SIZE;
+	int a = last_avail_idx_shadow;
+	int b = last_used_idx_shadow;
+	last_avail_idx_shadow = (last_avail_idx_shadow + skipped_index) % SIZE_RING;
+	last_used_idx_shadow = (last_used_idx_shadow + skipped_index) % SIZE_RING;
+	for(int i = skipped_index; i < num_fin; i++) {
+	//for(int i = 0; i < num_fin; i++) {
 		set_param(&ring_pair->descs[last_avail_idx_shadow], id[i]);
 #ifdef STRIDE_VQ
 		last_avail_idx_shadow += 4;
@@ -430,6 +391,11 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 			last_used_idx_shadow = 0;
 		}
 #endif
+	}
+
+	for(int i = 0; i < skipped_index; i++) {
+		set_param(&ring_pair->descs[a + i], id[i]);
+		delete_info(&r->descs[b + i]);
 	}
 }
 

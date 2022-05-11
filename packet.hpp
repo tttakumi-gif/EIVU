@@ -70,12 +70,14 @@ packet* get_packet_addr(buf* buffer) {
 }
 
 void set_id(buf* buffer, int32_t id) {
+#if HEADER_SIZE > 64 
 	*(int32_t*)buffer->header.id_addr = id;
 
 	int loop_num = HEADER_SIZE / 2 - 64;
 	for(int i = 64; i < loop_num; i += 64) {
 		((char*)buffer->header.id_addr)[i]++; 
 	}
+#endif
 }
 
 int32_t get_id(buf* buffer) {
