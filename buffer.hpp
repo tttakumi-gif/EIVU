@@ -33,6 +33,9 @@ constexpr int AVAIL_FLAG = 0b1 << 7;
 constexpr int USED_FLAG = 0b1 << 15;
 
 struct desc {
+#if VQENTRY_SIZE == 128
+	char padding[56];
+#endif
 #if VQENTRY_SIZE == 8
 	int32_t entry_index;
 #else
@@ -43,6 +46,9 @@ struct desc {
 	int16_t flags;
 #if VQENTRY_SIZE == 64 
 	char padding[48];
+#endif
+#if VQENTRY_SIZE == 128
+	char padding2[56];
 #endif
 };// __attribute__((__aligned__(2)));
 

@@ -67,13 +67,14 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 
 #if HEADER_SIZE > 0
 			// パケットの紐づけ
-			//volatile int id = get_id(buffer);
-			//volatile int len = get_len(buffer);
 			while(*(volatile int*)buffer->header.len_addr > 0) {
 				do_none();
 			}
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
 			set_len(buffer, 1);
+			//if(get_id(buffer) < 0 || get_len(buffer) < 0) {
+			//	exit(1);
+			//}
 			//_mm_clflushopt(buffer->header.id_addr);
 			//_mm_clflushopt(buffer->header.len_addr);
 #endif
@@ -88,9 +89,9 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 
 			// index更新
 #ifdef STRIDE_VQ
-			r->last_avail_idx += 4;
+			r->last_avail_idx += NUM_VQ_STRIDE;
 			if(SIZE_RING <= r->last_avail_idx) {
-				r->last_avail_idx = r->last_avail_idx % 4 + 1;
+				r->last_avail_idx = r->last_avail_idx % NUM_VQ_STRIDE + 1;
 			}
 #else
 			r->last_avail_idx += 1;
@@ -137,9 +138,9 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 
 			// index更新
 #ifdef STRIDE_VQ
-			r->last_avail_idx += 4;
+			r->last_avail_idx += NUM_VQ_STRIDE;
 			if(SIZE_RING <= r->last_avail_idx) {
-				r->last_avail_idx = r->last_avail_idx % 4 + 1;
+				r->last_avail_idx = r->last_avail_idx % NUM_VQ_STRIDE + 1;
 			}
 #else
 			r->last_avail_idx += 1;
@@ -166,9 +167,9 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 
 		// index更新
 #ifdef STRIDE_VQ
-		last_avail_idx_shadow += 4;
+		last_avail_idx_shadow += NUM_VQ_STRIDE;
 		if(SIZE_RING <= last_avail_idx_shadow) {
-			last_avail_idx_shadow = last_avail_idx_shadow % 4 + 1;
+			last_avail_idx_shadow = last_avail_idx_shadow % NUM_VQ_STRIDE + 1;
 		}
 #else
 		last_avail_idx_shadow += 1;
@@ -202,19 +203,18 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 #endif
 
 #if HEADER_SIZE > 0
-			//volatile int id = get_id(buffer);
-			//volatile int len = get_len(buffer);
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
 			set_len(buffer, 0);
-			//_mm_clflushopt(buffer->header.id_addr);
-			//_mm_clflushopt(buffer->header.len_addr);
+			//if(get_id(buffer) < 0 || get_len(buffer) < 0) {
+			//	exit(1);
+			//}
 #endif
 
 			// index更新
 #ifdef STRIDE_VQ
-			r->last_used_idx += 4;
+			r->last_used_idx += NUM_VQ_STRIDE;
 			if(SIZE_RING <= r->last_used_idx) {
-				r->last_used_idx = r->last_used_idx % 4 + 1;
+				r->last_used_idx = r->last_used_idx % NUM_VQ_STRIDE + 1;
 			}
 #else
 			r->last_used_idx += 1;
@@ -252,9 +252,9 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 
 			// index更新
 #ifdef STRIDE_VQ
-			r->last_used_idx += 4;
+			r->last_used_idx += NUM_VQ_STRIDE;
 			if(SIZE_RING <= r->last_used_idx) {
-				r->last_used_idx = r->last_used_idx % 4 + 1;
+				r->last_used_idx = r->last_used_idx % NUM_VQ_STRIDE + 1;
 			}
 #else
 			r->last_used_idx += 1;
@@ -278,9 +278,9 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 
 		// index更新
 #ifdef STRIDE_VQ
-		last_used_idx_shadow += 4;
+		last_used_idx_shadow += NUM_VQ_STRIDE;
 		if(SIZE_RING <= last_used_idx_shadow) {
-			last_used_idx_shadow = last_used_idx_shadow % 4 + 1;
+			last_used_idx_shadow = last_used_idx_shadow % NUM_VQ_STRIDE + 1;
 		}
 #else
 		last_used_idx_shadow += 1;
@@ -308,9 +308,9 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 		buf* buffer = &pool[id[i]];
 
 #ifdef STRIDE_VQ
-		r->last_used_idx += 4;
+		r->last_used_idx += NUM_VQ_STRIDE;
 		if(SIZE_RING <= r->last_used_idx) {
-			r->last_used_idx = r->last_used_idx % 4 + 1;
+			r->last_used_idx = r->last_used_idx % NUM_VQ_STRIDE + 1;
 		}
 #else
 		r->last_used_idx += 1;
@@ -321,9 +321,9 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 
 		wait_push(ring_pair, ring_pair->last_avail_idx);
 #ifdef STRIDE_VQ
-		ring_pair->last_avail_idx += 4;
+		ring_pair->last_avail_idx += NUM_VQ_STRIDE;
 		if(SIZE_RING <= ring_pair->last_avail_idx) {
-			ring_pair->last_avail_idx = ring_pair->last_avail_idx % 4 + 1;
+			ring_pair->last_avail_idx = ring_pair->last_avail_idx % NUM_VQ_STRIDE + 1;
 		}
 #else
 		ring_pair->last_avail_idx += 1;
@@ -337,6 +337,9 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 		//volatile int len = get_len(buffer);
 		set_id(buffer, (get_id(buffer) + 1) & 2047);
 		set_len(buffer, 2);
+		//if(get_id(buffer) < 0 || get_len(buffer) < 0) {
+		//	exit(1);
+		//}
 		//_mm_clflushopt(buffer->header.id_addr);
 		//_mm_clflushopt(buffer->header.len_addr);
 #endif
@@ -360,9 +363,9 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 #endif
 		set_param(&ring_pair->descs[last_avail_idx_shadow], id[i]);
 #ifdef STRIDE_VQ
-		last_avail_idx_shadow += 4;
+		last_avail_idx_shadow += NUM_VQ_STRIDE;
 		if(SIZE_RING <= last_avail_idx_shadow) {
-			last_avail_idx_shadow = last_avail_idx_shadow % 4 + 1;
+			last_avail_idx_shadow = last_avail_idx_shadow % NUM_VQ_STRIDE + 1;
 		}
 #else
 		last_avail_idx_shadow += 1;
@@ -373,9 +376,9 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 
 		delete_info(&r->descs[last_used_idx_shadow]);
 #ifdef STRIDE_VQ
-		last_used_idx_shadow += 4;
+		last_used_idx_shadow += NUM_VQ_STRIDE;
 		if(SIZE_RING <= last_used_idx_shadow) {
-			last_used_idx_shadow = last_used_idx_shadow % 4 + 1;
+			last_used_idx_shadow = last_used_idx_shadow % NUM_VQ_STRIDE + 1;
 		}
 #else
 		last_used_idx_shadow += 1;

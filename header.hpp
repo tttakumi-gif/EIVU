@@ -31,6 +31,7 @@
 //#define VQENTRY_SIZE 8 
 #define VQENTRY_SIZE 16
 //#define VQENTRY_SIZE 64
+//#define VQENTRY_SIZE 128
 
 //#define HEADER_SIZE 0
 //#define HEADER_SIZE 64
@@ -39,6 +40,8 @@
 
 //constexpr int32_t SIZE_PADDING = 0;
 constexpr int32_t SIZE_PADDING = 128;
+
+constexpr int32_t NUM_VQ_STRIDE = 4096;
 
 //#define SKIP_CLT
 #if 0 
@@ -53,8 +56,8 @@ constexpr int32_t SIZE_PADDING = 128;
 
 #define RANDOM
 
-#if 0
-//#define STRIDE_VQ 
+#if 1
+//#define STRIDE_VQ
 #else
 //#define SKIP_INDEX 
 #endif
