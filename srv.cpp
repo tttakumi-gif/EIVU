@@ -15,11 +15,7 @@ namespace {
 					num_fin = i;
 				}
 
-#ifdef SKIP_CLT
-				csring->pull_avoid(num_fin);
-#else
 				move_packet(csring, scring, pool, num_fin);
-#endif
 			}
 		}
 	//	else if(opt.process == COPY) {
@@ -87,7 +83,13 @@ int main(int argc, char* argv[]) {
 	}
 
 	// 送受信開始
+#ifndef SKIP_CLT
 	rs_packet(csring, scring, pool, opt);
+#else
+	while(*(volatile bool*)flag == true) {
+		;
+	}
+#endif
 
 	shm_unlink("shm_buf");
 

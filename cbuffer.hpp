@@ -59,9 +59,7 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 			packet* p = get_packet_addr(buffer);
 			
 			// ディスクリプタとパケットプールが確保できるまでwait
-#if defined(AVOID_CLT) || defined(SKIP_CLT)
-			wait_push(r, r->last_avail_idx);
-#else
+#ifndef SKIP_CLT
 			wait_push(r, r->last_avail_idx);
 #endif
 
@@ -71,7 +69,11 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 				do_none();
 			}
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
+#ifndef SKIP_CLT
 			set_len(buffer, 1);
+#else
+			set_len(buffer, 0);
+#endif
 			//if(get_id(buffer) < 0 || get_len(buffer) < 0) {
 			//	exit(1);
 			//}
@@ -112,9 +114,7 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 			packet* xmm01 = get_packet_addr(buffer);
 			packet* xmm02 = parray[i];
 
-#if defined(AVOID_CLT) || defined(SKIP_CLT)
-			wait_push(r, r->last_avail_idx);
-#else
+#ifndef SKIP_CLT
 			wait_push(r, r->last_avail_idx);
 #endif
 
@@ -124,7 +124,11 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 				do_none();
 			}
 			set_id(buffer, (get_id(buffer) + 1) & 2047);
+#ifndef SKIP_CLT
 			set_len(buffer, 1);
+#else
+			set_len(buffer, 0);
+#endif
 #endif
 
 			for(int j = 0; j < NUM_LOOP; j++) {
@@ -197,7 +201,7 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 			wait_pull(r, r->last_used_idx);
 
 			buf* buffer = &pool[r->descs[r->last_used_idx].entry_index];
-#ifndef AVOID_CLT
+#ifndef AVOID_TX
 			packet* p = get_packet_addr(buffer);
 			memcpy((void*)(parray[i]), (void*)p, SIZE_PACKET);
 #endif

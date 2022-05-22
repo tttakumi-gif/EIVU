@@ -36,7 +36,7 @@
 //#define HEADER_SIZE 0
 //#define HEADER_SIZE 64
 #define HEADER_SIZE 128
-//#define HEADER_SIZE 1024
+//#define HEADER_SIZE 1024 
 
 //constexpr int32_t SIZE_PADDING = 0;
 constexpr int32_t SIZE_PADDING = 128;
@@ -44,11 +44,11 @@ constexpr int32_t SIZE_PADDING = 128;
 constexpr int32_t NUM_VQ_STRIDE = 4096;
 
 //#define SKIP_CLT
-#if 0 
+#if 0
 #if 1
-#define ZERO_COPY
-#define AVOID_CLT
+//#define ZERO_COPY
 //#define AVOID_SRV
+//#define AVOID_TX
 #else 
 #define READ_SRV
 #endif

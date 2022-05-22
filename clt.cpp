@@ -92,6 +92,10 @@ int main(int argc, char **argv) {
 	// 送受信開始
 	send_packet(csring, pool, opt);
 
+#ifdef SKIP_CLT
+	*flag = false;
+#endif
+
 	shm_unlink("shm_buf");
 
 	return 0;

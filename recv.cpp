@@ -58,7 +58,7 @@ namespace {
 			}
 			
 			// パケット受信
-//#ifdef AVOID_CLT
+//#ifdef AVOID_TX
 //			pull_avoid(scring, num_fin);
 //#else
 			for(int j = 0; j < num_fin; j++) {
@@ -91,7 +91,7 @@ namespace {
 //#endif
 		}
 
-#ifndef AVOID_CLT
+#ifndef AVOID_TX
 		delete(parray);
 		delete(pool_local);
 #endif
@@ -119,7 +119,13 @@ int main(int argc, char **argv) {
 	std::chrono::system_clock::time_point start, end;
 	start = std::chrono::system_clock::now();
 
+#ifndef SKIP_CLT
 	recv_packet(scring, pool, opt);
+#else
+	while(*(volatile bool*)flag == true) {
+		;
+	}
+#endif
 
 	// 計測終了
 	end = std::chrono::system_clock::now();
