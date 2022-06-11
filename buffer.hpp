@@ -81,9 +81,9 @@ struct ring {
 	uint16_t last_avail_idx;
 	uint16_t last_used_idx;
 	int32_t pool_index;
-	//int_fast32_t __attribute__((__aligned__(64))) last_avail_idx;
-	//int_fast32_t __attribute__((__aligned__(64))) last_used_idx;
-	//int_fast32_t __attribute__((__aligned__(64))) pool_index;
+	//uint16_t __attribute__((__aligned__(64))) last_avail_idx;
+	//uint16_t __attribute__((__aligned__(64))) last_used_idx;
+	//int32_t __attribute__((__aligned__(64))) pool_index;
 	desc descs[SIZE_RING];
 //	vring_desc vdesc[SIZE_RING];
 //	vring_avail vavail[SIZE_RING];

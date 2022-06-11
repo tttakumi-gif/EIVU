@@ -77,7 +77,9 @@ int main(int argc, char* argv[]) {
 	volatile bool *flag = (volatile bool*)(scring + 1);
 	*flag = false;
 
+#ifdef PRINT
 	std::printf("srv: \n  - pool: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool, csring, scring, flag);
+#endif
 
 	while(!*flag) {
 	}

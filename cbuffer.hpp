@@ -46,7 +46,7 @@ void init_ring(ring* r) {
 char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 17, 4, 16, 26, 19, 5, 28, 20, 6, 27, 7, 8, 18, 29, 9};
 #endif
 
-void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
+void ipush(ring* r, buf **parray, buf *pool, int num_fin, bool is_stream) {
 	int last_avail_idx_shadow = r->last_avail_idx;
 
 	if(!is_stream) {
@@ -63,31 +63,21 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 			wait_push(r, r->last_avail_idx);
 #endif
 
-#if HEADER_SIZE > 0
-			// パケットの紐づけ
-			while(*(volatile int*)buffer->header.len_addr > 0) {
-				do_none();
-			}
-			set_id(buffer, (get_id(buffer) + 1) & 2047);
-#ifndef SKIP_CLT
-			set_len(buffer, 1);
-#else
-			set_len(buffer, 0);
-#endif
-			//if(get_id(buffer) < 0 || get_len(buffer) < 0) {
-			//	exit(1);
-			//}
-			//_mm_clflushopt(buffer->header.id_addr);
-			//_mm_clflushopt(buffer->header.len_addr);
-#endif
-
 #ifndef ZERO_COPY
-			memcpy((void*)p, (void*)parray[i], SIZE_PACKET);
+			memcpy((void*)p, (void*)parray[i]->addr, SIZE_PACKET);
 #endif
 //			for(int j = 0; j < NUM_LOOP2; j++) {
 //				__asm__("cldemote (%0)" :: "r" ((int64_t*)&p + j));
 //				__asm__("cldemote (%0)" :: "r" ((int64_t*)&parray[i] + j));
 //			}
+
+#if HEADER_SIZE > 0
+			set_id(parray[i], (get_id(parray[i]) + 1) & 2047);
+			set_len(parray[i], 1);
+  		//if(get_id(parray[i]) < 0 || get_len(parray[i]) < 0) {
+  		//	exit(1);
+  		//}
+#endif
 
 			// index更新
 #ifdef STRIDE_VQ
@@ -112,23 +102,15 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 			buf* buffer = &pool[r->pool_index + i];
 #endif
 			packet* xmm01 = get_packet_addr(buffer);
-			packet* xmm02 = parray[i];
+			packet* xmm02 = (packet*)parray[i]->addr;
 
 #ifndef SKIP_CLT
 			wait_push(r, r->last_avail_idx);
 #endif
 
 #if HEADER_SIZE > 0
-			// パケットの紐づけ
-			while(*(volatile int32_t*)buffer->header.len_addr > 0) {
-				do_none();
-			}
-			set_id(buffer, (get_id(buffer) + 1) & 2047);
-#ifndef SKIP_CLT
-			set_len(buffer, 1);
-#else
-			set_len(buffer, 0);
-#endif
+			set_id(parray[i], (get_id(parray[i]) + 1) & 2047);
+			set_len(parray[i], 1);
 #endif
 
 			for(int j = 0; j < NUM_LOOP; j++) {
@@ -193,7 +175,7 @@ void ipush(ring* r, packet **parray, buf *pool, int num_fin, bool is_stream) {
 	r->pool_index = (r->pool_index + num_fin) % SIZE_POOL;
 }
 
-void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
+void pull(ring* r, buf* parray[], buf *pool, int num_fin, bool is_stream) {
 	int last_used_idx_shadow = r->last_used_idx;
 	if(!is_stream) {
 		for(int i = 0; i < num_fin; i++) {
@@ -203,13 +185,13 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 			buf* buffer = &pool[r->descs[r->last_used_idx].entry_index];
 #ifndef AVOID_TX
 			packet* p = get_packet_addr(buffer);
-			memcpy((void*)(parray[i]), (void*)p, SIZE_PACKET);
+			memcpy((void*)(parray[i]->addr), (void*)p, SIZE_PACKET);
 #endif
 
 #if HEADER_SIZE > 0
-			set_id(buffer, (get_id(buffer) + 1) & 2047);
-			set_len(buffer, 0);
-			//if(get_id(buffer) < 0 || get_len(buffer) < 0) {
+			set_id(parray[i], (get_id(parray[i]) + 1) & 2047);
+			set_len(parray[i], 0);
+			//if(get_id(parray[i]) < 0 || get_len(parray[i]) < 0) {
 			//	exit(1);
 			//}
 #endif
@@ -235,7 +217,7 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 			buf* buffer = &pool[r->descs[r->last_used_idx].entry_index];
 			packet *p = get_packet_addr(buffer);
 
-			auto* xmm01 = parray[i];
+			auto* xmm01 = (packet*)parray[i]->addr;
 			auto* xmm02 = p;
 			for(int j = 0; j < NUM_LOOP; j++) {
 				if(!IS_PSMALL) {
@@ -250,8 +232,8 @@ void pull(ring* r, packet* parray[], buf *pool, int num_fin, bool is_stream) {
 			}
 
 #if HEADER_SIZE > 0
-			set_id(buffer, (get_id(buffer) + 1) & 2047);
-			set_len(buffer, 0);
+			set_id(parray[i], (get_id(parray[i]) + 1) & 2047);
+			set_len(parray[i], 0);
 #endif
 
 			// index更新
@@ -337,8 +319,6 @@ void move_packet(ring* r, ring* ring_pair, buf *pool, int num_fin) {
 #endif
 
 #if HEADER_SIZE > 0
-		//volatile int id = get_id(buffer);
-		//volatile int len = get_len(buffer);
 		set_id(buffer, (get_id(buffer) + 1) & 2047);
 		set_len(buffer, 2);
 		//if(get_id(buffer) < 0 || get_len(buffer) < 0) {

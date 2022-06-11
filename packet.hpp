@@ -40,6 +40,9 @@ struct mbuf_header {
 
 struct buf {
 	mbuf_header header;
+#if HEADER_SIZE > 0 && HEADER_SIZE < 128
+	char padding_extra[128 - HEADER_SIZE];
+#endif
 	char padding[SIZE_PADDING];
 	char addr[SIZE_BUFFER - SIZE_PADDING];
 };
@@ -69,9 +72,22 @@ packet* get_packet_addr(buf* buffer) {
 	return (packet*)buffer->addr;
 }
 
+static inline void *__movsb(void *d, const void *s, size_t n) {
+  asm volatile ("rep movsb"
+                : "=D" (d),
+                  "=S" (s),
+                  "=c" (n)
+                : "0" (d),
+                  "1" (s),
+                  "2" (n)
+                : "memory");
+  return d;
+}
+
 void set_id(buf* buffer, int32_t id) {
 #if HEADER_SIZE > 64 
-	*(int32_t*)buffer->header.id_addr = id;
+	memset(buffer->header.id_addr, id, 64);
+	//__movsb(buffer->header.id_addr, &id, 4);
 
 	int loop_num = HEADER_SIZE / 2 - 64;
 	for(int i = 64; i < loop_num; i += 64) {
@@ -85,12 +101,16 @@ int32_t get_id(buf* buffer) {
 }
 
 void set_len(buf* buffer, int32_t len) {
-	*(int32_t*)buffer->header.len_addr = len;
-
+#if HEADER_SIZE >= 128
+	memset(buffer->header.len_addr, len, 64);
+	//__movsb(buffer->header.len_addr, &len, 4);
 	int loop_num = HEADER_SIZE / 2 - 64;
 	for(int i = 64; i < loop_num; i += 64) {
 		((char*)buffer->header.len_addr)[i]++; 
 	}
+#else
+	memset(buffer->header.len_addr, len, HEADER_SIZE / 2);
+#endif
 }
 
 int32_t get_len(buf* buffer) {

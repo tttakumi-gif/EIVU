@@ -14,7 +14,7 @@ namespace {
 
 		int local_pool_index = 0;
 		buf* pool_local = new (std::align_val_t{64}) buf[SIZE_POOL];
-		packet** parray = new packet*[opt.size_batch];
+		buf** parray = new buf*[opt.size_batch];
 
 		while(0 < i) {
 			// 受信パケット数の決定
@@ -24,15 +24,15 @@ namespace {
 
 			for(int j = 0; j < num_fin; j++, i--) {
 #ifdef RANDOM
-				parray[j] = get_packet_addr(&pool_local[local_pool_index + (int)ids[j]]);
+				parray[j] = &pool_local[local_pool_index + (int)ids[j]];
 #else
-				parray[j] = get_packet_addr(&pool_local[local_pool_index]);
+				parray[j] = &pool_local[local_pool_index];
 				if(SIZE_POOL <= ++local_pool_index) {
 					local_pool_index = 0;
 				}
 #endif
-				parray[j]->packet_id = i;
-				parray[j]->packet_len = SIZE_PACKET;
+				((packet*)(parray[j]->addr))->packet_id = i;
+				((packet*)(parray[j]->addr))->packet_len = SIZE_PACKET;
 			}
 			ipush(csring, parray, pool, num_fin, is_stream);
 #ifdef RANDOM
@@ -59,16 +59,16 @@ namespace {
 }
 
 int main(int argc, char **argv) {
-	puts("begin");
-
 	{
 		constexpr int size = sizeof(ring) * 2 + sizeof(buf) * SIZE_POOL + sizeof(volatile bool);
+#ifdef PRINT
 		std::cout << "size: " << size << std::endl;
-		static_assert(size <= SIZE_SHM, "over packet size");
 		std::cout << "packet size: " << sizeof(packet) << ", " << SIZE_PACKET << std::endl;
 		std::cout << "packet buffer size: " << sizeof(buf) << std::endl;
 		std::cout << "desc size: " << sizeof(desc) << std::endl;
 		std::cout << "ring size: " << sizeof(ring) << std::endl;
+#endif
+		static_assert(size <= SIZE_SHM, "over packet size");
 	}
 
 	// 初期設定
@@ -82,7 +82,9 @@ int main(int argc, char **argv) {
 	volatile bool *flag = (volatile bool*)(scring + 1);
 	*flag = false;
 
+#ifdef PRINT
 	std::printf("clt: \n  - pool: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool, csring, scring, flag);
+#endif
 
 	init_resource();
 

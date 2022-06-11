@@ -1,8 +1,6 @@
 #include "buffer.hpp"
 #include "shm.hpp"
 
-#define PRINT
-
 namespace {
 
 #ifdef VERIFICATION
@@ -49,7 +47,7 @@ namespace {
 
 		int local_pool_index = 0;
 		buf* pool_local = new (std::align_val_t{64}) buf[SIZE_POOL];
-		packet** parray = new packet*[opt.size_batch];
+		buf** parray = new buf*[opt.size_batch];
 
 		for(int i = NUM_PACKET; 0 < i; i -= num_fin) {
 			// 受信パケット数の決定
@@ -63,9 +61,9 @@ namespace {
 //#else
 			for(int j = 0; j < num_fin; j++) {
 #ifdef RANDOM
-				parray[j] = get_packet_addr(&pool_local[local_pool_index + (int)ids[j]]);
+				parray[j] = &pool_local[local_pool_index + (int)ids[j]];
 #else
-				parray[j] = get_packet_addr(&pool_local[local_pool_index]);
+				parray[j] = &pool_local[local_pool_index];
 				if(SIZE_POOL <= ++local_pool_index) {
 					local_pool_index = 0;
 				}
@@ -85,7 +83,9 @@ namespace {
 			judge_packet(parray, num_fin);
 #else
 			if(unlikely((i & 8388607) == 0)) {
+#ifdef PRINT
 				print(parray[0]);
+#endif
 			}
 #endif
 //#endif
@@ -110,8 +110,10 @@ int main(int argc, char **argv) {
 
 	bool *flag = (bool*)(scring + 1);
 
+#ifdef PRINT
 	std::printf("recv: \n  - pool: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool, csring, scring, flag);
 	//std::printf("recv: \n  - pool: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", &scring->size, &scring->last_avail_idx, &scring->last_used_idx, &scring->pool_index);
+#endif
 
 	*flag = true;
 

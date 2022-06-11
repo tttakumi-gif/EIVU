@@ -95,9 +95,11 @@ info_opt get_opt(int argc, char **argv) {
 		}
 	}
 #endif
+#ifdef PRINT
 	if(result.num <= 0) {
 		result.print_opt();
 	}
+#endif
 	return result;
 }
 
@@ -117,7 +119,9 @@ bool judge_stream(std::string optarg) {
 		return true;
 	}
 	else if(optarg != "off") {
+#ifdef PRINT
 		std::printf("invalid argument \"--process=%s\"\n", optarg.c_str());
+#endif
 	}
 
 	return false;
