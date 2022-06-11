@@ -70,7 +70,7 @@ namespace {
 #endif
 			}
 
-			pull(scring, parray, pool, num_fin, is_stream);
+            send_guest_to_tx(scring, parray, pool, num_fin, is_stream);
 #ifdef RANDOM
 			local_pool_index += num_fin;
 			if(SIZE_POOL <= local_pool_index) {

@@ -34,7 +34,7 @@ namespace {
 				((packet*)(parray[j]->addr))->packet_id = i;
 				((packet*)(parray[j]->addr))->packet_len = SIZE_PACKET;
 			}
-			ipush(csring, parray, pool, num_fin, is_stream);
+            send_rx_to_guest(csring, parray, pool, num_fin, is_stream);
 #ifdef RANDOM
 			local_pool_index += num_fin;
 			if(SIZE_POOL <= local_pool_index) {

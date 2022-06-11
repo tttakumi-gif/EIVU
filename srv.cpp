@@ -41,18 +41,18 @@ namespace {
 	//			}
 	//			scring.ipush_avoid(SRV, num_fin, is_stream);
 	//#elif defined(READ_SRV)
-	//			//csring.pull(parray, pool, num_fin);
+	//			//csring.send_guest_to_tx(parray, pool, num_fin);
 	//			volatile packet *p;
 	//			for(volatile int j = 0; j < num_fin; j++) {
 	//				p = &parray[j];
 	//			}
 	//			scring.ipush_avoid(SRV, num_fin, is_stream);
 	//#else
-	//			csring.pull(parray, pool, num_fin, is_stream);
+	//			csring.send_guest_to_tx(parray, pool, num_fin, is_stream);
 	//			for(volatile int j = 0; j < num_fin; j++) {
 	//				parray[j].set_verification();
 	//			}
-	//			scring.ipush(parray, pool, SRV, num_fin, is_stream);
+	//			scring.send_rx_to_guest(parray, pool, SRV, num_fin, is_stream);
 	//#endif
 	//		}
 	//	}
