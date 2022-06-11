@@ -28,18 +28,18 @@
 #include <iostream>
 #include <chrono>
 
-//#define VQENTRY_SIZE 8
-#define VQENTRY_SIZE 16
-//#define VQENTRY_SIZE 64
-//#define VQENTRY_SIZE 128
+//#define VQ_ENTRY_SIZE 8
+#define VQ_ENTRY_SIZE 16
+//#define VQ_ENTRY_SIZE 64
+//#define VQ_ENTRY_SIZE 128
 
-//#define HEADER_SIZE 0
-//#define HEADER_SIZE 64
-#define HEADER_SIZE 128
-//#define HEADER_SIZE 1024 
+//#define MBUF_HEADER_SIZE 0
+//#define MBUF_HEADER_SIZE 64
+#define MBUF_HEADER_SIZE 128
+//#define MBUF_HEADER_SIZE 1024
 
-//constexpr int32_t SIZE_PADDING = 0;
-constexpr int32_t SIZE_PADDING = 128;
+//constexpr int32_t PACKET_BUFFER_PADDING = 0;
+constexpr int32_t PACKET_BUFFER_PADDING = 128;
 
 //#define SKIP_CLT
 #if 0

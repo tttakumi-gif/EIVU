@@ -2,99 +2,63 @@
 #include "shm.hpp"
 
 namespace {
-	void rs_packet(ring *csring, ring *scring, buf *pool, info_opt opt) {
+    void rs_packet(vq *vq_rx_to_guest, vq *ring_guest_to_tx, buf *pool_guest_addr, info_opt opt) {
 #ifdef CPU_BIND
-		bind_core(1);
+        bind_core(1);
 #endif
 
-		if(opt.process == MOVE) {
-			int32_t num_fin = opt.size_batch;
+        if (opt.process == MOVE) {
+            int32_t num_fin = opt.size_batch;
 
-			for(int i = NUM_PACKET; 0 < i; i -= num_fin) {
-				if(unlikely(i < num_fin)) {
-					num_fin = i;
-				}
+            for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
+                if (unlikely(i < num_fin)) {
+                    num_fin = i;
+                }
 
-				move_packet(csring, scring, pool, num_fin);
-			}
-		}
-	//	else if(opt.process == COPY) {
-	//		bool is_stream = (opt.stream == ON) ? true : false;
-	//#ifndef AVOID_SRV
-	//		packet *parray;
-	//		parray = new (std::align_val_t{64}) packet[opt.size_batch];
-	//		assert((intptr_t(pool) & 63) == 0);
-	//		assert((intptr_t(parray) & 63) == 0);
-	//#endif
-	//
-	//		int_fast32_t num_fin = opt.size_batch;
-	//
-	//		for(int_fast32_t i = NUM_PACKET; 0 < i; i -= num_fin) {
-	//			if(unlikely(i < num_fin)) {
-	//				num_fin = i;
-	//			}
-	//
-	//#ifdef AVOID_SRV
-	//			csring.pull_avoid(num_fin);
-	//			for(volatile int j = 0; j < num_fin; j++) {
-	//				;
-	//			}
-	//			scring.ipush_avoid(SRV, num_fin, is_stream);
-	//#elif defined(READ_SRV)
-	//			//csring.send_guest_to_tx(parray, pool, num_fin);
-	//			volatile packet *p;
-	//			for(volatile int j = 0; j < num_fin; j++) {
-	//				p = &parray[j];
-	//			}
-	//			scring.ipush_avoid(SRV, num_fin, is_stream);
-	//#else
-	//			csring.send_guest_to_tx(parray, pool, num_fin, is_stream);
-	//			for(volatile int j = 0; j < num_fin; j++) {
-	//				parray[j].set_verification();
-	//			}
-	//			scring.send_rx_to_guest(parray, pool, SRV, num_fin, is_stream);
-	//#endif
-	//		}
-	//	}
-	}
+                guest_recv_process(vq_rx_to_guest, ring_guest_to_tx, pool_guest_addr, num_fin);
+            }
+        } else {
+            exit(1);
+        }
+    }
 }
 
-int main(int argc, char* argv[]) {
-	// 初期設定
-	int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
-	buf *pool = (buf*)mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+int main(int argc, char *argv[]) {
+    // 初期設定
+    int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
+    buf *pool_guest_addr = (buf *) mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
 
-	ring *csring = (ring*)(pool + SIZE_POOL);
-	init_ring(csring);
+    vq *vq_rx_to_guest = (vq *) (pool_guest_addr + POOL_ENTRY_NUM);
+    init_ring(vq_rx_to_guest);
 
-	ring *scring = (ring*)(csring + 1);
-	init_ring(scring);
+    vq *vq_guest_to_tx = (vq *) (vq_rx_to_guest + 1);
+    init_ring(vq_guest_to_tx);
 
-	memset(pool, 0, sizeof(buf) * SIZE_POOL);
+    memset(pool_guest_addr, 0, sizeof(buf) * POOL_ENTRY_NUM);
 
-	info_opt opt = get_opt(argc, argv);
-	
-	volatile bool *flag = (volatile bool*)(scring + 1);
-	*flag = false;
+    info_opt opt = get_opt(argc, argv);
+
+    volatile bool *flag = (volatile bool *) (vq_guest_to_tx + 1);
+    *flag = false;
 
 #ifdef PRINT
-	std::printf("srv: \n  - pool: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool, csring, scring, flag);
+    std::printf("srv: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool_guest_addr, vq_rx_to_guest, vq_guest_to_tx, flag);
 #endif
 
-	while(!*flag) {
-	}
+    while (!*flag) {
+    }
 
-	// 送受信開始
+    // 送受信開始
 #ifndef SKIP_CLT
-	rs_packet(csring, scring, pool, opt);
+    rs_packet(vq_rx_to_guest, vq_guest_to_tx, pool_guest_addr, opt);
 #else
-	while(*(volatile bool*)flag == true) {
-		;
-	}
+    while(*(volatile bool*)flag == true) {
+        ;
+    }
 #endif
 
-	shm_unlink("shm_buf");
+    shm_unlink("shm_buf");
 
-	return 0;
+    return 0;
 }
 

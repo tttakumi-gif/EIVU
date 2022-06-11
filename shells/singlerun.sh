@@ -24,14 +24,14 @@ perf=""
 #	sudo ~/new-b4-assignment/srv.out --batch=32
 #done
 
-sudo ${perf} ../build/srv.out --stream=off --process=move --batch=32 &
-#sudo ../build/srv.out --stream=off --process=move --batch=32 &
+sudo ${perf} ./srv.out --stream=off --process=move --batch=32 &
+#sudo ./srv.out --stream=off --process=move --batch=32 &
 sleep 0.5
-#sudo ${perf} ../build/clt.out --batch=$batch --process=copy --stream=$1 &
-sudo ../build/clt.out --batch=$batch --process=copy --stream=$1 &
-sleep 0.5 
-#sudo ${perf} ../build/recv.out --stream=$2 --process=copy --batch=32
-sudo ../build/recv.out --stream=$2 --process=copy --batch=32
+#sudo ${perf} ./clt.out --batch=$batch --process=copy --stream=$1 &
+sudo ./clt.out --batch=$batch --process=copy --stream=$1 &
+sleep 0.5
+#sudo ${perf} ./recv.out --stream=$2 --process=copy --batch=32
+sudo ./recv.out --stream=$2 --process=copy --batch=32
 
 #sudo ~/new-b4-assignment/build/clt.out --batch=$batch --process=copy --stream=$@ &
 #sleep 0.1

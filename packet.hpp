@@ -7,7 +7,6 @@
 constexpr int32_t SIZE_PACKET = 64;
 constexpr bool IS_PSMALL = SIZE_PACKET < 32;
 constexpr int32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32) + (SIZE_PACKET % 32 == 0 ? 0 : 1);
-constexpr int32_t NUM_LOOP2 = SIZE_PACKET / 64;
 
 #if 1 
 //constexpr int32_t NUM_PACKET = 409600;
@@ -34,17 +33,17 @@ constexpr int32_t SIZE_BUFFER = sizeof(packet);
 #endif
 
 struct mbuf_header {
-	char id_addr[HEADER_SIZE / 2];
-	char len_addr[HEADER_SIZE / 2];
+	char id_addr[MBUF_HEADER_SIZE / 2];
+	char len_addr[MBUF_HEADER_SIZE / 2];
 };
 
 struct buf {
 	mbuf_header header;
-#if HEADER_SIZE > 0 && HEADER_SIZE < 128
-	char padding_extra[128 - HEADER_SIZE];
+#if MBUF_HEADER_SIZE > 0 && MBUF_HEADER_SIZE < 128
+	char padding_extra[128 - MBUF_HEADER_SIZE];
 #endif
-	char padding[SIZE_PADDING];
-	char addr[SIZE_BUFFER - SIZE_PADDING];
+	char padding[PACKET_BUFFER_PADDING];
+	char addr[SIZE_BUFFER - PACKET_BUFFER_PADDING];
 };
 
 void do_none() {
@@ -85,11 +84,11 @@ static inline void *__movsb(void *d, const void *s, size_t n) {
 }
 
 void set_id(buf* buffer, int32_t id) {
-#if HEADER_SIZE > 64 
+#if MBUF_HEADER_SIZE > 64
 	memset(buffer->header.id_addr, id, 64);
 	//__movsb(buffer->header.id_addr, &id, 4);
 
-	int loop_num = HEADER_SIZE / 2 - 64;
+	int loop_num = MBUF_HEADER_SIZE / 2 - 64;
 	for(int i = 64; i < loop_num; i += 64) {
 		((char*)buffer->header.id_addr)[i]++; 
 	}
@@ -101,15 +100,15 @@ int32_t get_id(buf* buffer) {
 }
 
 void set_len(buf* buffer, int32_t len) {
-#if HEADER_SIZE >= 128
+#if MBUF_HEADER_SIZE >= 128
 	memset(buffer->header.len_addr, len, 64);
 	//__movsb(buffer->header.len_addr, &len, 4);
-	int loop_num = HEADER_SIZE / 2 - 64;
+	int loop_num = MBUF_HEADER_SIZE / 2 - 64;
 	for(int i = 64; i < loop_num; i += 64) {
 		((char*)buffer->header.len_addr)[i]++; 
 	}
 #else
-	memset(buffer->header.len_addr, len, HEADER_SIZE / 2);
+	memset(buffer->header.len_addr, len, MBUF_HEADER_SIZE / 2);
 #endif
 }
 
