@@ -47,25 +47,18 @@ char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 
                 8, 18, 29, 9};
 #endif
 
-void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, buf *pool_guest_addr, int num_fin, bool is_stream) {
+void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_guest_addr, int num_fin, bool is_stream) {
     int last_avail_idx_shadow = vq_rx_to_guest->last_avail_idx;
 
     if (!is_stream) {
         for (int i = 0; i < num_fin; i++) {
-#ifdef RANDOM
-            buf *packet_buffer_dest = &pool_guest_addr[vq_rx_to_guest->last_pool_idx + ids[i]];
-#else
-            buf* packet_buffer_dest = &pool_guest_addr[vq_rx_to_guest->last_pool_idx + i];
-#endif
-            packet *packet_addr_dest = get_packet_addr(packet_buffer_dest);
-
             // ディスクリプタとパケットプールが確保できるまでwait
 #ifndef SKIP_CLT
             wait_push(vq_rx_to_guest, vq_rx_to_guest->last_avail_idx);
 #endif
 
 #ifndef ZERO_COPY
-            memcpy((void *) packet_addr_dest, (void *) pool_host_addr[i]->addr, SIZE_PACKET);
+            memcpy(pool_guest_addr[i], (void *) pool_host_addr[i]->addr, SIZE_PACKET);
 #endif
 //			for(int j = 0; j < NUM_LOOP2; j++) {
 //				__asm__("cldemote (%0)" :: "vq_rx_to_guest" ((int64_t*)&packet_addr_dest + j));
@@ -96,12 +89,7 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, buf *pool_guest_
     } else {
         for (int i = 0; i < num_fin; i++) {
             // ディスクリプタとパケットプールが確保できるまでwait
-#ifdef RANDOM
-            buf *packet_buffer_dest = &pool_guest_addr[vq_rx_to_guest->last_pool_idx + ids[i]];
-#else
-            buf* packet_buffer_dest = &pool_guest_addr[vq_rx_to_guest->last_pool_idx + i];
-#endif
-            packet *xmm01 = get_packet_addr(packet_buffer_dest);
+            void *xmm01 = pool_guest_addr[i];
             packet *xmm02 = (packet *) pool_host_addr[i]->addr;
 
 #ifndef SKIP_CLT
@@ -142,7 +130,7 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, buf *pool_guest_
     last_avail_idx_shadow = (last_avail_idx_shadow + skipped_index) % VQ_ENYRY_NUM;
     for (int i = skipped_index; i < num_fin; i++) {
 #else
-        for(int i = 0; i < num_fin; i++) {
+    for(int i = 0; i < num_fin; i++) {
 #endif
 #ifdef RANDOM
         set_param(&vq_rx_to_guest->descs[last_avail_idx_shadow], vq_rx_to_guest->last_pool_idx + ids[i]);
@@ -169,22 +157,17 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, buf *pool_guest_
         set_param(&vq_rx_to_guest->descs[a + i], vq_rx_to_guest->last_pool_idx + ids[i]);
     }
 #endif
-
-    // 共有変数に反映
-    vq_rx_to_guest->last_pool_idx = (vq_rx_to_guest->last_pool_idx + num_fin) % POOL_ENTRY_NUM;
 }
 
-void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, buf *pool_guest_addr, int num_fin, bool is_stream) {
+void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_guest_addr, int num_fin, bool is_stream) {
     int last_used_idx_shadow = vq_guest_to_tx->last_used_idx;
     if (!is_stream) {
         for (int i = 0; i < num_fin; i++) {
             // ディスクリプタにバッファが割り当てられるまでwait
             wait_pull(vq_guest_to_tx, vq_guest_to_tx->last_used_idx);
 
-            buf *packet_buffer_src = &pool_guest_addr[vq_guest_to_tx->descs[vq_guest_to_tx->last_used_idx].entry_index];
 #ifndef AVOID_TX
-            packet *packet_addr_src = get_packet_addr(packet_buffer_src);
-            memcpy((void *) (pool_host_addr[i]->addr), (void *) packet_addr_src, SIZE_PACKET);
+            memcpy((void *) (pool_host_addr[i]->addr), pool_guest_addr[i], SIZE_PACKET);
 #endif
 
 #if MBUF_HEADER_SIZE > 0
@@ -212,11 +195,9 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, buf *pool_guest_
         for (int i = 0; i < num_fin; i++) {
             // ディスクリプタにバッファが割り当てられるまでwait
             wait_pull(vq_guest_to_tx, vq_guest_to_tx->last_used_idx);
-            buf *packet_buffer_src = &pool_guest_addr[vq_guest_to_tx->descs[vq_guest_to_tx->last_used_idx].entry_index];
-            packet *packet_addr_src = get_packet_addr(packet_buffer_src);
 
             auto *xmm01 = (packet *) pool_host_addr[i]->addr;
-            auto *xmm02 = packet_addr_src;
+            auto *xmm02 = pool_guest_addr[i];
             for (int j = 0; j < NUM_LOOP; j++) {
                 if (!IS_PSMALL) {
                     //_mm256_stream_si256((__m256i*)xmm01 + j, _mm256_load_si256((__m256i*)xmm02 + j));

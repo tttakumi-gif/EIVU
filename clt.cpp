@@ -15,6 +15,7 @@ namespace {
         int local_pool_index = 0;
         buf *pool_rx_addr = new(std::align_val_t{64}) buf[POOL_ENTRY_NUM];
         buf **send_addrs = new buf *[opt.size_batch];
+        void **send_addrs_dest = new void *[opt.size_batch];
 
         while (0 < i) {
             // 受信パケット数の決定
@@ -26,21 +27,27 @@ namespace {
 #ifdef RANDOM
                 send_addrs[j] = &pool_rx_addr[local_pool_index + (int) ids[j]];
 #else
-                send_addrs[j] = &pool_rx_addr[local_pool_index];
-                if(POOL_ENTRY_NUM <= ++local_pool_index) {
-                    local_pool_index = 0;
-                }
+                send_addrs[j] = &pool_rx_addr[local_pool_index + j];
 #endif
                 ((packet *) (send_addrs[j]->addr))->packet_id = i;
                 ((packet *) (send_addrs[j]->addr))->packet_len = SIZE_PACKET;
-            }
-            send_rx_to_guest(vq_rx_to_guest, send_addrs, pool_guest_addr, num_fin, is_stream);
+
 #ifdef RANDOM
-            local_pool_index += num_fin;
-            if (POOL_ENTRY_NUM <= local_pool_index) {
+		int offset = 2304 * (vq_rx_to_guest->last_pool_idx + ids[j]) + 128 + 128;
+#else
+                int offset = 2304 * (vq_rx_to_guest->last_pool_idx + j) + 128 + 128;
+
+#endif
+		send_addrs_dest[j] = (void*)((char*)pool_guest_addr + offset);
+            }
+
+            send_rx_to_guest(vq_rx_to_guest, send_addrs, send_addrs_dest, num_fin, is_stream);
+	    vq_rx_to_guest->last_pool_idx = (vq_rx_to_guest->last_pool_idx + num_fin) % POOL_ENTRY_NUM;
+
+	    local_pool_index += num_fin;
+            if(POOL_ENTRY_NUM <= local_pool_index) {
                 local_pool_index = 0;
             }
-#endif
         }
 
 #ifndef ZERO_COPY

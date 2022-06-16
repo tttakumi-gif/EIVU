@@ -48,6 +48,7 @@ namespace {
         int local_pool_index = 0;
         buf *pool_tx_addr = new(std::align_val_t{64}) buf[POOL_ENTRY_NUM];
         buf **recv_addrs = new buf *[opt.size_batch];
+        void **recv_addrs_src = new void *[opt.size_batch];
 
         for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
             // 受信パケット数の決定
@@ -63,20 +64,20 @@ namespace {
 #ifdef RANDOM
                 recv_addrs[j] = &pool_tx_addr[local_pool_index + (int) ids[j]];
 #else
-                recv_addrs[j] = &pool_tx_addr[local_pool_index];
-                if(POOL_ENTRY_NUM <= ++local_pool_index) {
-                    local_pool_index = 0;
-                }
+                recv_addrs[j] = &pool_tx_addr[local_pool_index + j];
 #endif
+
+		int offset = 2304 * (vq_guest_to_tx->descs[vq_guest_to_tx->last_used_idx].entry_index) + 128 + 128;
+		recv_addrs_src[j] = (void*)((char*)pool_guest_addr + offset);
             }
 
-            send_guest_to_tx(vq_guest_to_tx, recv_addrs, pool_guest_addr, num_fin, is_stream);
-#ifdef RANDOM
-            local_pool_index += num_fin;
-            if (POOL_ENTRY_NUM <= local_pool_index) {
+            //send_guest_to_tx(vq_guest_to_tx, recv_addrs, pool_guest_addr, num_fin, is_stream);
+            send_guest_to_tx(vq_guest_to_tx, recv_addrs, recv_addrs_src, num_fin, is_stream);
+
+	    local_pool_index += num_fin;
+            if(POOL_ENTRY_NUM <= local_pool_index) {
                 local_pool_index = 0;
             }
-#endif
 
 #ifdef VERIFICATION
             // パケット検証
