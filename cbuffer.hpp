@@ -78,76 +78,55 @@ char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 
 #endif
 
 void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_guest_addr, int num_fin, bool is_stream) {
-    int last_avail_idx_shadow = vq_rx_to_guest->last_avail_idx;
     for (int i = 0; i < num_fin; i++) {
         PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
         PREFETCH_POOL(pool_guest_addr[i]);
     }
 
-    if (!is_stream) {
-        for (int i = 0; i < num_fin; i++) {
-#if MBUF_HEADER_SIZE > 0
-            PROC_MBUF_HEADER(pool_host_addr[i]);
-#endif
-
-            // ディスクリプタとパケットプールが確保できるまでwait
 #ifndef SKIP_CLT
-            wait_push(vq_rx_to_guest, vq_rx_to_guest->last_avail_idx);
+    for (int i = 0; i < num_fin; i++) {
+				wait_push(vq_rx_to_guest, vq_rx_to_guest->last_avail_idx + i);
+		}
 #endif
 
+#if MBUF_HEADER_SIZE > 0
+    for (int i = 0; i < num_fin; i++) {
+				PROC_MBUF_HEADER(pool_host_addr[i]);
+		}
+#endif
+
+    int last_avail_idx_shadow = vq_rx_to_guest->last_avail_idx;
+		for (int i = 0; i < num_fin; i++) {
+				if (!is_stream) {
 #ifndef ZERO_COPY
-            memcpy(pool_guest_addr[i], (void *) pool_host_addr[i]->addr, SIZE_PACKET);
+						memcpy(pool_guest_addr[i], (void *) pool_host_addr[i]->addr, SIZE_PACKET);
 #endif
+				} else {
+						void *xmm01 = pool_guest_addr[i];
+						packet *xmm02 = (packet *) pool_host_addr[i]->addr;
 
-            // index更新
+						for (int j = 0; j < NUM_LOOP; j++) {
+								if (!IS_PSMALL) {
+										_mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
+								} else {
+										_mm_stream_si128((__m128i *) xmm01 + j, _mm_stream_load_si128((__m128i *) xmm02 + j));
+								}
+						}
+				}
+
+				// index更新
 #ifdef STRIDE_VQ
-            vq_rx_to_guest->last_avail_idx += NUM_VQ_STRIDE;
-            if(VQ_ENYRY_NUM <= vq_rx_to_guest->last_avail_idx) {
-                vq_rx_to_guest->last_avail_idx = vq_rx_to_guest->last_avail_idx % NUM_VQ_STRIDE + 1;
-            }
+				vq_rx_to_guest->last_avail_idx += NUM_VQ_STRIDE;
+				if(VQ_ENYRY_NUM <= vq_rx_to_guest->last_avail_idx) {
+						vq_rx_to_guest->last_avail_idx = vq_rx_to_guest->last_avail_idx % NUM_VQ_STRIDE + 1;
+				}
 #else
-            vq_rx_to_guest->last_avail_idx += 1;
-            if (VQ_ENYRY_NUM <= vq_rx_to_guest->last_avail_idx) {
-                vq_rx_to_guest->last_avail_idx = 0;
-            }
+				vq_rx_to_guest->last_avail_idx += 1;
+				if (VQ_ENYRY_NUM <= vq_rx_to_guest->last_avail_idx) {
+						vq_rx_to_guest->last_avail_idx = 0;
+				}
 #endif
-        }
-    } else {
-        for (int i = 0; i < num_fin; i++) {
-            // ディスクリプタとパケットプールが確保できるまでwait
-            void *xmm01 = pool_guest_addr[i];
-            packet *xmm02 = (packet *) pool_host_addr[i]->addr;
-
-#ifndef SKIP_CLT
-            wait_push(vq_rx_to_guest, vq_rx_to_guest->last_avail_idx);
-#endif
-
-#if MBUF_HEADER_SIZE > 0
-            PROC_MBUF_HEADER(pool_host_addr[i])
-#endif
-
-            for (int j = 0; j < NUM_LOOP; j++) {
-                if (!IS_PSMALL) {
-                    _mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
-                } else {
-                    _mm_stream_si128((__m128i *) xmm01 + j, _mm_stream_load_si128((__m128i *) xmm02 + j));
-                }
-            }
-
-            // index更新
-#ifdef STRIDE_VQ
-            vq_rx_to_guest->last_avail_idx += NUM_VQ_STRIDE;
-            if(VQ_ENYRY_NUM <= vq_rx_to_guest->last_avail_idx) {
-                vq_rx_to_guest->last_avail_idx = vq_rx_to_guest->last_avail_idx % NUM_VQ_STRIDE + 1;
-            }
-#else
-            vq_rx_to_guest->last_avail_idx += 1;
-            if (VQ_ENYRY_NUM <= vq_rx_to_guest->last_avail_idx) {
-                vq_rx_to_guest->last_avail_idx = 0;
-            }
-#endif
-        }
-    }
+		}
 
 #ifdef SKIP_INDEX
     int skipped_index = 64 / VQ_ENTRY_SIZE;
@@ -189,78 +168,49 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
 }
 
 void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_guest_addr, int num_fin, bool is_stream) {
-    int last_used_idx_shadow = vq_guest_to_tx->last_used_idx;
+    for (int i = 0; i < num_fin; i++) {
+				wait_pull(vq_guest_to_tx, vq_guest_to_tx->last_used_idx + i);
+		}
+
     for (int i = 0; i < num_fin; i++) {
         PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
+				PREFETCH_POOL(pool_guest_addr[i]);
     }
 
-    if (!is_stream) {
-        for (int i = 0; i < num_fin; i++) {
-#if MBUF_HEADER_SIZE > 0
-            PROC_MBUF_HEADER(pool_host_addr[i])
-#endif
-
-            // ディスクリプタにバッファが割り当てられるまでwait
-            wait_pull(vq_guest_to_tx, vq_guest_to_tx->last_used_idx);
-
-            if (i == 0) {
-                for (int j = 0; j < num_fin; j++) {
-                    PREFETCH_POOL(pool_guest_addr[i]);
-                }
-            }
-
+    int last_used_idx_shadow = vq_guest_to_tx->last_used_idx;
+		for (int i = 0; i < num_fin; i++) {
+				if (!is_stream) {
 #ifndef AVOID_TX
-            memcpy((void *) (pool_host_addr[i]->addr), pool_guest_addr[i], SIZE_PACKET);
+						memcpy((void *) (pool_host_addr[i]->addr), pool_guest_addr[i], SIZE_PACKET);
 #endif
+				} else {
+						auto *xmm01 = (packet *) pool_host_addr[i]->addr;
+						auto *xmm02 = pool_guest_addr[i];
+						for (int j = 0; j < NUM_LOOP; j++) {
+								if (!IS_PSMALL) {
+										_mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
+								} else {
+										_mm_store_si128((__m128i *) xmm01 + j, _mm_stream_load_si128((__m128i *) xmm02 + j));
+								}
+						}
+				}
 
-            // index更新
+				// index更新
 #ifdef STRIDE_VQ
-            vq_guest_to_tx->last_used_idx += NUM_VQ_STRIDE;
-            if(VQ_ENYRY_NUM <= vq_guest_to_tx->last_used_idx) {
-                vq_guest_to_tx->last_used_idx = vq_guest_to_tx->last_used_idx % NUM_VQ_STRIDE + 1;
-            }
+				vq_guest_to_tx->last_used_idx += NUM_VQ_STRIDE;
+				if(VQ_ENYRY_NUM <= vq_guest_to_tx->last_used_idx) {
+						vq_guest_to_tx->last_used_idx = vq_guest_to_tx->last_used_idx % NUM_VQ_STRIDE + 1;
+				}
 #else
-            vq_guest_to_tx->last_used_idx += 1;
-            if (VQ_ENYRY_NUM <= vq_guest_to_tx->last_used_idx) {
-                vq_guest_to_tx->last_used_idx = 0;
-            }
+				vq_guest_to_tx->last_used_idx += 1;
+				if (VQ_ENYRY_NUM <= vq_guest_to_tx->last_used_idx) {
+						vq_guest_to_tx->last_used_idx = 0;
+				}
 #endif
-        }
-    } else {
-        for (int i = 0; i < num_fin; i++) {
-            // ディスクリプタにバッファが割り当てられるまでwait
-            wait_pull(vq_guest_to_tx, vq_guest_to_tx->last_used_idx);
+		}
 
-            auto *xmm01 = (packet *) pool_host_addr[i]->addr;
-            auto *xmm02 = pool_guest_addr[i];
-            for (int j = 0; j < NUM_LOOP; j++) {
-                if (!IS_PSMALL) {
-                    //_mm256_stream_si256((__m256i*)xmm01 + j, _mm256_load_si256((__m256i*)xmm02 + j));
-                    _mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
-                    //_mm256_store_si256((__m256i*)xmm01 + j, _mm256_stream_load_si256((__m256i*)xmm02 + j));
-                } else {
-                    //_mm_stream_si128((__m128i*)xmm01 + j, _mm_load_si128((__m128i*)xmm02 + j));
-                    _mm_store_si128((__m128i *) xmm01 + j, _mm_stream_load_si128((__m128i *) xmm02 + j));
-                }
-            }
-
-#if MBUF_HEADER_SIZE > 0
-            PROC_MBUF_HEADER(pool_host_addr[i])
-#endif
-
-            // index更新
-#ifdef STRIDE_VQ
-            vq_guest_to_tx->last_used_idx += NUM_VQ_STRIDE;
-            if(VQ_ENYRY_NUM <= vq_guest_to_tx->last_used_idx) {
-                vq_guest_to_tx->last_used_idx = vq_guest_to_tx->last_used_idx % NUM_VQ_STRIDE + 1;
-            }
-#else
-            vq_guest_to_tx->last_used_idx += 1;
-            if (VQ_ENYRY_NUM <= vq_guest_to_tx->last_used_idx) {
-                vq_guest_to_tx->last_used_idx = 0;
-            }
-#endif
-        }
+    for (int i = 0; i < num_fin; i++) {
+				PROC_MBUF_HEADER(pool_host_addr[i])
     }
 
 #ifdef SKIP_INDEX
@@ -295,19 +245,21 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_gues
 #endif
 }
 
-static int lastindex = 0;
-
 void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_addr, int num_fin) {
     for (int i = 0; i < num_fin; i++) {
-        PREFETCH_MBUF(pool_guest_addr[lastindex].header.id_addr, pool_guest_addr[lastindex].header.len_addr);
-        lastindex = (lastindex + 1) % 163456;
+        wait_pull(vq_rx_to_guest, vq_rx_to_guest->last_used_idx + i);
     }
+
+    for (int i = 0; i < num_fin; i++) {
+				int index = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx + i].entry_index;
+        PREFETCH_MBUF(pool_guest_addr[index].header.id_addr, pool_guest_addr[index].header.len_addr);
+    }
+
     int id[num_fin];
     int last_used_idx_shadow = vq_rx_to_guest->last_used_idx;
     int last_avail_idx_shadow = vq_guest_to_tx->last_avail_idx;
 
     for (int i = 0; i < num_fin; i++) {
-        wait_pull(vq_rx_to_guest, vq_rx_to_guest->last_used_idx);
         id[i] = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx].entry_index;
         buf *packet_buffer = &pool_guest_addr[id[i]];
 
@@ -343,7 +295,6 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
 #if !defined(READ_SRV) && !defined(AVOID_SRV) && defined(VERIFICATION)
         packet* p = get_packet_addr(&pool_guest_addr[id[i]]);
         set_verification(p);
-        //__asm__("cldemote (%0)" :: "vq_rx_to_guest" (&p->verification));
 #endif
     }
 
