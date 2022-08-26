@@ -33,10 +33,9 @@ namespace {
                 ((packet *) (send_addrs[j]->addr))->packet_len = SIZE_PACKET;
 
 #ifdef RANDOM
-		int offset = 2304 * (vq_rx_to_guest->last_pool_idx + ids[j]) + 128 + 128;
+		int offset = sizeof(buf) * (vq_rx_to_guest->last_pool_idx + ids[j]) + sizeof(mbuf_header) + PACKET_BUFFER_PADDING;
 #else
-                int offset = 2304 * (vq_rx_to_guest->last_pool_idx + j) + 128 + 128;
-
+		int offset = sizeof(buf) * (vq_rx_to_guest->last_pool_idx + j) + sizeof(mbuf_header) + PACKET_BUFFER_PADDING;
 #endif
 		send_addrs_dest[j] = (void*)((char*)pool_guest_addr + offset);
             }

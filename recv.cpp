@@ -67,15 +67,16 @@ namespace {
                 recv_addrs[j] = &pool_tx_addr[local_pool_index + j];
 #endif
 
-		int offset = 2304 * (vq_guest_to_tx->descs[vq_guest_to_tx->last_used_idx].entry_index) + 128 + 128;
-		recv_addrs_src[j] = (void*)((char*)pool_guest_addr + offset);
+                int offset = sizeof(buf) * (vq_guest_to_tx->descs[vq_guest_to_tx->last_used_idx + j].entry_index) +
+                             sizeof(mbuf_header) + PACKET_BUFFER_PADDING;
+                recv_addrs_src[j] = (void *) ((char *) pool_guest_addr + offset);
             }
 
             //send_guest_to_tx(vq_guest_to_tx, recv_addrs, pool_guest_addr, num_fin, is_stream);
             send_guest_to_tx(vq_guest_to_tx, recv_addrs, recv_addrs_src, num_fin, is_stream);
 
-	    local_pool_index += num_fin;
-            if(POOL_ENTRY_NUM <= local_pool_index) {
+            local_pool_index += num_fin;
+            if (POOL_ENTRY_NUM <= local_pool_index) {
                 local_pool_index = 0;
             }
 
@@ -85,7 +86,7 @@ namespace {
 #else
             if (unlikely((i & 8388607) == 0)) {
 #ifdef PRINT
-                print(recv_addrs[0]);
+                print((packet*)&recv_addrs[0]->addr);
 #endif
             }
 #endif

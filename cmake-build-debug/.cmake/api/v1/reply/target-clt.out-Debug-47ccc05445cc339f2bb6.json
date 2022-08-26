@@ -2,7 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "srv.out"
+			"path" : "clt.out"
 		}
 	],
 	"backtrace" : 1,
@@ -25,13 +25,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 14,
+				"line" : 11,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 15,
+				"line" : 12,
 				"parent" : 0
 			}
 		]
@@ -64,7 +64,7 @@
 			]
 		}
 	],
-	"id" : "srv.out::@6890427a1f51a3e7e1df",
+	"id" : "clt.out::@6890427a1f51a3e7e1df",
 	"link" : 
 	{
 		"commandFragments" : 
@@ -85,8 +85,8 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "srv.out",
-	"nameOnDisk" : "srv.out",
+	"name" : "clt.out",
+	"nameOnDisk" : "clt.out",
 	"paths" : 
 	{
 		"build" : ".",
@@ -108,7 +108,7 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "srv.cpp",
+			"path" : "clt.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{

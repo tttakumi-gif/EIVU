@@ -34,7 +34,6 @@
 //#define VQ_ENTRY_SIZE 128
 
 //#define MBUF_HEADER_SIZE 0
-//#define MBUF_HEADER_SIZE 64
 #define MBUF_HEADER_SIZE 128
 //#define MBUF_HEADER_SIZE 1024
 

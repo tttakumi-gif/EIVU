@@ -5,26 +5,6 @@
     <option name="openedFilesInfos">
       <list>
         <OpenedFileInfo>
-          <option name="caretOffset" value="2505" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/clt.cpp" />
-        </OpenedFileInfo>
-        <OpenedFileInfo>
-          <option name="caretOffset" value="86" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/srv.cpp" />
-        </OpenedFileInfo>
-        <OpenedFileInfo>
-          <option name="caretOffset" value="79" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/recv.cpp" />
-        </OpenedFileInfo>
-        <OpenedFileInfo>
-          <option name="caretOffset" value="1662" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/buffer.hpp" />
-        </OpenedFileInfo>
-        <OpenedFileInfo>
-          <option name="caretOffset" value="782" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/header.hpp" />
-        </OpenedFileInfo>
-        <OpenedFileInfo>
           <option name="caretOffset" value="56" />
           <option name="fileUrl" value="file://$PROJECT_DIR$/packet.hpp" />
         </OpenedFileInfo>
@@ -33,8 +13,28 @@
           <option name="fileUrl" value="file://$PROJECT_DIR$/shells/singlerun.sh" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="9837" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/cbuffer.hpp" />
+          <option name="caretOffset" value="0" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/cmake-build-debug/singlerun.sh" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="1382" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/buffer.hpp" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="0" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/.idea/misc.xml" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="423" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/CMakeLists.txt" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="148" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/clt.cpp" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="0" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/.gitignore" />
         </OpenedFileInfo>
       </list>
     </option>

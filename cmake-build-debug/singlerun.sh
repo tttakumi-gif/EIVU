@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #opt_perf="-e l1d.replacement,l1d_pend_miss.fb_full,l1d_pend_miss.pending,l2_lines_in.all,L1-dcache-loads,L1-dcache-load-misses,L1-dcache-stores,L1-dcache-store-misses,LLC-loads,LLC-load-misses,LLC-stores,LLC-store-misses,l2_rqsts.all_rfo,l2_rqsts.rfo_hit,l2_rqsts.rfo_miss,offcore_response.demand_rfo.l3_hit.hit_other_core_no_fwd,offcore_requests_outstanding.cycles_with_demand_rfo"
-opt_perf="-M L1MPKI,L2MPKI,L3MPKI -e l1d.replacement,l2_lines_out.non_silent,l2_lines_out.silent,l2_lines_out.useless_hwpf,offcore_requests.demand_rfo,offcore_requests_outstanding.demand_rfo,offcore_requests_outstanding.cycles_with_demand_rfo,offcore_response.all_rfo.any_response,offcore_response.demand_rfo.any_response,offcore_response.all_pf_rfo.any_response,offcore_response.pf_l2_rfo.any_response,offcore_response.pf_l3_rfo.any_response,LLC-loads,LLC-stores,l1d_pend_miss.fb_full" 
+opt_perf="-e cache-references,cache-misses,mem_load_uops_retired.l1_hit,mem_load_uops_retired.l1_miss,mem_load_uops_retired.l3_hit,mem_load_uops_retired.l3_miss,LLC-load,LLC-load-misses,LLC-store,LLC-store-misses"
 #l2_rqsts.all_rfo,l2_rqsts.rfo_hit,l2_rqsts.rfo_miss,offcore_requests.demand_rfo,offcore_requests_outstanding.demand_rfo,mem_inst_retired.all_loads,mem_inst_retired.all_stores
 
 #opt_perf="-e cache-misses,L1-dcache-load-misses,L1-dcache-loads,L1-dcache-stores,LLC-loads,LLC-stores,LLC-load-misses,LLC-store-misses,cpu/event=0xA3,umask=0x06,cmask=0x06,name=STALLS_L3_MISS/"
@@ -11,8 +11,9 @@ opt_perf="-M L1MPKI,L2MPKI,L3MPKI -e l1d.replacement,l2_lines_out.non_silent,l2_
 i=""
 loop=1
 batch=32
-#perf="perf stat $opt_perf -r $loop $i"
-perf=""
+perf="perf stat $opt_perf -r $loop $i"
+#perf="valgrind --tool=cachegrind"
+#perf=""
 
 #sudo perf stat $opt_perf -r $loop ~/new-b4-assignment/build/clt.out --stream=off --batch=$batch &
 #sudo perf stat $opt_perf -r $loop ~/new-b4-assignment/build/clt.out --stream=on --batch=$batch &

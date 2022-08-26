@@ -26,7 +26,7 @@ struct packet {
 #endif
 };
 
-#if 1 
+#if 1
 constexpr int32_t SIZE_BUFFER = 2176;
 #else
 constexpr int32_t SIZE_BUFFER = sizeof(packet);
@@ -85,7 +85,7 @@ static inline void *__movsb(void *d, const void *s, size_t n) {
 
 void set_id(buf* buffer, int32_t id) {
 #if MBUF_HEADER_SIZE > 64
-	memset(buffer->header.id_addr, id, 64);
+	memcpy(buffer->header.id_addr, &id, 4);
 	//__movsb(buffer->header.id_addr, &id, 4);
 
 	int loop_num = MBUF_HEADER_SIZE / 2 - 64;
@@ -101,7 +101,7 @@ int32_t get_id(buf* buffer) {
 
 void set_len(buf* buffer, int32_t len) {
 #if MBUF_HEADER_SIZE >= 128
-	memset(buffer->header.len_addr, len, 64);
+	memcpy(buffer->header.len_addr, &len, 4);
 	//__movsb(buffer->header.len_addr, &len, 4);
 	int loop_num = MBUF_HEADER_SIZE / 2 - 64;
 	for(int i = 64; i < loop_num; i += 64) {
