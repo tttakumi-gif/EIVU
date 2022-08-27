@@ -12,14 +12,11 @@
 #define PREFETCH_MBUF(addr1, addr2) \
         prefetch0(addr1); \
         prefetch0(addr2);
-#if 1
 #define PREFETCH_POOL(addr) \
     prefetch0(addr);
 #else
-#define PREFETCH_POOL(addr)
-#endif
-#else
 #define PREFETCH_MBUF(addr1, addr2)
+#define PREFETCH_POOL(addr)
 #endif
 
 static inline void prefetch0(const volatile void *p) {
@@ -85,8 +82,8 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
 
 #ifndef SKIP_CLT
     for (int i = 0; i < num_fin; i++) {
-        wait_push(vq_rx_to_guest, vq_rx_to_guest->last_avail_idx + i);
-    }
+				wait_push(vq_rx_to_guest, vq_rx_to_guest->last_avail_idx + i);
+		}
 #endif
 
 #if MBUF_HEADER_SIZE > 0
@@ -251,7 +248,7 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
     }
 
     for (int i = 0; i < num_fin; i++) {
-        int index = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx + i].entry_index;
+				int index = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx + i].entry_index;
         PREFETCH_MBUF(pool_guest_addr[index].header.id_addr, pool_guest_addr[index].header.len_addr);
     }
 
