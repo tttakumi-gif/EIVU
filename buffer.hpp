@@ -50,30 +50,6 @@ struct desc {
 #endif
 };
 
-struct vring_desc {
-    uint64_t addr;
-    uint32_t len;
-    uint16_t flags;
-    uint16_t next;
-};
-
-struct vring_avail {
-    uint16_t flags;
-    uint16_t idx;
-    uint16_t ring[0];
-};
-
-struct vring_used_elem {
-    uint32_t id;
-    uint32_t len;
-};
-
-struct vring_used {
-    uint16_t flags;
-    uint16_t idx;
-    struct vring_used_elem ring[0];
-};
-
 struct vq {
     int16_t size;
 #if 1
@@ -86,11 +62,6 @@ struct vq {
     int32_t __attribute__((__aligned__(64))) last_pool_idx;
 #endif
     desc descs[VQ_ENYRY_NUM];
-#if 0
-    vring_desc vdesc[VQ_ENYRY_NUM];
-    vring_avail vavail[VQ_ENYRY_NUM];
-    vring_used vused[VQ_ENYRY_NUM];
-#endif
 };
 
 #include "cbuffer.hpp"
