@@ -2,41 +2,6 @@
 #include "shm.hpp"
 
 namespace {
-
-#ifdef VERIFICATION
-    inline void check_verification(packet* p) {
-#ifdef READ_SRV
-        if(unlikely(p->packet_id == -1)) {
-#else
-        if(unlikely(p->packet_id != static_cast<signed>(p->verification ^ 0xffffffff))) {
-#endif
-            std::printf("verification error\n");
-            print(p);
-            std::printf("not 0x%x\n", (p->packet_id ^ 0xffffffff));
-            exit(1);
-        }
-    }
-
-    inline void judge_packet(packet* parray[], int32_t num_fin) {
-        for(int i = 0; i < num_fin; i++) {
-            check_verification(parray[i]);
-
-#ifndef READ_SRV
-            if(unlikely((parray[i]->packet_id & 8388607) == 0)) {
-#if INFO_CPU == PROC_CLT_R
-                std::printf("%g%%\n", getCurrentValue_p());
-#elif INFO_CPU == TOTAL_CLT
-                std::printf("%g%%\n", getCurrentValue_t());
-#endif
-#ifdef PRINT
-                print(parray[i]);
-#endif
-            }
-#endif
-        }
-    }
-#endif
-
     void recv_packet(vq *vq_guest_to_tx, buf *pool_guest_addr, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(2);
@@ -73,29 +38,24 @@ namespace {
             }
 
             //send_guest_to_tx(vq_guest_to_tx, recv_addrs, pool_guest_addr, num_fin, is_stream);
-            send_guest_to_tx(vq_guest_to_tx, recv_addrs, recv_addrs_src, num_fin, is_stream);
+            send_guest_to_tx(vq_guest_to_tx, pool_tx_addr, recv_addrs, recv_addrs_src, num_fin, is_stream);
 
             local_pool_index += num_fin;
             if (POOL_ENTRY_NUM <= local_pool_index) {
                 local_pool_index = 0;
             }
 
-#ifdef VERIFICATION
-            // パケット検証
-            judge_packet(recv_addrs, num_fin);
-#else
+
             if (unlikely((i & 8388607) == 0)) {
 #ifdef PRINT
                 print((packet*)&recv_addrs[0]->addr);
 #endif
             }
-#endif
-//#endif
         }
 
 #ifndef AVOID_TX
-        delete[](recv_addrs);
-        delete[](pool_tx_addr);
+            delete[](recv_addrs);
+            delete[](pool_tx_addr);
 #endif
     }
 }
@@ -142,4 +102,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-

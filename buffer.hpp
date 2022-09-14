@@ -20,7 +20,6 @@
 
 //constexpr int VQ_ENYRY_NUM = 64;
 constexpr int VQ_ENYRY_NUM = 256;
-//constexpr int VQ_ENYRY_NUM = 4096;
 //constexpr int VQ_ENYRY_NUM = 32768;
 #if 0
 constexpr int POOL_ENTRY_NUM = 1024;
@@ -49,7 +48,7 @@ struct desc {
 #if VQ_ENTRY_SIZE == 128
     char padding2[56];
 #endif
-};// __attribute__((__aligned__(2)));
+};
 
 struct vring_desc {
     uint64_t addr;
@@ -92,6 +91,6 @@ struct vq {
     vring_avail vavail[VQ_ENYRY_NUM];
     vring_used vused[VQ_ENYRY_NUM];
 #endif
-};// __attribute__((__aligned__(64)));
+};
 
 #include "cbuffer.hpp"

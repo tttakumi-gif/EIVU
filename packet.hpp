@@ -2,8 +2,6 @@
 
 #include "cpuinfo.hpp"
 
-#define DUMMY_FULL
-
 constexpr int32_t SIZE_PACKET = 64;
 constexpr bool IS_PSMALL = SIZE_PACKET < 32;
 constexpr int32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32) + (SIZE_PACKET % 32 == 0 ? 0 : 1);
@@ -18,18 +16,15 @@ constexpr int32_t NUM_PACKET = 100000000000000000;
 struct packet {
 	int32_t packet_id;
 	int32_t packet_len;
-#ifndef VERIFICATION
 	char dummy[SIZE_PACKET - sizeof(int32_t) * 2];
-#else
-	char dummy[SIZE_PACKET - sizeof(int32_t) * 3];
-	int32_t verification;
-#endif
 };
 
 #if 1
 constexpr int32_t SIZE_BUFFER = 2176;
+constexpr int32_t PACKET_BUFFER_PADDING = 128;
 #else
 constexpr int32_t SIZE_BUFFER = sizeof(packet);
+constexpr int32_t PACKET_BUFFER_PADDING = 0;
 #endif
 
 struct mbuf_header {
@@ -50,22 +45,8 @@ void do_none() {
 }
 
 void print(packet* p) {
-#ifdef VERIFICATION
-	std::printf("id: %d, len: %d, dummy: %s, verification: 0x%x\n", p->packet_id, p->packet_len, p->dummy, p->verification);
-#else
 	std::printf("id: %d, len: %d, dummy: %s\n", p->packet_id, p->packet_len, p->dummy);
-#endif
 }
-
-#ifdef VERIFICATION
-void set_verification(packet* p) {
-#ifdef ZERO_COPY
-	p->verification = p->verification + p->packet_id + 1;
-#else
-	p->verification = p->packet_id ^ 0xffffffff;
-#endif
-}
-#endif
 
 packet* get_packet_addr(buf* buffer) {
 	return (packet*)buffer->addr;

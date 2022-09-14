@@ -13,7 +13,7 @@
         prefetch0(addr1); \
         prefetch0(addr2);
 #define PREFETCH_POOL(addr) \
-    prefetch0(addr);
+        prefetch0(addr);
 #else
 #define PREFETCH_MBUF(addr1, addr2)
 #define PREFETCH_POOL(addr)
@@ -74,9 +74,10 @@ char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 
                 8, 18, 29, 9};
 #endif
 
-void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_guest_addr, int num_fin, bool is_stream) {
+void send_rx_to_guest(vq *vq_rx_to_guest, buf *mbuf_start, buf **pool_host_addr, void **pool_guest_addr, int num_fin, bool is_stream) {
     for (int i = 0; i < num_fin; i++) {
-        PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
+        //PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
+        PREFETCH_MBUF(mbuf_start[i].header.id_addr, mbuf_start[i].header.len_addr);
         PREFETCH_POOL(pool_guest_addr[i]);
     }
 
@@ -88,7 +89,8 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
 
 #if MBUF_HEADER_SIZE > 0
     for (int i = 0; i < num_fin; i++) {
-        PROC_MBUF_HEADER(pool_host_addr[i]);
+        //PROC_MBUF_HEADER(pool_host_addr[i]);
+        PROC_MBUF_HEADER(&mbuf_start[i]);
     }
 #endif
 
@@ -164,13 +166,14 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
 #endif
 }
 
-void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_guest_addr, int num_fin, bool is_stream) {
+void send_guest_to_tx(vq *vq_guest_to_tx, buf *mbuf_start, buf **pool_host_addr, void **pool_guest_addr, int num_fin, bool is_stream) {
     for (int i = 0; i < num_fin; i++) {
         wait_pull(vq_guest_to_tx, vq_guest_to_tx->last_used_idx + i);
     }
 
     for (int i = 0; i < num_fin; i++) {
-        PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
+        //PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
+        PREFETCH_MBUF(mbuf_start[i].header.id_addr, mbuf_start[i].header.len_addr);
         PREFETCH_POOL(pool_guest_addr[i]);
     }
 
@@ -207,7 +210,8 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_gues
     }
 
     for (int i = 0; i < num_fin; i++) {
-        PROC_MBUF_HEADER(pool_host_addr[i])
+        //PROC_MBUF_HEADER(pool_host_addr[i])
+        PROC_MBUF_HEADER(&mbuf_start[i]);
     }
 
 #ifdef SKIP_INDEX
@@ -248,8 +252,9 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
     }
 
     for (int i = 0; i < num_fin; i++) {
-				int index = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx + i].entry_index;
-        PREFETCH_MBUF(pool_guest_addr[index].header.id_addr, pool_guest_addr[index].header.len_addr);
+//				int index = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx + i].entry_index;
+        //PREFETCH_MBUF(pool_guest_addr[index].header.id_addr, pool_guest_addr[index].header.len_addr);
+        PREFETCH_MBUF(pool_guest_addr[i].header.id_addr, pool_guest_addr[i].header.len_addr);
     }
 
     int id[num_fin];
@@ -258,7 +263,8 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
 
     for (int i = 0; i < num_fin; i++) {
         id[i] = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx].entry_index;
-        buf *packet_buffer = &pool_guest_addr[id[i]];
+        //buf *packet_buffer = &pool_guest_addr[id[i]];
+        buf *packet_buffer = &pool_guest_addr[i];
 
 #if MBUF_HEADER_SIZE > 0
         PROC_MBUF_HEADER(packet_buffer);
@@ -287,11 +293,6 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
         if (VQ_ENYRY_NUM <= vq_guest_to_tx->last_avail_idx) {
             vq_guest_to_tx->last_avail_idx = 0;
         }
-#endif
-
-#if !defined(READ_SRV) && !defined(AVOID_SRV) && defined(VERIFICATION)
-        packet* p = get_packet_addr(&pool_guest_addr[id[i]]);
-        set_verification(p);
 #endif
     }
 
