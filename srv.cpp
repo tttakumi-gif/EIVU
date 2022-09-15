@@ -26,16 +26,15 @@ namespace {
 int main(int argc, char *argv[]) {
     // 初期設定
     int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
-    buf *pool_guest_addr = (buf *) mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+    buf *pool_guest_addr = (buf *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+    memset(pool_guest_addr, 0, sizeof(buf) * POOL_ENTRY_NUM);
 
     vq *vq_rx_to_guest = (vq *) (pool_guest_addr + POOL_ENTRY_NUM);
     init_ring(vq_rx_to_guest);
 
     vq *vq_guest_to_tx = (vq *) (vq_rx_to_guest + 1);
     init_ring(vq_guest_to_tx);
-
-    memset(pool_guest_addr, 0, sizeof(buf) * POOL_ENTRY_NUM);
-
+    
     info_opt opt = get_opt(argc, argv);
 
     volatile bool *flag = (volatile bool *) (vq_guest_to_tx + 1);

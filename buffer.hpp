@@ -2,7 +2,6 @@
 
 #include "packet.hpp"
 #include "option.hpp"
-#include "random.hpp"
 
 #define PROC_CLT_S 0
 #define PROC_CLT_R 1
