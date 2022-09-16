@@ -38,7 +38,7 @@ namespace {
             }
 
             //send_guest_to_tx(vq_guest_to_tx, recv_addrs, pool_guest_addr, num_fin, is_stream);
-            send_guest_to_tx(vq_guest_to_tx, pool_tx_addr, recv_addrs, recv_addrs_src, num_fin, is_stream);
+            send_guest_to_tx(vq_guest_to_tx, recv_addrs, recv_addrs_src, num_fin, is_stream);
 
             local_pool_index += num_fin;
             if (POOL_ENTRY_NUM <= local_pool_index) {

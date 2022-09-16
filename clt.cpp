@@ -33,18 +33,19 @@ namespace {
                 ((packet *) (send_addrs[j]->addr))->packet_len = SIZE_PACKET;
 
 #ifdef RANDOM
-		int offset = sizeof(buf) * (vq_rx_to_guest->last_pool_idx + ids[j]) + sizeof(mbuf_header) + PACKET_BUFFER_PADDING;
+                int offset = sizeof(buf) * (vq_rx_to_guest->last_pool_idx + ids[j]) + sizeof(mbuf_header) +
+                             PACKET_BUFFER_PADDING;
 #else
-		int offset = sizeof(buf) * (vq_rx_to_guest->last_pool_idx + j) + sizeof(mbuf_header) + PACKET_BUFFER_PADDING;
+                int offset = sizeof(buf) * (vq_rx_to_guest->last_pool_idx + j) + sizeof(mbuf_header) + PACKET_BUFFER_PADDING;
 #endif
-		send_addrs_dest[j] = (void*)((char*)pool_guest_addr + offset);
+                send_addrs_dest[j] = (void *) ((char *) pool_guest_addr + offset);
             }
 
-            send_rx_to_guest(vq_rx_to_guest, pool_rx_addr, send_addrs, send_addrs_dest, num_fin, is_stream);
-	    vq_rx_to_guest->last_pool_idx = (vq_rx_to_guest->last_pool_idx + num_fin) % POOL_ENTRY_NUM;
+            send_rx_to_guest(vq_rx_to_guest, send_addrs, send_addrs_dest, num_fin, is_stream);
+            vq_rx_to_guest->last_pool_idx = (vq_rx_to_guest->last_pool_idx + num_fin) % POOL_ENTRY_NUM;
 
-	    local_pool_index += num_fin;
-            if(POOL_ENTRY_NUM <= local_pool_index) {
+            local_pool_index += num_fin;
+            if (POOL_ENTRY_NUM <= local_pool_index) {
                 local_pool_index = 0;
             }
         }
