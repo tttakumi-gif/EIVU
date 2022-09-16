@@ -20,7 +20,7 @@
 //constexpr int VQ_ENYRY_NUM = 64;
 constexpr int VQ_ENYRY_NUM = 256;
 //constexpr int VQ_ENYRY_NUM = 32768;
-#if 0
+#if 1
 constexpr int POOL_ENTRY_NUM = 1024;
 #else
 constexpr int POOL_ENTRY_NUM = 163456;
