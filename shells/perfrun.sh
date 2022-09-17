@@ -35,8 +35,8 @@ run() {
 }
 
 outputfile() {
-  sudo perf mem -t load report --sort=mem --stdio > ./$1/perfmem.txt
-  sudo perf c2c report --stdio > ./$1/perfc2c.txt
+  sudo perf mem -t load report --sort=mem --stdio > ./$1/perfmem
+  sudo perf c2c report --stdio > ./$1/perfc2c
 }
 
 rm -rf results
@@ -49,7 +49,7 @@ txstream=off
 
 # perf clt
 echo "start clt"
-run "${perf}" "" "" ${rxstream} ${txstream} > ./results/clt/throughput.txt
+run "${perf}" "" "" ${rxstream} ${txstream} > ./results/clt/throughput
 #run "${perf}" "" "" off off
 sleep ${gap}
 outputfile results/clt
@@ -58,7 +58,7 @@ sudo chown sdn results/clt/perf.data
 
 # perf srv
 echo "start srv"
-run "" "${perf}" "" ${rxstream} ${txstream} > ./results/srv/throughput.txt
+run "" "${perf}" "" ${rxstream} ${txstream} > ./results/srv/throughput
 sleep ${gap}
 outputfile results/srv
 mv perf.data ./results/srv/
@@ -66,7 +66,7 @@ sudo chown sdn results/srv/perf.data
 
 # perf recv
 echo "start recv"
-run "" "" "${perf}" ${rxstream} ${txstream} > ./results/recv/throughput.txt
+run "" "" "${perf}" ${rxstream} ${txstream} > ./results/recv/throughput
 sleep ${gap}
 outputfile results/recv
 mv perf.data ./results/recv/
