@@ -28,17 +28,17 @@ txstream=off
 
 # perf clt
 echo "start clt"
-echo "Rx Thread" >> ./results/result.txt
-run "${perf}" "" "" ${rxstream} ${txstream} &>> ./results/result.txt
+echo "Rx Thread" >> ./results/result
+run "${perf}" "" "" ${rxstream} ${txstream} &>> ./results/result
 #run "${perf}" "" "" off off
 
 # perf srv
 echo "start srv"
-echo "Guest Thread" >> ./results/result.txt
-run "" "${perf}" "" ${rxstream} ${txstream} &>> ./results/result.txt
+echo "Guest Thread" >> ./results/result
+run "" "${perf}" "" ${rxstream} ${txstream} &>> ./results/result
 
 # perf recv
 echo "start recv"
-echo "Tx Thread" >> ./results/result.txt
-run "" "" "${perf}" ${rxstream} ${txstream} &>> ./results/result.txt
+echo "Tx Thread" >> ./results/result
+run "" "" "${perf}" ${rxstream} ${txstream} &>> ./results/result
 
