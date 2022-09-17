@@ -2,6 +2,8 @@
 
 mkdir results
 
+mkdir results/base
+
 mkdir results/individual
 
 mkdir results/individual/programmatic
@@ -64,9 +66,9 @@ mkdir results/individual/programmatic/api
 mkdir results/individual/programmatic/api/memcpy
 mkdir results/individual/programmatic/api/memcpy/vector
 mkdir results/individual/programmatic/api/memcpy/vector/rx
-mkdir results/individual/programmatic/api/memcpy/vector/rx/movl
+mkdir results/individual/programmatic/api/memcpy/vector/rx/vmovdqa
 mkdir results/individual/programmatic/api/memcpy/vector/tx
-mkdir results/individual/programmatic/api/memcpy/vector/tx/movl
+mkdir results/individual/programmatic/api/memcpy/vector/tx/vmovdqa
 mkdir results/individual/programmatic/api/memcpy/non-temporal
 mkdir results/individual/programmatic/api/memcpy/non-temporal/rx
 mkdir results/individual/programmatic/api/memcpy/non-temporal/rx/vmovntdqa
@@ -75,20 +77,20 @@ mkdir results/individual/programmatic/api/memcpy/non-temporal/tx/vmovntdqa
 
 mkdir results/individual/programmatic/api/cache_line
 mkdir results/individual/programmatic/api/cache_line/prefetch
-mkdir results/individual/programmatic/api/cache_line/prefetch/nf
-mkdir results/individual/programmatic/api/cache_line/prefetch/nf/prefetch
+mkdir results/individual/programmatic/api/cache_line/prefetch/rx
+mkdir results/individual/programmatic/api/cache_line/prefetch/rx/prefetch
 mkdir results/individual/programmatic/api/cache_line/prefetch/tx
 mkdir results/individual/programmatic/api/cache_line/prefetch/tx/prefetch
 
 mkdir results/individual/programmatic/api/cache_line/demote
-mkdir results/individual/programmatic/api/cache_line/demote/nf
-mkdir results/individual/programmatic/api/cache_line/demote/nf/demote
+mkdir results/individual/programmatic/api/cache_line/demote/tx
+mkdir results/individual/programmatic/api/cache_line/demote/tx/demote
 mkdir results/individual/programmatic/api/cache_line/demote/rx
 mkdir results/individual/programmatic/api/cache_line/demote/rx/demote
 
 mkdir results/individual/programmatic/api/cache_line/flush
-mkdir results/individual/programmatic/api/cache_line/flush/nf
-mkdir results/individual/programmatic/api/cache_line/flush/nf/flush
+mkdir results/individual/programmatic/api/cache_line/flush/tx
+mkdir results/individual/programmatic/api/cache_line/flush/tx/flush
 mkdir results/individual/programmatic/api/cache_line/flush/rx
 mkdir results/individual/programmatic/api/cache_line/flush/rx/flush
 
@@ -122,13 +124,13 @@ mkdir results/individual/configuration/runtime/packet_pool/cache/num_entries/409
 mkdir results/individual/configuration/runtime/other
 mkdir results/individual/configuration/runtime/other/batching
 mkdir results/individual/configuration/runtime/other/batching/rx
-mkdir results/individual/configuration/runtime/other/batching/rx/1
+mkdir results/individual/configuration/runtime/other/batching/rx/16
 mkdir results/individual/configuration/runtime/other/batching/rx/256
 mkdir results/individual/configuration/runtime/other/batching/nf
-mkdir results/individual/configuration/runtime/other/batching/nf/1
+mkdir results/individual/configuration/runtime/other/batching/nf/16
 mkdir results/individual/configuration/runtime/other/batching/nf/256
 mkdir results/individual/configuration/runtime/other/batching/tx
-mkdir results/individual/configuration/runtime/other/batching/tx/1
+mkdir results/individual/configuration/runtime/other/batching/tx/16
 mkdir results/individual/configuration/runtime/other/batching/tx/256
 
 mkdir results/individual/configuration/runtime/other/buffer_allocation
