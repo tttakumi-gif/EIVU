@@ -12,6 +12,7 @@ mkdir results/individual/programmatic/structure/virtqueue
 mkdir results/individual/programmatic/structure/virtqueue/queue
 mkdir results/individual/programmatic/structure/virtqueue/queue/type
 mkdir results/individual/programmatic/structure/virtqueue/queue/type/idx_64B
+mkdir results/individual/programmatic/structure/virtqueue/queue/type/size_64B
 
 mkdir results/individual/programmatic/structure/virtqueue/queue/alignment
 mkdir results/individual/programmatic/structure/virtqueue/queue/alignment/avail_idx
@@ -107,13 +108,13 @@ mkdir results/individual/configuration/runtime
 mkdir results/individual/configuration/runtime/virtqueue
 mkdir results/individual/configuration/runtime/virtqueue/num_entries
 mkdir results/individual/configuration/runtime/virtqueue/num_entries/64
-mkdir results/individual/configuration/runtime/virtqueue/num_entries/65536
+mkdir results/individual/configuration/runtime/virtqueue/num_entries/2048
 
 mkdir results/individual/configuration/runtime/packet_pool
 mkdir results/individual/configuration/runtime/packet_pool/buffer
 mkdir results/individual/configuration/runtime/packet_pool/buffer/num_entries
-mkdir results/individual/configuration/runtime/packet_pool/buffer/num_entries/128
-mkdir results/individual/configuration/runtime/packet_pool/buffer/num_entries/1048576
+mkdir results/individual/configuration/runtime/packet_pool/buffer/num_entries/1024
+mkdir results/individual/configuration/runtime/packet_pool/buffer/num_entries/2048
 
 mkdir results/individual/configuration/runtime/packet_pool/cache
 mkdir results/individual/configuration/runtime/packet_pool/cache/num_entries

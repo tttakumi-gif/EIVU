@@ -69,16 +69,15 @@ void init_ring(vq *v) {
     init_descs(v);
 }
 
-#ifdef RANDOM
 char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 17, 4, 16, 26, 19, 5, 28, 20, 6, 27, 7,
                 8, 18, 29, 9};
-#endif
 
 void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_guest_addr, int num_fin,
                       bool is_stream) {
     for (int i = 0; i < num_fin; i++) {
         PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
-//        PREFETCH_POOL(pool_guest_addr[i]);
+        //PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.id_addr);
+    //    PREFETCH_POOL(pool_guest_addr[i]);
     }
 
 #ifndef SKIP_CLT
@@ -89,6 +88,10 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
 
 #if MBUF_HEADER_SIZE > 0
     for (int i = 0; i < num_fin; i++) {
+        //if(*(int*)(pool_host_addr[i]->header.id_addr) == 999999) {
+        //    exit(1);
+        //}
+        //memset(pool_host_addr[i]->header.id_addr, i, 4);
         PROC_MBUF_HEADER(pool_host_addr[i]);
     }
 #endif
@@ -98,6 +101,7 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
         if (!is_stream) {
 #ifndef ZERO_COPY
             memcpy(pool_guest_addr[i], (void *) pool_host_addr[i]->addr, SIZE_PACKET);
+            //cldemote(pool_guest_addr[i]);
 #endif
         } else {
             void *xmm01 = pool_guest_addr[i];
@@ -173,7 +177,8 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_gues
 
     for (int i = 0; i < num_fin; i++) {
         PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
-//        PREFETCH_POOL(pool_guest_addr[i]);
+        //PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.id_addr);
+       //PREFETCH_POOL(pool_guest_addr[i]);
     }
 
     int last_used_idx_shadow = vq_guest_to_tx->last_used_idx;
@@ -181,6 +186,7 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_gues
         if (!is_stream) {
 #ifndef AVOID_TX
             memcpy((void *) (pool_host_addr[i]->addr), pool_guest_addr[i], SIZE_PACKET);
+            //cldemote(pool_host_addr[i]->addr);
 #endif
         } else {
             auto *xmm01 = (packet *) pool_host_addr[i]->addr;
@@ -208,9 +214,15 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_gues
 #endif
     }
 
+#if MBUF_HEADER_SIZE > 0
     for (int i = 0; i < num_fin; i++) {
+        //if(*(int*)(pool_host_addr[i]->header.id_addr) == 999999) {
+        //    exit(1);
+        //}
+        //memset(pool_host_addr[i]->header.id_addr, i, 4);
         PROC_MBUF_HEADER(pool_host_addr[i])
     }
+#endif
 
 #ifdef SKIP_INDEX
     int skipped_index = 64 / VQ_ENTRY_SIZE;
@@ -252,6 +264,7 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
     for (int i = 0; i < num_fin; i++) {
         int index = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx + i].entry_index;
         PREFETCH_MBUF(pool_guest_addr[index].header.id_addr, pool_guest_addr[index].header.len_addr)
+        //PREFETCH_MBUF(pool_guest_addr[index].header.id_addr, pool_guest_addr[index].header.id_addr)
     }
 
     int id[num_fin];
@@ -261,9 +274,17 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
     for (int i = 0; i < num_fin; i++) {
         id[i] = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx].entry_index;
         buf *packet_buffer = &pool_guest_addr[id[i]];
+        //if(((packet*)(packet_buffer->addr))->packet_id == 999999) {
+        //    exit(1);
+        //}
+        //memset(&((packet*)(packet_buffer->addr))->packet_len, i, 4);
 
 #if MBUF_HEADER_SIZE > 0
         PROC_MBUF_HEADER(packet_buffer);
+        //if(*(int*)(packet_buffer->header.id_addr) == 999999) {
+        //    exit(1);
+        //}
+        //memset(packet_buffer->header.id_addr, i, 4);
 #endif
 
 #ifdef STRIDE_VQ
