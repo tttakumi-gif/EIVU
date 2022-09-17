@@ -4,8 +4,8 @@ project(new-b4-assignment)
 set(CMAKE_CXX_STANDARD 17)
 
 set(obj "shm.cpp")
-set(flags "-O3 -march=native -std=c++17 -pthread -mtune=native -Wall -Wextra -ffast-math -mfpmath=both -g")
-#set(flags "-O3 -march=x86-64 -std=c++17 -pthread -mtune=generic -Wall -Wextra -ffast-math -mfpmath=both -g")
+#set(flags "-O3 -march=native -std=c++17 -pthread -mtune=native -Wall -Wextra -ffast-math -mfpmath=both -g")
+set(flags "-O3 -march=x86-64 -std=c++17 -pthread -mtune=generic -Wall -Wextra -ffast-math -mfpmath=both -g")
 set(CMAKE_CXX_FLAGS "${flags}")
 
 add_executable(clt.out clt.cpp ${obj})

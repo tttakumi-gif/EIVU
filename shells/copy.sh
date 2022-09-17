@@ -3,6 +3,7 @@
 cp ./run.sh ./base/
 
 cp ./run.sh ./individual/programmatic/structure/virtqueue/queue/type/idx_64B/
+cp ./run.sh ./individual/programmatic/structure/virtqueue/queue/type/size_64B/
 
 cp ./run.sh ./individual/programmatic/structure/virtqueue/queue/alignment/avail_idx/
 cp ./run.sh ./individual/programmatic/structure/virtqueue/queue/alignment/used_idx/
@@ -47,13 +48,12 @@ cp ./run.sh ./individual/programmatic/other/zero_copy/tx/zerocopy/
 
 
 cp ./run.sh ./individual/configuration/runtime/virtqueue/num_entries/64/
-cp ./run.sh ./individual/configuration/runtime/virtqueue/num_entries/65536/
+cp ./run.sh ./individual/configuration/runtime/virtqueue/num_entries/2048/
 
-cp ./run.sh ./individual/configuration/runtime/packet_pool/buffer/num_entries/128/
-cp ./run.sh ./individual/configuration/runtime/packet_pool/buffer/num_entries/1048576/
-
-cp ./run.sh ./individual/configuration/runtime/packet_pool/cache/num_entries/0/
-cp ./run.sh ./individual/configuration/runtime/packet_pool/cache/num_entries/4096/
+cp ./run.sh ./individual/configuration/runtime/packet_pool/buffer/num_entries/1024/
+cp ./run.sh ./individual/configuration/runtime/packet_pool/buffer/num_entries/2048/
+cp ./run.sh ./individual/configuration/runtime/packet_pool/buffer/num_entries/81728/
+cp ./run.sh ./individual/configuration/runtime/packet_pool/buffer/num_entries/163456/
 
 
 cp ./run.sh ./individual/configuration/runtime/other/batching/rx/16/

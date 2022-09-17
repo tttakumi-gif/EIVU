@@ -46,11 +46,11 @@ namespace {
             }
 
 
-            // if (unlikely((i & 8388607) == 0)) {
+             if (unlikely((i & 8388607) == 0)) {
 #ifdef PRINT
                 print((packet*)&recv_addrs[0]->addr);
 #endif
-            // }
+             }
         }
 
 #ifndef AVOID_TX
