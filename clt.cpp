@@ -9,13 +9,14 @@ namespace {
         assert((intptr_t(pool_guest_addr) & 63) == 0);
 
         int32_t i = NUM_PACKET;
-        int32_t num_fin = opt.size_batch;
+        // int32_t num_fin = opt.size_batch;
+        int32_t num_fin = 32;
         bool is_stream = (opt.stream == ON) ? true : false;
 
         int local_pool_index = 0;
         buf *pool_rx_addr = new(std::align_val_t{64}) buf[POOL_ENTRY_NUM];
-        buf **send_addrs = new buf *[opt.size_batch];
-        void **send_addrs_dest = new void *[opt.size_batch];
+        buf **send_addrs = new buf *[num_fin];
+        void **send_addrs_dest = new void *[num_fin];
 
         while (0 < i) {
             // 受信パケット数の決定

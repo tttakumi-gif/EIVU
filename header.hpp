@@ -40,13 +40,13 @@
 //#define AVOID_SRV
 //#define AVOID_TX
 
-#define RANDOM
+// #define RANDOM
 
 #if 0
 #define STRIDE_VQ
 constexpr int32_t NUM_VQ_STRIDE = 4;
 #else
-#define SKIP_INDEX 
+// #define SKIP_INDEX 
 #endif
 
-//#define PRINT
+// #define PRINT

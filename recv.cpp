@@ -7,13 +7,13 @@ namespace {
         bind_core(2);
 #endif
 
-        int32_t num_fin = opt.size_batch;
+        int32_t num_fin = 32;
         bool is_stream = (opt.stream == ON) ? true : false;
 
         int local_pool_index = 0;
         buf *pool_tx_addr = new(std::align_val_t{64}) buf[POOL_ENTRY_NUM];
-        buf **recv_addrs = new buf *[opt.size_batch];
-        void **recv_addrs_src = new void *[opt.size_batch];
+        buf **recv_addrs = new buf *[num_fin];
+        void **recv_addrs_src = new void *[num_fin];
 
         for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
             // 受信パケット数の決定
@@ -46,11 +46,11 @@ namespace {
             }
 
 
-            if (unlikely((i & 8388607) == 0)) {
+            // if (unlikely((i & 8388607) == 0)) {
 #ifdef PRINT
                 print((packet*)&recv_addrs[0]->addr);
 #endif
-            }
+            // }
         }
 
 #ifndef AVOID_TX

@@ -8,7 +8,8 @@ namespace {
 #endif
 
         if (opt.process == MOVE) {
-            int32_t num_fin = opt.size_batch;
+            // int32_t num_fin = opt.size_batch;
+            int32_t num_fin = 32;
 
             for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
                 if (unlikely(i < num_fin)) {
