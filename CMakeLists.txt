@@ -18,8 +18,6 @@ add_executable(nf.out nf.cpp ${obj})
 target_link_libraries(nf.out PUBLIC rt)
 target_include_directories(nf.out PUBLIC util)
 
-add_custom_command(
-	TARGET nf.out
-	POST_BUILD
-	COMMAND cp ../shells/run.sh ./ && cp ../shells/statrun.sh ./
-)
+file(COPY "${CMAKE_SOURCE_DIR}/shells/run.sh" DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY "${CMAKE_SOURCE_DIR}/shells/statrun.sh" DESTINATION ${CMAKE_BINARY_DIR})
+
