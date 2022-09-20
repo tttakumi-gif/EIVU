@@ -1,6 +1,6 @@
 #pragma once
 
-#include "header.hpp"
+#include "../header.hpp"
 
 #define FILE_MODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
 //#define SIZE_SHM 65536

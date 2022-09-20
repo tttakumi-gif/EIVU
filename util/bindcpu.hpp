@@ -1,6 +1,6 @@
 #pragma once
 
-#include "header.hpp"
+#include "../header.hpp"
 
 pid_t gettid() {
 	return syscall(SYS_gettid);
