@@ -77,7 +77,7 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
     for (int i = 0; i < num_fin; i++) {
         PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
         //PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.id_addr);
-    //    PREFETCH_POOL(pool_guest_addr[i]);
+        //    PREFETCH_POOL(pool_guest_addr[i]);
     }
 
     for (int i = 0; i < num_fin; i++) {
@@ -97,15 +97,14 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
     int last_avail_idx_shadow = vq_rx_to_guest->last_avail_idx;
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
-        //if (false) {
 #ifndef ZERO_COPY_RX
             memcpy(pool_guest_addr[i], (void *) pool_host_addr[i]->addr, SIZE_PACKET);
             //cldemote(pool_guest_addr[i]);
             //_mm_clflushopt(pool_guest_addr[i]);
 #endif
         } else {
-            void *xmm01 = pool_guest_addr[i];
-            packet *xmm02 = (packet *) pool_host_addr[i]->addr;
+//            void *xmm01 = pool_guest_addr[i];
+//            packet *xmm02 = (packet *) pool_host_addr[i]->addr;
 
             for (int j = 0; j < NUM_LOOP; j++) {
                 if (!IS_PSMALL) {
@@ -137,7 +136,7 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
     last_avail_idx_shadow = (last_avail_idx_shadow + skipped_index) % VQ_ENYRY_NUM;
     for (int i = skipped_index; i < num_fin; i++) {
 #else
-        for(int i = 0; i < num_fin; i++) {
+    for (int i = 0; i < num_fin; i++) {
 #endif
 #ifdef RANDOM
         set_param(&vq_rx_to_guest->descs[last_avail_idx_shadow], vq_rx_to_guest->last_pool_idx + ids[i]);
@@ -179,21 +178,20 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_gues
     for (int i = 0; i < num_fin; i++) {
         PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
         //PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.id_addr);
-       //PREFETCH_POOL(pool_guest_addr[i]);
+        //PREFETCH_POOL(pool_guest_addr[i]);
     }
 
     int last_used_idx_shadow = vq_guest_to_tx->last_used_idx;
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
-        //if (false) {
 #ifndef ZERO_COPY_TX
             memcpy((void *) (pool_host_addr[i]->addr), pool_guest_addr[i], SIZE_PACKET);
             //cldemote(pool_host_addr[i]->addr);
             //_mm_clflushopt(pool_host_addr[i]->addr);
 #endif
         } else {
-            auto *xmm01 = (packet *) pool_host_addr[i]->addr;
-            auto *xmm02 = pool_guest_addr[i];
+//            auto *xmm01 = (packet *) pool_host_addr[i]->addr;
+//            auto *xmm02 = pool_guest_addr[i];
             for (int j = 0; j < NUM_LOOP; j++) {
                 if (!IS_PSMALL) {
 //                    _mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
@@ -234,7 +232,7 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_gues
     last_used_idx_shadow = (last_used_idx_shadow + skipped_index) % VQ_ENYRY_NUM;
     for (int i = skipped_index; i < num_fin; i++) {
 #else
-        for(int i = 0; i < num_fin; i++) {
+    for (int i = 0; i < num_fin; i++) {
 #endif
         // パケットの取得, ディスクリプタの紐づけ解除
         delete_info(&vq_guest_to_tx->descs[last_used_idx_shadow]);
@@ -325,7 +323,7 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
     last_used_idx_shadow = (last_used_idx_shadow + skipped_index) % VQ_ENYRY_NUM;
     for (int i = skipped_index; i < num_fin; i++) {
 #else
-        for(int i = 0; i < num_fin; i++) {
+    for (int i = 0; i < num_fin; i++) {
 #endif
         set_param(&vq_guest_to_tx->descs[last_avail_idx_shadow], id[i]);
 #ifdef STRIDE_VQ

@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 
     vq *vq_guest_to_tx = (vq *) (vq_rx_to_guest + 1);
     init_ring(vq_guest_to_tx);
-    
+
     info_opt opt = get_opt(argc, argv);
 
     volatile bool *flag = (volatile bool *) (vq_guest_to_tx + 1);
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     }
 
     // 送受信開始
-		rs_packet(vq_rx_to_guest, vq_guest_to_tx, pool_guest_addr, opt);
+    rs_packet(vq_rx_to_guest, vq_guest_to_tx, pool_guest_addr, opt);
 
     shm_unlink("shm_buf");
 

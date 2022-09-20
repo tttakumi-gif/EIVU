@@ -37,7 +37,8 @@ namespace {
                 int offset = sizeof(buf) * (vq_rx_to_guest->last_pool_idx + ids[j]) + sizeof(mbuf_header) +
                              PACKET_BUFFER_PADDING;
 #else
-                int offset = sizeof(buf) * (vq_rx_to_guest->last_pool_idx + j) + sizeof(mbuf_header) + PACKET_BUFFER_PADDING;
+                int offset =
+                        sizeof(buf) * (vq_rx_to_guest->last_pool_idx + j) + sizeof(mbuf_header) + PACKET_BUFFER_PADDING;
 #endif
                 send_addrs_dest[j] = (void *) ((char *) pool_guest_addr + offset);
             }
