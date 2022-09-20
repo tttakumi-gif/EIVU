@@ -51,7 +51,7 @@ namespace {
             }
         }
 
-#ifndef ZERO_COPY
+#ifndef ZERO_COPY_RX
         delete[](send_addrs);
         delete[](pool_rx_addr);
 #endif
@@ -101,10 +101,6 @@ int main(int argc, char **argv) {
 
     // 送受信開始
     send_packet(vq_rx_to_guest, pool_guest_addr, opt);
-
-#ifdef SKIP_CLT
-    *flag = false;
-#endif
 
     shm_unlink("shm_buf");
 

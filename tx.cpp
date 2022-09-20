@@ -22,9 +22,6 @@ namespace {
             }
 
             // パケット受信
-//#ifdef AVOID_TX
-//			pull_avoid(vq_guest_to_tx, num_fin);
-//#else
             for (int j = 0; j < num_fin; j++) {
 #ifdef RANDOM
                 recv_addrs[j] = &pool_tx_addr[local_pool_index + (int) ids[j]];
@@ -53,7 +50,7 @@ namespace {
              }
         }
 
-#ifndef AVOID_TX
+#ifndef ZERO_COPY_TX
             delete[](recv_addrs);
             delete[](pool_tx_addr);
 #endif
@@ -83,13 +80,7 @@ int main(int argc, char **argv) {
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
 
-#ifndef SKIP_CLT
-    recv_packet(vq_guest_to_tx, pool_guest_addr, opt);
-#else
-    while(*(volatile bool*)flag == true) {
-        ;
-    }
-#endif
+		recv_packet(vq_guest_to_tx, pool_guest_addr, opt);
 
     // 計測終了
     end = std::chrono::system_clock::now();

@@ -80,11 +80,9 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
     //    PREFETCH_POOL(pool_guest_addr[i]);
     }
 
-#ifndef SKIP_CLT
     for (int i = 0; i < num_fin; i++) {
         wait_push(vq_rx_to_guest, vq_rx_to_guest->last_avail_idx + i);
     }
-#endif
 
 #if MBUF_HEADER_SIZE > 0
     for (int i = 0; i < num_fin; i++) {
@@ -100,7 +98,7 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
         //if (false) {
-#ifndef ZERO_COPY
+#ifndef ZERO_COPY_RX
             memcpy(pool_guest_addr[i], (void *) pool_host_addr[i]->addr, SIZE_PACKET);
             //cldemote(pool_guest_addr[i]);
             //_mm_clflushopt(pool_guest_addr[i]);
@@ -188,7 +186,7 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_gues
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
         //if (false) {
-#ifndef AVOID_TX
+#ifndef ZERO_COPY_TX
             memcpy((void *) (pool_host_addr[i]->addr), pool_guest_addr[i], SIZE_PACKET);
             //cldemote(pool_host_addr[i]->addr);
             //_mm_clflushopt(pool_host_addr[i]->addr);

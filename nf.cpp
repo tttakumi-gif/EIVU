@@ -49,13 +49,7 @@ int main(int argc, char *argv[]) {
     }
 
     // 送受信開始
-#ifndef SKIP_CLT
-    rs_packet(vq_rx_to_guest, vq_guest_to_tx, pool_guest_addr, opt);
-#else
-    while(*(volatile bool*)flag == true) {
-        ;
-    }
-#endif
+		rs_packet(vq_rx_to_guest, vq_guest_to_tx, pool_guest_addr, opt);
 
     shm_unlink("shm_buf");
 
