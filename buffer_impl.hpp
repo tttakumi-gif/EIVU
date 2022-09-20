@@ -280,11 +280,7 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
     for (int i = 0; i < num_fin; i++) {
         id[i] = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx].entry_index;
         buf *packet_buffer = &pool_guest_addr[id[i]];
-<<<<<<< HEAD
         //if(((packet*)(packet_buffer->addr))->packet_len == 999999) {
-=======
-        //if(((packet*)(packet_buffer->addr))->packet_id == 999999) {
->>>>>>> 7c55d2408ddbcc042f27a72b3a80ea1f315267c2
         //    exit(1);
         //}
         //memset(&((packet*)(packet_buffer->addr))->packet_len, i, 4);

@@ -1,6 +1,6 @@
 # cmake_minimum_required(VERSION <specify CMake version here>)
 cmake_minimum_required(VERSION 3.11)
-project(new-b4-assignment)
+project(mock-vhost-user)
 set(CMAKE_CXX_STANDARD 17)
 
 set(obj "shm.cpp")
@@ -8,9 +8,15 @@ set(obj "shm.cpp")
 set(flags "-O3 -march=x86-64 -std=c++17 -pthread -mtune=generic -Wall -Wextra -ffast-math -mfpmath=both -g")
 set(CMAKE_CXX_FLAGS "${flags}")
 
-add_executable(clt.out clt.cpp ${obj})
-target_link_libraries(clt.out PUBLIC rt)
-add_executable(recv.out recv.cpp ${obj})
-target_link_libraries(recv.out PUBLIC rt)
-add_executable(srv.out srv.cpp ${obj})
-target_link_libraries(srv.out PUBLIC rt)
+add_executable(rx.out rx.cpp ${obj})
+target_link_libraries(rx.out PUBLIC rt)
+add_executable(tx.out tx.cpp ${obj})
+target_link_libraries(tx.out PUBLIC rt)
+add_executable(nf.out nf.cpp ${obj})
+target_link_libraries(nf.out PUBLIC rt)
+
+add_custom_command(
+	TARGET nf.out
+	POST_BUILD
+	COMMAND cp ../shells/run.sh ./ && cp ../shells/statrun.sh ./
+)

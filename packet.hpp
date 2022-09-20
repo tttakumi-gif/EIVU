@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cpuinfo.hpp"
+#include "bindcpu.hpp"
 
 constexpr int32_t SIZE_PACKET = 64;
 constexpr bool IS_PSMALL = SIZE_PACKET < 32;
