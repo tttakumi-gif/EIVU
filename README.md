@@ -14,6 +14,7 @@ This program uses virtqueue (`vq`) and packet buffer pool (array of `buf`).
 
 Use cmake to build.
 Execute the following command.
+Then, three binaries are generated: "rx.out", "nf.out", and "tx.out".
 
 ```
 $ mkdir build && cd build
