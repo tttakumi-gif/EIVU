@@ -150,4 +150,3 @@ mkdir results/individual/configuration/bios/cache/hw_prefetch
 mkdir results/individual/configuration/bios/cache/hw_prefetch/off
 mkdir results/individual/configuration/bios/cache/adjacent_cache
 mkdir results/individual/configuration/bios/cache/adjacent_cache/off
-
