@@ -117,17 +117,10 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
         }
 
         // index更新
-#ifdef STRIDE_VQ
-        vq_rx_to_guest->last_avail_idx += NUM_VQ_STRIDE;
-        if(VQ_ENYRY_NUM <= vq_rx_to_guest->last_avail_idx) {
-                vq_rx_to_guest->last_avail_idx = vq_rx_to_guest->last_avail_idx % NUM_VQ_STRIDE + 1;
-        }
-#else
         vq_rx_to_guest->last_avail_idx += 1;
         if (VQ_ENYRY_NUM <= vq_rx_to_guest->last_avail_idx) {
             vq_rx_to_guest->last_avail_idx = 0;
         }
-#endif
     }
 
 #ifdef SKIP_INDEX
@@ -145,17 +138,10 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
 #endif
 
         // index更新
-#ifdef STRIDE_VQ
-        last_avail_idx_shadow += NUM_VQ_STRIDE;
-        if(VQ_ENYRY_NUM <= last_avail_idx_shadow) {
-            last_avail_idx_shadow = last_avail_idx_shadow % NUM_VQ_STRIDE + 1;
-        }
-#else
         last_avail_idx_shadow += 1;
         if (VQ_ENYRY_NUM <= last_avail_idx_shadow) {
             last_avail_idx_shadow = 0;
         }
-#endif
     }
 
 #ifdef SKIP_INDEX
@@ -203,17 +189,10 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_gues
         }
 
         // index更新
-#ifdef STRIDE_VQ
-        vq_guest_to_tx->last_used_idx += NUM_VQ_STRIDE;
-        if(VQ_ENYRY_NUM <= vq_guest_to_tx->last_used_idx) {
-                vq_guest_to_tx->last_used_idx = vq_guest_to_tx->last_used_idx % NUM_VQ_STRIDE + 1;
-        }
-#else
         vq_guest_to_tx->last_used_idx += 1;
         if (VQ_ENYRY_NUM <= vq_guest_to_tx->last_used_idx) {
             vq_guest_to_tx->last_used_idx = 0;
         }
-#endif
     }
 
 #if MBUF_HEADER_SIZE > 0
@@ -238,17 +217,10 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, void **pool_gues
         delete_info(&vq_guest_to_tx->descs[last_used_idx_shadow]);
 
         // index更新
-#ifdef STRIDE_VQ
-        last_used_idx_shadow += NUM_VQ_STRIDE;
-        if(VQ_ENYRY_NUM <= last_used_idx_shadow) {
-            last_used_idx_shadow = last_used_idx_shadow % NUM_VQ_STRIDE + 1;
-        }
-#else
         last_used_idx_shadow += 1;
         if (VQ_ENYRY_NUM <= last_used_idx_shadow) {
             last_used_idx_shadow = 0;
         }
-#endif
     }
 
 #ifdef SKIP_INDEX
@@ -289,30 +261,16 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
         //memset(packet_buffer->header.id_addr, i, 4);
 #endif
 
-#ifdef STRIDE_VQ
-        vq_rx_to_guest->last_used_idx += NUM_VQ_STRIDE;
-        if(VQ_ENYRY_NUM <= vq_rx_to_guest->last_used_idx) {
-            vq_rx_to_guest->last_used_idx = vq_rx_to_guest->last_used_idx % NUM_VQ_STRIDE + 1;
-        }
-#else
         vq_rx_to_guest->last_used_idx += 1;
         if (VQ_ENYRY_NUM <= vq_rx_to_guest->last_used_idx) {
             vq_rx_to_guest->last_used_idx = 0;
         }
-#endif
 
         wait_push(vq_guest_to_tx, vq_guest_to_tx->last_avail_idx);
-#ifdef STRIDE_VQ
-        vq_guest_to_tx->last_avail_idx += NUM_VQ_STRIDE;
-        if(VQ_ENYRY_NUM <= vq_guest_to_tx->last_avail_idx) {
-            vq_guest_to_tx->last_avail_idx = vq_guest_to_tx->last_avail_idx % NUM_VQ_STRIDE + 1;
-        }
-#else
         vq_guest_to_tx->last_avail_idx += 1;
         if (VQ_ENYRY_NUM <= vq_guest_to_tx->last_avail_idx) {
             vq_guest_to_tx->last_avail_idx = 0;
         }
-#endif
     }
 
 #ifdef SKIP_INDEX
@@ -326,30 +284,16 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
     for (int i = 0; i < num_fin; i++) {
 #endif
         set_param(&vq_guest_to_tx->descs[last_avail_idx_shadow], id[i]);
-#ifdef STRIDE_VQ
-        last_avail_idx_shadow += NUM_VQ_STRIDE;
-        if(VQ_ENYRY_NUM <= last_avail_idx_shadow) {
-            last_avail_idx_shadow = last_avail_idx_shadow % NUM_VQ_STRIDE + 1;
-        }
-#else
         last_avail_idx_shadow += 1;
         if (VQ_ENYRY_NUM <= last_avail_idx_shadow) {
             last_avail_idx_shadow = 0;
         }
-#endif
 
         delete_info(&vq_rx_to_guest->descs[last_used_idx_shadow]);
-#ifdef STRIDE_VQ
-        last_used_idx_shadow += NUM_VQ_STRIDE;
-        if(VQ_ENYRY_NUM <= last_used_idx_shadow) {
-            last_used_idx_shadow = last_used_idx_shadow % NUM_VQ_STRIDE + 1;
-        }
-#else
         last_used_idx_shadow += 1;
         if (VQ_ENYRY_NUM <= last_used_idx_shadow) {
             last_used_idx_shadow = 0;
         }
-#endif
     }
 
 #ifdef SKIP_INDEX
