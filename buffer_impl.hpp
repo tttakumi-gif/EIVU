@@ -27,10 +27,20 @@ static inline void cldemote(const volatile void *p) {
     asm volatile(".byte 0x0f, 0x1c, 0x06"::"S" (p));
 }
 
+void _delete_info(desc *d) {
+    d->flags = d->flags | USED_FLAG;
+    d->flags = d->flags & ~AVAIL_FLAG;
+}
+
 void delete_info(desc *d) {
     d->entry_index = -1;
     d->flags = d->flags | USED_FLAG;
     d->flags = d->flags & ~AVAIL_FLAG;
+}
+
+void _set_param(desc *d) {
+    d->flags = d->flags & ~USED_FLAG;
+    d->flags = d->flags | AVAIL_FLAG;
 }
 
 void set_param(desc *d, int this_id) {
@@ -98,6 +108,7 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
 #ifndef ZERO_COPY_RX
+            pool_guest_addr[i] = &pool_guest_addr[vq_rx_to_guest->descs[vq_rx_to_guest->last_avail_idx].entry_index];
             memcpy(pool_guest_addr[i], (void *) pool_host_addr[i]->addr, SIZE_PACKET);
             //cldemote(pool_guest_addr[i]);
             //_mm_clflushopt(pool_guest_addr[i]);
@@ -134,7 +145,8 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, void **pool_gues
 #ifdef RANDOM
         set_param(&vq_rx_to_guest->descs[last_avail_idx_shadow], vq_rx_to_guest->last_pool_idx + ids[i]);
 #else
-        set_param(&vq_rx_to_guest->descs[last_avail_idx_shadow], vq_rx_to_guest->last_pool_idx + i);
+//        set_param(&vq_rx_to_guest->descs[last_avail_idx_shadow], vq_rx_to_guest->last_pool_idx + i);
+        _set_param(&vq_rx_to_guest->descs[last_avail_idx_shadow]);
 #endif
 
         // index更新
@@ -289,7 +301,13 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
             last_avail_idx_shadow = 0;
         }
 
-        delete_info(&vq_rx_to_guest->descs[last_used_idx_shadow]);
+        _delete_info(&vq_rx_to_guest->descs[last_used_idx_shadow]);
+        vq_rx_to_guest->descs[last_used_idx_shadow].entry_index = vq_rx_to_guest->last_pool_idx;
+        vq_rx_to_guest->last_pool_idx += 1;
+        if(SIZE_BUFFER <= vq_rx_to_guest->last_pool_idx) {
+            vq_rx_to_guest->last_pool_idx = 0;
+        }
+
         last_used_idx_shadow += 1;
         if (VQ_ENYRY_NUM <= last_used_idx_shadow) {
             last_used_idx_shadow = 0;

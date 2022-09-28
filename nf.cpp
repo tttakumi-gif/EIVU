@@ -2,6 +2,14 @@
 #include "shm.hpp"
 
 namespace {
+    void attach_buffer_to_vq(vq *virtqueue) {
+        assert(VQ_ENYRY_NUM <= SIZE_BUFFER);
+        for (int i = 0; i < VQ_ENYRY_NUM; i++) {
+            virtqueue[i].descs->entry_index = i;
+            virtqueue->last_pool_idx += 1;
+        }
+    }
+
     void rs_packet(vq *vq_rx_to_guest, vq *ring_guest_to_tx, buf *pool_guest_addr, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(1);
@@ -32,6 +40,7 @@ int main(int argc, char *argv[]) {
 
     vq *vq_rx_to_guest = (vq *) (pool_guest_addr + POOL_ENTRY_NUM);
     init_ring(vq_rx_to_guest);
+    attach_buffer_to_vq(vq_rx_to_guest);
 
     vq *vq_guest_to_tx = (vq *) (vq_rx_to_guest + 1);
     init_ring(vq_guest_to_tx);

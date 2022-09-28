@@ -44,7 +44,7 @@ namespace {
             }
 
             send_rx_to_guest(vq_rx_to_guest, send_addrs, send_addrs_dest, num_fin, is_stream);
-            vq_rx_to_guest->last_pool_idx = (vq_rx_to_guest->last_pool_idx + num_fin) % POOL_ENTRY_NUM;
+//            vq_rx_to_guest->last_pool_idx = (vq_rx_to_guest->last_pool_idx + num_fin) % POOL_ENTRY_NUM;
 
             local_pool_index += num_fin;
             if (POOL_ENTRY_NUM <= local_pool_index) {
