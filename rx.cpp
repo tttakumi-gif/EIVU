@@ -43,7 +43,7 @@ namespace {
                 send_addrs_dest[j] = (void *) ((char *) pool_guest_addr + offset);
             }
 
-            send_rx_to_guest(vq_rx_to_guest, send_addrs, send_addrs_dest, num_fin, is_stream);
+            send_rx_to_guest(vq_rx_to_guest, send_addrs, pool_guest_addr, num_fin, is_stream);
 //            vq_rx_to_guest->last_pool_idx = (vq_rx_to_guest->last_pool_idx + num_fin) % POOL_ENTRY_NUM;
 
             local_pool_index += num_fin;

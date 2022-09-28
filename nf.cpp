@@ -3,7 +3,7 @@
 
 namespace {
     void attach_buffer_to_vq(vq *virtqueue) {
-        assert(VQ_ENYRY_NUM <= SIZE_BUFFER);
+        assert(VQ_ENYRY_NUM <= POOL_ENTRY_NUM);
         for (int i = 0; i < VQ_ENYRY_NUM; i++) {
             virtqueue[i].descs->entry_index = i;
             virtqueue->last_pool_idx += 1;
@@ -37,6 +37,10 @@ int main(int argc, char *argv[]) {
     int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
     buf *pool_guest_addr = (buf *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
     memset(pool_guest_addr, 0, sizeof(buf) * POOL_ENTRY_NUM);
+    for(int i = 0; i < POOL_ENTRY_NUM; i++) {
+        set_len(&pool_guest_addr[i], -1);
+        assert(get_len(&pool_guest_addr[i]) == -1);
+    }
 
     vq *vq_rx_to_guest = (vq *) (pool_guest_addr + POOL_ENTRY_NUM);
     init_ring(vq_rx_to_guest);
