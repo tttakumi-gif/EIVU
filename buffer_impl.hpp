@@ -97,15 +97,15 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, buf *pool_guest_
         if (!is_stream) {
 #ifndef ZERO_COPY_RX
             int64_t copy_dest_index = vq_rx_to_guest->descs[vq_rx_to_guest->last_avail_idx].entry_index;
-            auto *copy_dest_addr = (packet *) &pool_guest_addr[copy_dest_index].addr;
-            memcpy(copy_dest_addr, (void *) pool_host_addr[i]->addr, SIZE_PACKET);
-            //cldemote(pool_guest_addr[i]);
-            //_mm_clflushopt(pool_guest_addr[i]);
+            auto *copy_dest_addr = get_packet_addr(&pool_guest_addr[copy_dest_index]);
+            memcpy(copy_dest_addr, get_packet_addr(pool_host_addr[i]), SIZE_PACKET);
+            //cldemote(copy_dest_addr);
+            //_mm_clflushopt(copy_dest_addr);
 #endif
         } else {
 //            int64_t copy_dest_index = vq_rx_to_guest->descs[vq_rx_to_guest->last_avail_idx].entry_index;
-//            void *xmm01 = &pool_guest_addr[copy_dest_index].addr;
-//            auto *xmm02 = (packet *) pool_host_addr[i]->addr;
+//            void *xmm01 = get_packet_addr(&pool_guest_addr[copy_dest_index]);
+//            auto *xmm02 = get_packet_addr(pool_host_addr[i]);
 
             for (int j = 0; j < NUM_LOOP; j++) {
                 if (!IS_PSMALL) {
@@ -158,13 +158,13 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, buf *pool_guest_
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
 #ifndef ZERO_COPY_TX
-            memcpy((void *) (pool_host_addr[i]->addr), pool_guest_addr[i].addr, SIZE_PACKET);
-            //cldemote(pool_host_addr[i]->addr);
-            //_mm_clflushopt(pool_host_addr[i]->addr);
+            memcpy(get_packet_addr(pool_host_addr[i]), get_packet_addr(&pool_guest_addr[i]), SIZE_PACKET);
+            //cldemote(get_packet_addr(pool_host_addr[i]);
+            //_mm_clflushopt(get_packet_addr(pool_host_addr[i]);
 #endif
         } else {
-//            auto *xmm01 = (packet *) pool_host_addr[i]->addr;
-//            auto *xmm02 = pool_guest_addr[i].addr;
+//            auto *xmm01 = get_packet_addr(pool_host_addr[i];
+//            auto *xmm02 = get_packet_addr(&pool_guest_addr[i]);
             for (int j = 0; j < NUM_LOOP; j++) {
                 if (!IS_PSMALL) {
 //                    _mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
@@ -196,7 +196,7 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, buf *pool_guest_
     int skipped_index = 64 / VQ_ENTRY_SIZE;
     for (int i = skipped_index; i < num_fin; i++) {
 #else
-    for (int i = 0; i < num_fin; i++) {
+        for (int i = 0; i < num_fin; i++) {
 #endif
         int desc_index = (last_used_idx_shadow + i) % VQ_ENYRY_NUM;
 
@@ -261,7 +261,7 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buf *pool_guest_
     int skipped_index = 64 / VQ_ENTRY_SIZE;
     for (int i = skipped_index; i < num_fin; i++) {
 #else
-    for (int i = 0; i < num_fin; i++) {
+        for (int i = 0; i < num_fin; i++) {
 #endif
         int tx_desc_entry = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
         set_avail_flag(&vq_guest_to_tx->descs[tx_desc_entry]);
