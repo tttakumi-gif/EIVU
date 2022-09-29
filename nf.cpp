@@ -1,4 +1,4 @@
-#include "buffer.hpp"
+#include "virtqueue.hpp"
 #include "shm.hpp"
 
 namespace {
