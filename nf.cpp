@@ -5,7 +5,12 @@ namespace {
     void attach_buffer_to_vq(vq *virtqueue) {
         assert(VQ_ENYRY_NUM <= POOL_ENTRY_NUM);
         for (int i = 0; i < VQ_ENYRY_NUM; i++) {
-            virtqueue[i].descs->entry_index = i;
+#ifdef RANDOM_NF
+            int entry_index = i / 32 * 32 + ids[i % 32];
+#else
+            int entry_index = i;
+#endif
+            virtqueue[i].descs->entry_index = entry_index;
             virtqueue->last_pool_idx += 1;
         }
     }
@@ -16,8 +21,7 @@ namespace {
 #endif
 
         if (opt.process == MOVE) {
-            // int32_t num_fin = opt.size_batch;
-            int32_t num_fin = 32;
+            int32_t num_fin = opt.size_batch;
 
             for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
                 if (unlikely(i < num_fin)) {
@@ -37,7 +41,7 @@ int main(int argc, char *argv[]) {
     int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
     buf *pool_guest_addr = (buf *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
     memset(pool_guest_addr, 0, sizeof(buf) * POOL_ENTRY_NUM);
-    for(int i = 0; i < POOL_ENTRY_NUM; i++) {
+    for (int i = 0; i < POOL_ENTRY_NUM; i++) {
         set_len(&pool_guest_addr[i], -1);
         assert(get_len(&pool_guest_addr[i]) == -1);
     }

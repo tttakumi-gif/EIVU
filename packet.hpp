@@ -66,7 +66,7 @@ static inline void *__movsb(void *d, const void *s, size_t n) {
 
 void set_id(buf *buffer, int32_t id) {
 #if MBUF_HEADER_SIZE > 64
-    memcpy(buffer->header.id_addr, &id, sizeof(id));
+    *(int32_t *) buffer->header.id_addr = id;
     //__movsb(buffer->header.id_addr, &id, 4);
 
     int loop_num = MBUF_HEADER_SIZE / 2 - 64;
@@ -82,8 +82,6 @@ int32_t get_id(buf *buffer) {
 
 void set_len(buf *buffer, int32_t len) {
 #if MBUF_HEADER_SIZE >= 128
-//    memset(buffer->header.len_addr, 0, 64);
-//	memcpy(buffer->header.len_addr, &len, sizeof(len));
     *(int32_t *) (buffer->header.len_addr) = len;
     //__movsb(buffer->header.len_addr, &len, 4);
     int loop_num = MBUF_HEADER_SIZE / 2 - 64;
