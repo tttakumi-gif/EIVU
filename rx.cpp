@@ -12,8 +12,8 @@ namespace {
         int32_t num_fin = opt.size_batch;
         bool is_stream = (opt.stream == ON) ? true : false;
 
-        int local_pool_index = 0;
-        buf *pool_rx_addr = new(std::align_val_t{64}) buf[POOL_ENTRY_NUM];
+        auto *pool = (struct buffer_pool *) malloc(sizeof(buffer_pool));
+        init(pool);
         buf **send_addrs = new buf *[num_fin];
 
         while (0 < i) {
@@ -26,24 +26,20 @@ namespace {
 #ifdef RANDOM_RX
                 send_addrs[j] = &pool_rx_addr[local_pool_index + (int) ids[j]];
 #else
-                send_addrs[j] = &pool_rx_addr[local_pool_index + j];
+                send_addrs[j] = get_buffer(pool);
 #endif
                 ((packet *) (send_addrs[j]->addr))->packet_id = i;
                 ((packet *) (send_addrs[j]->addr))->packet_len = SIZE_PACKET;
             }
 
             send_rx_to_guest(vq_rx_to_guest, send_addrs, pool_guest_addr, num_fin, is_stream);
-
-            local_pool_index += num_fin;
-            if (POOL_ENTRY_NUM <= local_pool_index) {
-                local_pool_index = 0;
+            for (int j = 0; j < num_fin; j++) {
+                add_to_cache(pool, send_addrs[j]);
             }
         }
 
-#ifndef ZERO_COPY_RX
+        free(pool);
         delete[](send_addrs);
-        delete[](pool_rx_addr);
-#endif
     }
 
     void init_resource() {
@@ -80,7 +76,8 @@ int main(int argc, char **argv) {
     *flag = false;
 
 #ifdef PRINT
-    std::printf("clt: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool_guest_addr, vq_rx_to_guest, vq_guest_to_tx, flag);
+    std::printf("clt: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool_guest_addr,
+                vq_rx_to_guest, vq_guest_to_tx, flag);
 #endif
 
     init_resource();

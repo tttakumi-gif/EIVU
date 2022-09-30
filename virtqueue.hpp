@@ -1,6 +1,7 @@
 #pragma once
 
 #include "packet.hpp"
+#include "buffer_pool.hpp"
 #include "option.hpp"
 
 #define PROC_CLT_S 0
@@ -20,12 +21,6 @@
 //constexpr int VQ_ENYRY_NUM = 64;
 constexpr int VQ_ENYRY_NUM = 256;
 //constexpr int VQ_ENYRY_NUM = 32768;
-#if 1
-constexpr int POOL_ENTRY_NUM = 512;
-//constexpr int POOL_ENTRY_NUM = 8192;
-#else
-constexpr int POOL_ENTRY_NUM = 163456;
-#endif
 
 constexpr int AVAIL_FLAG = 0b1 << 7;
 constexpr int USED_FLAG = 0b1 << 15;

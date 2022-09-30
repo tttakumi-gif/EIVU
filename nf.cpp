@@ -43,7 +43,6 @@ int main(int argc, char *argv[]) {
     memset(pool_guest_addr, 0, sizeof(buf) * POOL_ENTRY_NUM);
     for (int i = 0; i < POOL_ENTRY_NUM; i++) {
         set_len(&pool_guest_addr[i], -1);
-        assert(get_len(&pool_guest_addr[i]) == -1);
     }
 
     vq *vq_rx_to_guest = (vq *) (pool_guest_addr + POOL_ENTRY_NUM);

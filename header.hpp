@@ -45,4 +45,4 @@
 //#define SKIP_INDEX_NF
 //#define SKIP_INDEX_TX
 
-//#define PRINT
+#define PRINT
