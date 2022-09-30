@@ -56,6 +56,10 @@ buf *get_buffer(buffer_pool *pool) {
     return buffer;
 }
 
+uint64_t get_buffer_index(buffer_pool *pool, buf *buffer) {
+    return ((intptr_t) buffer - (intptr_t) &pool->buffers) / sizeof(buf);
+}
+
 void add_to_cache(buffer_pool *pool, buf *data) {
     push(&pool->cache, data);
 }

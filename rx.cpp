@@ -2,15 +2,15 @@
 #include "shm.hpp"
 
 namespace {
-    void send_packet(vq *vq_rx_to_guest, buf *pool_guest_addr, info_opt opt) {
+    void send_packet(vq *vq_rx_to_guest, buffer_pool *pool_guest, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(0);
 #endif
-        assert((intptr_t(pool_guest_addr) & 63) == 0);
+        assert((intptr_t(pool_guest) & 63) == 0);
 
         int32_t i = NUM_PACKET;
         int32_t num_fin = opt.size_batch;
-        bool is_stream = (opt.stream == ON) ? true : false;
+        bool is_stream = opt.stream == ON;
 
         auto *pool = (struct buffer_pool *) malloc(sizeof(buffer_pool));
         init(pool);
@@ -32,7 +32,7 @@ namespace {
                 ((packet *) (send_addrs[j]->addr))->packet_len = SIZE_PACKET;
             }
 
-            send_rx_to_guest(vq_rx_to_guest, send_addrs, pool_guest_addr, num_fin, is_stream);
+            send_rx_to_guest(vq_rx_to_guest, send_addrs, pool_guest, num_fin, is_stream);
             for (int j = 0; j < num_fin; j++) {
                 add_to_cache(pool, send_addrs[j]);
             }
@@ -66,8 +66,8 @@ int main(int argc, char **argv) {
 
     // 初期設定
     int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
-    buf *pool_guest_addr = (buf *) mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
-    vq *vq_rx_to_guest = (vq *) (pool_guest_addr + POOL_ENTRY_NUM);
+    auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+    vq *vq_rx_to_guest = (vq *) (pool + 1);
     vq *vq_guest_to_tx = (vq *) (vq_rx_to_guest + 1);
 
     info_opt opt = get_opt(argc, argv);
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
     *flag = false;
 
 #ifdef PRINT
-    std::printf("clt: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool_guest_addr,
+    std::printf("clt: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool,
                 vq_rx_to_guest, vq_guest_to_tx, flag);
 #endif
 
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     }
 
     // 送受信開始
-    send_packet(vq_rx_to_guest, pool_guest_addr, opt);
+    send_packet(vq_rx_to_guest, pool, opt);
 
     shm_unlink("shm_buf");
 

@@ -2,7 +2,7 @@
 #include "shm.hpp"
 
 namespace {
-    void recv_packet(vq *vq_guest_to_tx, buf *pool_guest_addr, info_opt opt) {
+    void recv_packet(vq *vq_guest_to_tx, buffer_pool *pool_guest, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(2);
 #endif
@@ -10,8 +10,8 @@ namespace {
         int32_t num_fin = opt.size_batch;
         bool is_stream = opt.stream == ON;
 
-        int local_pool_index = 0;
-        buf *pool_tx_addr = new(std::align_val_t{64}) buf[POOL_ENTRY_NUM];
+        auto *pool = (struct buffer_pool *) malloc(sizeof(buffer_pool));
+        init(pool);
         buf **recv_addrs = new buf *[num_fin];
 
         for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
@@ -25,29 +25,24 @@ namespace {
 #ifdef RANDOM_TX
                 recv_addrs[j] = &pool_tx_addr[local_pool_index + (int) ids[j]];
 #else
-                recv_addrs[j] = &pool_tx_addr[local_pool_index + j];
+                recv_addrs[j] = get_buffer(pool);
 #endif
             }
 
-            send_guest_to_tx(vq_guest_to_tx, recv_addrs, pool_guest_addr, num_fin, is_stream);
-
-            local_pool_index += num_fin;
-            if (POOL_ENTRY_NUM <= local_pool_index) {
-                local_pool_index = 0;
+            send_guest_to_tx(vq_guest_to_tx, recv_addrs, pool_guest, num_fin, is_stream);
+            for (int j = 0; j < num_fin; j++) {
+                add_to_cache(pool, recv_addrs[j]);
             }
 
-
-            if (unlikely((i & 8388607) == 0)) {
 #ifdef PRINT
-            print((packet*)&recv_addrs[0]->addr);
-#endif
+            if (unlikely((i & 8388607) == 0)) {
+                print((packet *) &recv_addrs[0]->addr);
             }
+#endif
         }
 
-#ifndef ZERO_COPY_TX
+        free(pool);
         delete[](recv_addrs);
-        delete[](pool_tx_addr);
-#endif
     }
 }
 
@@ -55,8 +50,8 @@ int main(int argc, char **argv) {
 
     // 初期設定
     int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
-    buf *pool_guest_addr = (buf *) mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
-    vq *vq_rx_to_guest = (vq *) (pool_guest_addr + POOL_ENTRY_NUM);
+    auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+    vq *vq_rx_to_guest = (vq *) (pool + 1);
     vq *vq_guest_to_tx = (vq *) (vq_rx_to_guest + 1);
 
     info_opt opt = get_opt(argc, argv);
@@ -64,8 +59,8 @@ int main(int argc, char **argv) {
     bool *flag = (bool *) (vq_guest_to_tx + 1);
 
 #ifdef PRINT
-    std::printf("recv: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool_guest_addr, vq_rx_to_guest, vq_guest_to_tx, flag);
-    //std::printf("recv: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", &vq_guest_to_tx->size, &vq_guest_to_tx->last_avail_idx, &vq_guest_to_tx->last_used_idx, &vq_guest_to_tx->last_pool_idx);
+    std::printf("recv: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool,
+                vq_rx_to_guest, vq_guest_to_tx, flag);
 #endif
 
     *flag = true;
@@ -74,7 +69,7 @@ int main(int argc, char **argv) {
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
 
-    recv_packet(vq_guest_to_tx, pool_guest_addr, opt);
+    recv_packet(vq_guest_to_tx, pool, opt);
 
     // 計測終了
     end = std::chrono::system_clock::now();
