@@ -1,6 +1,7 @@
 #pragma once
 
 #include "packet.hpp"
+#include "buffer_pool.hpp"
 #include "option.hpp"
 
 #define PROC_CLT_S 0
@@ -20,11 +21,6 @@
 //constexpr int VQ_ENYRY_NUM = 64;
 constexpr int VQ_ENYRY_NUM = 256;
 //constexpr int VQ_ENYRY_NUM = 32768;
-#if 1
-constexpr int POOL_ENTRY_NUM = 8192;
-#else
-constexpr int POOL_ENTRY_NUM = 163456;
-#endif
 
 constexpr int AVAIL_FLAG = 0b1 << 7;
 constexpr int USED_FLAG = 0b1 << 15;
@@ -54,7 +50,7 @@ struct vq {
 #if 1
     uint16_t last_avail_idx;
     uint16_t last_used_idx;
-    int32_t last_pool_idx;
+//    int32_t last_pool_idx;
 #else
     uint16_t __attribute__((__aligned__(64))) last_avail_idx;
     uint16_t __attribute__((__aligned__(64))) last_used_idx;
@@ -63,4 +59,4 @@ struct vq {
     desc descs[VQ_ENYRY_NUM];
 };
 
-#include "buffer_impl.hpp"
+#include "virtqueue_impl.hpp"

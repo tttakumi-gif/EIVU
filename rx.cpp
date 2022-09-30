@@ -1,22 +1,20 @@
-#include "buffer.hpp"
+#include "virtqueue.hpp"
 #include "shm.hpp"
 
 namespace {
-    void send_packet(vq *vq_rx_to_guest, buf *pool_guest_addr, info_opt opt) {
+    void send_packet(vq *vq_rx_to_guest, buffer_pool *pool_guest, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(0);
 #endif
-        assert((intptr_t(pool_guest_addr) & 63) == 0);
+        assert((intptr_t(pool_guest) & 63) == 0);
 
         int32_t i = NUM_PACKET;
-        // int32_t num_fin = opt.size_batch;
-        int32_t num_fin = 32;
-        bool is_stream = (opt.stream == ON) ? true : false;
+        int32_t num_fin = opt.size_batch;
+        bool is_stream = opt.stream == ON;
 
-        int local_pool_index = 0;
-        buf *pool_rx_addr = new(std::align_val_t{64}) buf[POOL_ENTRY_NUM];
+        auto *pool = (struct buffer_pool *) malloc(sizeof(buffer_pool));
+        init(pool);
         buf **send_addrs = new buf *[num_fin];
-        void **send_addrs_dest = new void *[num_fin];
 
         while (0 < i) {
             // 受信パケット数の決定
@@ -25,37 +23,23 @@ namespace {
             }
 
             for (int j = 0; j < num_fin; j++, i--) {
-#ifdef RANDOM
+#ifdef RANDOM_RX
                 send_addrs[j] = &pool_rx_addr[local_pool_index + (int) ids[j]];
 #else
-                send_addrs[j] = &pool_rx_addr[local_pool_index + j];
+                send_addrs[j] = get_buffer(pool);
 #endif
                 ((packet *) (send_addrs[j]->addr))->packet_id = i;
                 ((packet *) (send_addrs[j]->addr))->packet_len = SIZE_PACKET;
-
-#ifdef RANDOM
-                int offset = sizeof(buf) * (vq_rx_to_guest->last_pool_idx + ids[j]) + sizeof(mbuf_header) +
-                             PACKET_BUFFER_PADDING;
-#else
-                int offset =
-                        sizeof(buf) * (vq_rx_to_guest->last_pool_idx + j) + sizeof(mbuf_header) + PACKET_BUFFER_PADDING;
-#endif
-                send_addrs_dest[j] = (void *) ((char *) pool_guest_addr + offset);
             }
 
-            send_rx_to_guest(vq_rx_to_guest, send_addrs, send_addrs_dest, num_fin, is_stream);
-            vq_rx_to_guest->last_pool_idx = (vq_rx_to_guest->last_pool_idx + num_fin) % POOL_ENTRY_NUM;
-
-            local_pool_index += num_fin;
-            if (POOL_ENTRY_NUM <= local_pool_index) {
-                local_pool_index = 0;
+            send_rx_to_guest(vq_rx_to_guest, send_addrs, pool_guest, num_fin, is_stream);
+            for (int j = 0; j < num_fin; j++) {
+                add_to_cache(pool, send_addrs[j]);
             }
         }
 
-#ifndef ZERO_COPY_RX
+        free(pool);
         delete[](send_addrs);
-        delete[](pool_rx_addr);
-#endif
     }
 
     void init_resource() {
@@ -82,8 +66,8 @@ int main(int argc, char **argv) {
 
     // 初期設定
     int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
-    buf *pool_guest_addr = (buf *) mmap(NULL, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
-    vq *vq_rx_to_guest = (vq *) (pool_guest_addr + POOL_ENTRY_NUM);
+    auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+    vq *vq_rx_to_guest = (vq *) (pool + 1);
     vq *vq_guest_to_tx = (vq *) (vq_rx_to_guest + 1);
 
     info_opt opt = get_opt(argc, argv);
@@ -92,7 +76,8 @@ int main(int argc, char **argv) {
     *flag = false;
 
 #ifdef PRINT
-    std::printf("clt: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool_guest_addr, vq_rx_to_guest, vq_guest_to_tx, flag);
+    std::printf("clt: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool,
+                vq_rx_to_guest, vq_guest_to_tx, flag);
 #endif
 
     init_resource();
@@ -101,7 +86,7 @@ int main(int argc, char **argv) {
     }
 
     // 送受信開始
-    send_packet(vq_rx_to_guest, pool_guest_addr, opt);
+    send_packet(vq_rx_to_guest, pool, opt);
 
     shm_unlink("shm_buf");
 

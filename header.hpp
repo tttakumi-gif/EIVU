@@ -37,8 +37,12 @@
 //#define ZERO_COPY_RX
 //#define ZERO_COPY_TX
 
-// #define RANDOM
+//#define RANDOM_RX
+//#define RANDOM_NF
+//#define RANDOM_TX
 
-// #define SKIP_INDEX
+//#define SKIP_INDEX_RX
+//#define SKIP_INDEX_NF
+//#define SKIP_INDEX_TX
 
-// #define PRINT
+#define PRINT
