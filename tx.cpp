@@ -16,7 +16,7 @@ namespace {
 
         for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
             // 受信パケット数の決定
-            if (unlikely(i < num_fin)) {
+            if (i < num_fin) {
                 num_fin = i;
             }
 
@@ -35,7 +35,7 @@ namespace {
             }
 
 #ifdef PRINT
-            if (unlikely((i & 8388607) == 0)) {
+            if ((i & 8388607) == 0) {
                 print((packet *) &recv_addrs[0]->addr);
             }
 #endif
@@ -74,8 +74,8 @@ int main(int argc, char **argv) {
     // 計測終了
     end = std::chrono::system_clock::now();
 
-    double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    double second = elapsed / 1000;
+    double elapsed = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+    double second = elapsed / 1000.0;
     std::printf("result: %.3fsec (%.3fMpps)\n", second, NUM_PACKET / second / 1000000);
 
     shm_unlink("shm_buf");

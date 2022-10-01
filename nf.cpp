@@ -8,7 +8,7 @@ namespace {
 #ifdef RANDOM_NF
             int entry_index = i / 32 * 32 + ids[i % 32];
 #else
-            int entry_index = get_buffer_index(pool, get_buffer(pool));
+            auto entry_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
             virtqueue[i].descs->entry_index = entry_index;
         }
@@ -20,10 +20,10 @@ namespace {
 #endif
 
         if (opt.process == MOVE) {
-            int32_t num_fin = opt.size_batch;
+            int num_fin = static_cast<int>(opt.size_batch);
 
             for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
-                if (unlikely(i < num_fin)) {
+                if (i < num_fin) {
                     num_fin = i;
                 }
 

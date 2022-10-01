@@ -28,13 +28,13 @@ static inline void cldemote(const volatile void *p) {
 }
 
 void set_used_flag(desc *d) {
-    d->flags = d->flags | USED_FLAG;
-    d->flags = d->flags & ~AVAIL_FLAG;
+    d->flags = static_cast<int16_t>(d->flags | USED_FLAG);
+    d->flags = static_cast<int16_t>(d->flags & ~AVAIL_FLAG);
 }
 
 void set_avail_flag(desc *d) {
-    d->flags = d->flags & ~USED_FLAG;
-    d->flags = d->flags | AVAIL_FLAG;
+    d->flags = static_cast<int16_t>(d->flags & ~USED_FLAG);
+    d->flags = static_cast<int16_t>(d->flags | AVAIL_FLAG);
 }
 
 void wait_used(vq *v, int desc_idx) {
@@ -54,8 +54,8 @@ void wait_avail(vq *v, int desc_idx) {
 void init_descs(vq *v) {
     memset(v->descs, 0, sizeof(desc) * VQ_ENYRY_NUM);
     for (int i = 0; i < VQ_ENYRY_NUM; i++) {
-        v->descs[i].id = i;
-        v->descs[i].flags = v->descs[i].flags | USED_FLAG;
+        v->descs[i].id = static_cast<int16_t>(i);
+        v->descs[i].flags = static_cast<int16_t>(v->descs[i].flags | USED_FLAG);
     }
 }
 
@@ -217,12 +217,12 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buffer_pool *poo
     }
 
     for (int i = 0; i < num_fin; i++) {
-        int index = vq_rx_to_guest->descs[vq_rx_to_guest->last_avail_idx + i].entry_index;
+        int64_t index = vq_rx_to_guest->descs[vq_rx_to_guest->last_avail_idx + i].entry_index;
         PREFETCH_MBUF(pool->buffers[index].header.id_addr, pool->buffers[index].header.len_addr)
         //PREFETCH_MBUF(pool_guest_addr[index].header.id_addr, pool_guest_addr[index].header.id_addr)
     }
 
-    int id[num_fin];
+    int64_t id[num_fin];
     int last_avail_idx_shadow = vq_rx_to_guest->last_avail_idx;
     int last_used_idx_shadow = vq_guest_to_tx->last_used_idx;
 
@@ -271,7 +271,7 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buffer_pool *poo
 #ifdef RANDOM_NF
         int next_buffer_index = ((vq_rx_to_guest->last_pool_idx + i) % POOL_ENTRY_NUM) / 32 * 32 + ids[i];
 #else
-        int next_buffer_index = get_buffer_index(pool, get_buffer(pool));
+        auto next_buffer_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
         assert(get_len(&pool->buffers[next_buffer_index]) == -1);
         vq_rx_to_guest->descs[rx_desc_entry].entry_index = next_buffer_index;

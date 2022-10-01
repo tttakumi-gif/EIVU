@@ -15,15 +15,15 @@
 
 #define CPU_BIND
 
-#define likely(x) __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
+//#define likely(x) __builtin_expect(!!(x), 1)
+//#define unlikely(x) __builtin_expect(!!(x), 0)
 
 //constexpr int VQ_ENYRY_NUM = 64;
 constexpr int VQ_ENYRY_NUM = 256;
 //constexpr int VQ_ENYRY_NUM = 32768;
 
-constexpr int AVAIL_FLAG = 0b1 << 7;
-constexpr int USED_FLAG = 0b1 << 15;
+constexpr int16_t AVAIL_FLAG = static_cast<int16_t>(0b1 << 7);
+constexpr int16_t USED_FLAG = static_cast<int16_t>(0b1 << 15);
 
 struct desc {
 #if VQ_ENTRY_SIZE == 128

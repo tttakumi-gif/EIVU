@@ -18,7 +18,7 @@ namespace {
 
         while (0 < i) {
             // 受信パケット数の決定
-            if (unlikely(i < num_fin)) {
+            if (i < num_fin) {
                 num_fin = i;
             }
 

@@ -12,13 +12,13 @@ constexpr int POOL_ENTRY_NUM = 163456;
 constexpr int POOL_CACHE_NUM = 512;
 
 struct cache_stack {
-    buf *cache[POOL_CACHE_NUM];
+    buf *cache[POOL_CACHE_NUM]{};
     int top = -1;
 };
 
 struct __attribute__((__aligned__(64))) buffer_pool {
-    buf buffers[POOL_ENTRY_NUM];
-    int last_pool_idx;
+    buf buffers[POOL_ENTRY_NUM]{};
+    int last_pool_idx = 0;
     cache_stack cache;
 };
 
