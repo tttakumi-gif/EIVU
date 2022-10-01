@@ -50,11 +50,9 @@ struct vq {
 #if 1
     uint16_t last_avail_idx;
     uint16_t last_used_idx;
-//    int32_t last_pool_idx;
 #else
     uint16_t __attribute__((__aligned__(64))) last_avail_idx;
     uint16_t __attribute__((__aligned__(64))) last_used_idx;
-    int32_t __attribute__((__aligned__(64))) last_pool_idx;
 #endif
     desc descs[VQ_ENYRY_NUM];
 };
