@@ -50,11 +50,12 @@ struct vq {
 #if 1
     uint16_t last_avail_idx;
     uint16_t last_used_idx;
+    desc descs[VQ_ENYRY_NUM];
 #else
     uint16_t __attribute__((__aligned__(64))) last_avail_idx;
     uint16_t __attribute__((__aligned__(64))) last_used_idx;
+    desc __attribute__((__aligned__(VQ_ENTRY_SIZE))) descs[VQ_ENYRY_NUM];
 #endif
-    desc descs[VQ_ENYRY_NUM];
 };
 
 #include "virtqueue_impl.hpp"
