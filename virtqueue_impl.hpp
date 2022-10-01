@@ -37,16 +37,16 @@ void set_avail_flag(desc *d) {
     d->flags = d->flags | AVAIL_FLAG;
 }
 
-void wait_push(vq *v, int prev_idx) {
+void wait_used(vq *v, int desc_idx) {
     // ディスクリプタが空くまでwait
-    while ((*(volatile int16_t *) &v->descs[prev_idx].flags & USED_FLAG) == 0) {
+    while ((*(volatile int16_t *) &v->descs[desc_idx].flags & USED_FLAG) == 0) {
         do_none();
     }
 }
 
-void wait_pull(vq *v, int prev_idx) {
+void wait_avail(vq *v, int desc_idx) {
     // ディスクリプタにバッファが割り当てられるまでwait
-    while ((*(volatile int16_t *) &v->descs[prev_idx].flags & AVAIL_FLAG) == 0) {
+    while ((*(volatile int16_t *) &v->descs[desc_idx].flags & AVAIL_FLAG) == 0) {
         do_none();
     }
 }
@@ -78,7 +78,7 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, buffer_pool *poo
     }
 
     for (int i = 0; i < num_fin; i++) {
-        wait_push(vq_rx_to_guest, vq_rx_to_guest->last_avail_idx + i);
+        wait_used(vq_rx_to_guest, vq_rx_to_guest->last_avail_idx + i);
     }
 
 #if MBUF_HEADER_SIZE > 0
@@ -144,7 +144,7 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, buffer_pool *poo
 void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, buffer_pool *pool_guest, int num_fin,
                       bool is_stream) {
     for (int i = 0; i < num_fin; i++) {
-        wait_pull(vq_guest_to_tx, vq_guest_to_tx->last_used_idx + i);
+        wait_avail(vq_guest_to_tx, vq_guest_to_tx->last_used_idx + i);
     }
 
     for (int i = 0; i < num_fin; i++) {
@@ -213,7 +213,7 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, buffer_pool *poo
 
 void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buffer_pool *pool, int num_fin) {
     for (int i = 0; i < num_fin; i++) {
-        wait_pull(vq_rx_to_guest, vq_rx_to_guest->last_used_idx + i);
+        wait_avail(vq_rx_to_guest, vq_rx_to_guest->last_used_idx + i);
     }
 
     for (int i = 0; i < num_fin; i++) {
@@ -248,7 +248,7 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buffer_pool *poo
             vq_rx_to_guest->last_used_idx = 0;
         }
 
-        wait_push(vq_guest_to_tx, vq_guest_to_tx->last_avail_idx);
+        wait_used(vq_guest_to_tx, vq_guest_to_tx->last_avail_idx);
         set_len(&pool->buffers[vq_guest_to_tx->descs[vq_guest_to_tx->last_avail_idx].entry_index], -1);
         vq_guest_to_tx->last_avail_idx += 1;
         if (VQ_ENYRY_NUM <= vq_guest_to_tx->last_avail_idx) {
