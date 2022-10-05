@@ -38,14 +38,8 @@ namespace {
 int main(int argc, char *argv[]) {
     // 初期設定
     int bfd = open_shmfile("shm_buf", SIZE_SHM, true);
-//    buf *pool_guest_addr = (buf *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
-//    memset(pool_guest_addr, 0, sizeof(buf) * POOL_ENTRY_NUM);
-//    for (int i = 0; i < POOL_ENTRY_NUM; i++) {
-//        set_len(&pool_guest_addr[i], -1);
-//    }
 
     auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
-//    auto *pool = (buffer_pool *) (pool_guest_addr + POOL_ENTRY_NUM);
     init(pool);
 
     auto *vq_rx_to_guest = (vq *) (pool + 1);
