@@ -14,7 +14,8 @@ namespace {
         init(pool);
         buf **recv_addrs = new buf *[num_fin];
 
-        newvq v{0, 0, 0, vq_guest_to_tx->descs};
+        newvq v{};
+        init_ring(&v, vq_guest_to_tx->descs);
 
         for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
             // 受信パケット数の決定

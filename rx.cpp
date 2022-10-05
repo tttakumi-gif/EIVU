@@ -16,7 +16,8 @@ namespace {
         init(pool);
         buf **send_addrs = new buf *[num_fin];
 
-        newvq v{0, 0, 0, vq_rx_to_guest->descs};
+        newvq v{};
+        init_ring(&v, vq_rx_to_guest->descs);
 
         while (0 < i) {
             // 受信パケット数の決定

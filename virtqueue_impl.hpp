@@ -80,6 +80,13 @@ void init_ring(vq *v) {
     init_descs(v);
 }
 
+void init_ring(newvq *v, desc *d) {
+    v->size = VQ_ENYRY_NUM;
+    v->last_used_idx = 0;
+    v->last_avail_idx = 0;
+    v->descs = d;
+}
+
 char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 17, 4, 16, 26, 19, 5, 28, 20, 6, 27, 7,
                 8, 18, 29, 9};
 

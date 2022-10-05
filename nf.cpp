@@ -18,8 +18,9 @@ namespace {
 #ifdef CPU_BIND
         bind_core(1);
 #endif
-        newvq v1{0, 0, 0, vq_rx_to_guest->descs};
-        newvq v2{0, 0, 0, ring_guest_to_tx->descs};
+        newvq v1{}, v2{};
+        init_ring(&v1, vq_rx_to_guest->descs);
+        init_ring(&v2, ring_guest_to_tx->descs);
 
         if (opt.process == MOVE) {
             int num_fin = static_cast<int>(opt.size_batch);
