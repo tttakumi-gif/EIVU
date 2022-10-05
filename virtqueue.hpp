@@ -45,6 +45,13 @@ struct desc {
 #endif
 };
 
+struct newvq {
+    int16_t size;
+    uint16_t last_avail_idx;
+    uint16_t last_used_idx;
+    desc *descs;
+};
+
 struct vq {
     int16_t size;
 #if 1
