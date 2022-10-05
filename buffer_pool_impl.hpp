@@ -1,5 +1,5 @@
 bool is_empty(cache_stack *stack) {
-    if (stack->top == -1) {
+    if (stack->top == -1 || POOL_CACHE_NUM == 0) {
         return true;
     } else {
         return false;
@@ -7,7 +7,7 @@ bool is_empty(cache_stack *stack) {
 }
 
 bool is_full(cache_stack *stack) {
-    if (stack->top == POOL_CACHE_NUM) {
+    if (stack->top == POOL_CACHE_NUM || POOL_CACHE_NUM == 0) {
         return true;
     } else {
         return false;
@@ -52,7 +52,6 @@ buf *get_buffer(buffer_pool *pool) {
     if (pool->last_pool_idx >= POOL_ENTRY_NUM) {
         pool->last_pool_idx = 0;
     }
-
     return buffer;
 }
 
