@@ -136,7 +136,7 @@ void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, buffer_pool *poo
 #ifdef SKIP_INDEX_RX
     for (int i = 0; i < skipped_index; i++) {
         int desc_index = (last_used_idx_shadow + i) % VQ_ENYRY_NUM;
-        set_avail_flag(&vq_rx_to_guest->descs[desc_index]);
+        set_used_flag(&vq_rx_to_guest->descs[desc_index]);
     }
 #endif
 }
@@ -198,15 +198,13 @@ void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, buffer_pool *poo
     for (int i = 0; i < num_fin; i++) {
 #endif
         int desc_index = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
-
-        // パケットの取得, ディスクリプタの紐づけ解除
         set_avail_flag(&vq_guest_to_tx->descs[desc_index]);
     }
 
 #ifdef SKIP_INDEX_TX
     for (int i = 0; i < skipped_index; i++) {
         int desc_index = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
-        set_used_flag(&vq_guest_to_tx->descs[desc_index]);
+        set_avail_flag(&vq_guest_to_tx->descs[desc_index]);
     }
 #endif
 }
@@ -281,11 +279,11 @@ void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buffer_pool *poo
 #ifdef SKIP_INDEX_NF
     for (int i = 0; i < skipped_index; i++) {
         int tx_desc_entry = (last_used_idx_shadow + i) % VQ_ENYRY_NUM;
-        set_avail_flag(&vq_guest_to_tx->descs[tx_desc_entry]);
+        set_used_flag(&vq_guest_to_tx->descs[tx_desc_entry]);
         vq_guest_to_tx->descs[tx_desc_entry].entry_index = id[i];
 
         int rx_desc_entry = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
-        set_used_flag(&vq_rx_to_guest->descs[rx_desc_entry]);
+        set_avail_flag(&vq_rx_to_guest->descs[rx_desc_entry]);
     }
 #endif
 }
