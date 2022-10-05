@@ -51,6 +51,13 @@ void wait_avail(vq *v, int desc_idx) {
     }
 }
 
+void wait_avail(newvq *v, int desc_idx) {
+    // ディスクリプタにバッファが割り当てられるまでwait
+    while ((*(volatile int16_t *) &v->descs[desc_idx].flags & AVAIL_FLAG) == 0) {
+        do_none();
+    }
+}
+
 void init_descs(vq *v) {
     memset(v->descs, 0, sizeof(desc) * VQ_ENYRY_NUM);
     for (int i = 0; i < VQ_ENYRY_NUM; i++) {
@@ -69,7 +76,7 @@ void init_ring(vq *v) {
 char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 17, 4, 16, 26, 19, 5, 28, 20, 6, 27, 7,
                 8, 18, 29, 9};
 
-void send_rx_to_guest(vq *vq_rx_to_guest, buf **pool_host_addr, buffer_pool *pool_guest, int num_fin,
+void send_rx_to_guest(newvq *vq_rx_to_guest, buf **pool_host_addr, buffer_pool *pool_guest, int num_fin,
                       bool is_stream) {
     for (int i = 0; i < num_fin; i++) {
         PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
