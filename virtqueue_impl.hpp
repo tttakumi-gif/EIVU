@@ -44,6 +44,13 @@ void wait_used(vq *v, int desc_idx) {
     }
 }
 
+void wait_used(newvq *v, int desc_idx) {
+    // ディスクリプタが空くまでwait
+    while ((*(volatile int16_t *) &v->descs[desc_idx].flags & USED_FLAG) == 0) {
+        do_none();
+    }
+}
+
 void wait_avail(vq *v, int desc_idx) {
     // ディスクリプタにバッファが割り当てられるまでwait
     while ((*(volatile int16_t *) &v->descs[desc_idx].flags & AVAIL_FLAG) == 0) {
@@ -148,7 +155,7 @@ void send_rx_to_guest(newvq *vq_rx_to_guest, buf **pool_host_addr, buffer_pool *
 #endif
 }
 
-void send_guest_to_tx(vq *vq_guest_to_tx, buf **pool_host_addr, buffer_pool *pool_guest, int num_fin,
+void send_guest_to_tx(newvq *vq_guest_to_tx, buf **pool_host_addr, buffer_pool *pool_guest, int num_fin,
                       bool is_stream) {
     for (int i = 0; i < num_fin; i++) {
         wait_used(vq_guest_to_tx, vq_guest_to_tx->last_avail_idx + i);

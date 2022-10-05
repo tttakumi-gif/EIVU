@@ -14,6 +14,8 @@ namespace {
         init(pool);
         buf **recv_addrs = new buf *[num_fin];
 
+        newvq v{0, 0, 0, vq_guest_to_tx->descs};
+
         for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
             // 受信パケット数の決定
             if (i < num_fin) {
@@ -29,7 +31,7 @@ namespace {
 #endif
             }
 
-            send_guest_to_tx(vq_guest_to_tx, recv_addrs, pool_guest, num_fin, is_stream);
+            send_guest_to_tx(&v, recv_addrs, pool_guest, num_fin, is_stream);
             for (int j = 0; j < num_fin; j++) {
                 add_to_cache(pool, recv_addrs[j]);
             }
