@@ -2,6 +2,14 @@
 #include "shm.hpp"
 
 namespace {
+    void init_descs(desc *descs) {
+        memset(descs, 0, sizeof(desc) * VQ_ENYRY_NUM);
+        for (int i = 0; i < VQ_ENYRY_NUM; i++) {
+            descs[i].id = static_cast<int16_t>(i);
+            descs[i].flags = static_cast<int16_t>(descs[i].flags | USED_FLAG);
+        }
+    }
+
     void attach_buffer_to_vq(newvq *virtqueue, buffer_pool *pool) {
         assert(VQ_ENYRY_NUM <= POOL_ENTRY_NUM);
         for (int i = 0; i < VQ_ENYRY_NUM; i++) {
@@ -18,6 +26,7 @@ namespace {
 #ifdef CPU_BIND
         bind_core(1);
 #endif
+        attach_buffer_to_vq(vq_rx_to_guest, pool);
 
         if (opt.process == MOVE) {
             int num_fin = static_cast<int>(opt.size_batch);
@@ -42,26 +51,20 @@ int main(int argc, char *argv[]) {
     auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
     init(pool);
 
-    auto *vq_rx_to_guest = (vq *) (pool + 1);
-    init_ring(vq_rx_to_guest);
+    auto *descs_rx = (desc *) (pool + 1);
+    init_descs(descs_rx);
     newvq v1{};
-    init_ring(&v1, vq_rx_to_guest->descs);
-    attach_buffer_to_vq(&v1, pool);
+    init_ring(&v1, descs_rx);
 
-    vq *vq_guest_to_tx = (vq *) (vq_rx_to_guest + 1);
-    init_ring(vq_guest_to_tx);
+    auto *descs_tx = (desc *) (descs_rx + VQ_ENYRY_NUM);
+    init_descs(descs_tx);
     newvq v2{};
-    init_ring(&v2, vq_guest_to_tx->descs);
+    init_ring(&v2, descs_tx);
 
     info_opt opt = get_opt(argc, argv);
 
-    volatile bool *flag = (volatile bool *) (vq_guest_to_tx + 1);
+    volatile bool *flag = (volatile bool *) (descs_tx + VQ_ENYRY_NUM);
     *flag = false;
-
-#ifdef PRINT
-    std::printf("srv: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool,
-                vq_rx_to_guest, vq_guest_to_tx, flag);
-#endif
 
     while (!*flag) {
     }

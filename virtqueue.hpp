@@ -25,6 +25,7 @@ constexpr int VQ_ENYRY_NUM = 256;
 constexpr int16_t AVAIL_FLAG = static_cast<int16_t>(0b1 << 7);
 constexpr int16_t USED_FLAG = static_cast<int16_t>(0b1 << 15);
 
+//struct __attribute__((__aligned__(VQ_ENTRY_SIZE))) desc {
 struct desc {
 #if VQ_ENTRY_SIZE == 128
     char padding[56];

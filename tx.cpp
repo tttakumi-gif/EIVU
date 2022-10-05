@@ -2,7 +2,7 @@
 #include "shm.hpp"
 
 namespace {
-    void recv_packet(vq *vq_guest_to_tx, buffer_pool *pool_guest, info_opt opt) {
+    void recv_packet(newvq *vq_guest_to_tx, buffer_pool *pool_guest, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(2);
 #endif
@@ -13,9 +13,6 @@ namespace {
         auto *pool = (struct buffer_pool *) malloc(sizeof(buffer_pool));
         init(pool);
         buf **recv_addrs = new buf *[num_fin];
-
-        newvq v{};
-        init_ring(&v, vq_guest_to_tx->descs);
 
         for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
             // 受信パケット数の決定
@@ -32,7 +29,7 @@ namespace {
 #endif
             }
 
-            send_guest_to_tx(&v, recv_addrs, pool_guest, num_fin, is_stream);
+            send_guest_to_tx(vq_guest_to_tx, recv_addrs, pool_guest, num_fin, is_stream);
             for (int j = 0; j < num_fin; j++) {
                 add_to_cache(pool, recv_addrs[j]);
             }
@@ -54,17 +51,15 @@ int main(int argc, char **argv) {
     // 初期設定
     int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
     auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
-    vq *vq_rx_to_guest = (vq *) (pool + 1);
-    vq *vq_guest_to_tx = (vq *) (vq_rx_to_guest + 1);
+    auto *descs_rx = (desc*)(pool + 1);
+    auto *descs_tx = (desc*)(descs_rx + VQ_ENYRY_NUM);
+
+    newvq v{};
+    init_ring(&v, descs_tx);
 
     info_opt opt = get_opt(argc, argv);
 
-    bool *flag = (bool *) (vq_guest_to_tx + 1);
-
-#ifdef PRINT
-    std::printf("recv: \n  - pool_guest_addr: %p\n  - RxRing: %p\n  - TxRing: %p\n  - end: %p\n", pool,
-                vq_rx_to_guest, vq_guest_to_tx, flag);
-#endif
+    bool *flag = (bool *) (descs_tx + VQ_ENYRY_NUM);
 
     *flag = true;
 
@@ -72,7 +67,7 @@ int main(int argc, char **argv) {
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
 
-    recv_packet(vq_guest_to_tx, pool, opt);
+    recv_packet(&v, pool, opt);
 
     // 計測終了
     end = std::chrono::system_clock::now();
