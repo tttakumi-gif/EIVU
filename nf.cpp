@@ -2,7 +2,7 @@
 #include "shm.hpp"
 
 namespace {
-    void attach_buffer_to_vq(vq *virtqueue, buffer_pool *pool) {
+    void attach_buffer_to_vq(newvq *virtqueue, buffer_pool *pool) {
         assert(VQ_ENYRY_NUM <= POOL_ENTRY_NUM);
         for (int i = 0; i < VQ_ENYRY_NUM; i++) {
 #ifdef RANDOM_NF
@@ -10,17 +10,14 @@ namespace {
 #else
             auto entry_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
-            virtqueue[i].descs->entry_index = entry_index;
+            virtqueue->descs->entry_index = entry_index;
         }
     }
 
-    void rs_packet(vq *vq_rx_to_guest, vq *ring_guest_to_tx, buffer_pool *pool, info_opt opt) {
+    void rs_packet(newvq *vq_rx_to_guest, newvq *vq_guest_to_tx, buffer_pool *pool, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(1);
 #endif
-        newvq v1{}, v2{};
-        init_ring(&v1, vq_rx_to_guest->descs);
-        init_ring(&v2, ring_guest_to_tx->descs);
 
         if (opt.process == MOVE) {
             int num_fin = static_cast<int>(opt.size_batch);
@@ -30,7 +27,7 @@ namespace {
                     num_fin = i;
                 }
 
-                guest_recv_process(&v1, &v2, pool, num_fin);
+                guest_recv_process(vq_rx_to_guest, vq_guest_to_tx, pool, num_fin);
             }
         } else {
             exit(1);
@@ -53,10 +50,14 @@ int main(int argc, char *argv[]) {
 
     auto *vq_rx_to_guest = (vq *) (pool + 1);
     init_ring(vq_rx_to_guest);
-    attach_buffer_to_vq(vq_rx_to_guest, pool);
+    newvq v1{};
+    init_ring(&v1, vq_rx_to_guest->descs);
+    attach_buffer_to_vq(&v1, pool);
 
     vq *vq_guest_to_tx = (vq *) (vq_rx_to_guest + 1);
     init_ring(vq_guest_to_tx);
+    newvq v2{};
+    init_ring(&v2, vq_guest_to_tx->descs);
 
     info_opt opt = get_opt(argc, argv);
 
@@ -72,7 +73,7 @@ int main(int argc, char *argv[]) {
     }
 
     // 送受信開始
-    rs_packet(vq_rx_to_guest, vq_guest_to_tx, pool, opt);
+    rs_packet(&v1, &v2, pool, opt);
 
     shm_unlink("shm_buf");
 
