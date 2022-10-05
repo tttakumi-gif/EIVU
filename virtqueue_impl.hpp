@@ -223,7 +223,7 @@ void send_guest_to_tx(newvq *vq_guest_to_tx, buf **pool_host_addr, buffer_pool *
 #endif
 }
 
-void guest_recv_process(vq *vq_rx_to_guest, vq *vq_guest_to_tx, buffer_pool *pool, int num_fin) {
+void guest_recv_process(newvq *vq_rx_to_guest, newvq *vq_guest_to_tx, buffer_pool *pool, int num_fin) {
     for (int i = 0; i < num_fin; i++) {
         wait_used(vq_rx_to_guest, vq_rx_to_guest->last_avail_idx + i);
     }

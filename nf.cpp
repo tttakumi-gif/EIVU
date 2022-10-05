@@ -18,6 +18,8 @@ namespace {
 #ifdef CPU_BIND
         bind_core(1);
 #endif
+        newvq v1{0, 0, 0, vq_rx_to_guest->descs};
+        newvq v2{0, 0, 0, ring_guest_to_tx->descs};
 
         if (opt.process == MOVE) {
             int num_fin = static_cast<int>(opt.size_batch);
@@ -27,7 +29,7 @@ namespace {
                     num_fin = i;
                 }
 
-                guest_recv_process(vq_rx_to_guest, ring_guest_to_tx, pool, num_fin);
+                guest_recv_process(&v1, &v2, pool, num_fin);
             }
         } else {
             exit(1);
