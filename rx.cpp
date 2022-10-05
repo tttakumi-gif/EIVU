@@ -53,13 +53,12 @@ namespace {
 
 int main(int argc, char **argv) {
     {
-        constexpr int size = sizeof(vq) * 2 + sizeof(buf) * POOL_ENTRY_NUM + sizeof(volatile bool);
+        constexpr int size = sizeof(desc) * VQ_ENYRY_NUM * 2 + sizeof(buf) * POOL_ENTRY_NUM + sizeof(volatile bool);
 #ifdef PRINT
         std::cout << "size: " << size << std::endl;
         std::cout << "packet size: " << sizeof(packet) << ", " << SIZE_PACKET << std::endl;
         std::cout << "packet buffer size: " << sizeof(buf) << std::endl;
         std::cout << "desc size: " << sizeof(desc) << std::endl;
-        std::cout << "vq size: " << sizeof(vq) << std::endl;
 #endif
         static_assert(size <= SIZE_SHM, "over packet size");
     }

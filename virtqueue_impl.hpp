@@ -37,23 +37,9 @@ void set_avail_flag(desc *d) {
     d->flags = static_cast<int16_t>(d->flags | AVAIL_FLAG);
 }
 
-void wait_used(vq *v, int desc_idx) {
-    // ディスクリプタが空くまでwait
-    while ((*(volatile int16_t *) &v->descs[desc_idx].flags & USED_FLAG) == 0) {
-        do_none();
-    }
-}
-
 void wait_used(newvq *v, int desc_idx) {
     // ディスクリプタが空くまでwait
     while ((*(volatile int16_t *) &v->descs[desc_idx].flags & USED_FLAG) == 0) {
-        do_none();
-    }
-}
-
-void wait_avail(vq *v, int desc_idx) {
-    // ディスクリプタにバッファが割り当てられるまでwait
-    while ((*(volatile int16_t *) &v->descs[desc_idx].flags & AVAIL_FLAG) == 0) {
         do_none();
     }
 }
@@ -63,21 +49,6 @@ void wait_avail(newvq *v, int desc_idx) {
     while ((*(volatile int16_t *) &v->descs[desc_idx].flags & AVAIL_FLAG) == 0) {
         do_none();
     }
-}
-
-void init_descs(vq *v) {
-    memset(v->descs, 0, sizeof(desc) * VQ_ENYRY_NUM);
-    for (int i = 0; i < VQ_ENYRY_NUM; i++) {
-        v->descs[i].id = static_cast<int16_t>(i);
-        v->descs[i].flags = static_cast<int16_t>(v->descs[i].flags | USED_FLAG);
-    }
-}
-
-void init_ring(vq *v) {
-    v->size = VQ_ENYRY_NUM;
-    v->last_used_idx = 0;
-    v->last_avail_idx = 0;
-    init_descs(v);
 }
 
 void init_ring(newvq *v, desc *d) {
