@@ -37,21 +37,21 @@ void set_avail_flag(desc *d) {
     d->flags = static_cast<int16_t>(d->flags | AVAIL_FLAG);
 }
 
-void wait_used(newvq *v, int desc_idx) {
+void wait_used(vq *v, int desc_idx) {
     // ディスクリプタが空くまでwait
     while ((*(volatile int16_t *) &v->descs[desc_idx].flags & USED_FLAG) == 0) {
         do_none();
     }
 }
 
-void wait_avail(newvq *v, int desc_idx) {
+void wait_avail(vq *v, int desc_idx) {
     // ディスクリプタにバッファが割り当てられるまでwait
     while ((*(volatile int16_t *) &v->descs[desc_idx].flags & AVAIL_FLAG) == 0) {
         do_none();
     }
 }
 
-void init_ring(newvq *v, desc *d) {
+void init_ring(vq *v, desc *d) {
     v->size = VQ_ENYRY_NUM;
     v->last_used_idx = 0;
     v->last_avail_idx = 0;
@@ -61,42 +61,41 @@ void init_ring(newvq *v, desc *d) {
 char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 17, 4, 16, 26, 19, 5, 28, 20, 6, 27, 7,
                 8, 18, 29, 9};
 
-void send_rx_to_guest(newvq *vq_rx_to_guest, buf **pool_host_addr, buffer_pool *pool_guest, int num_fin,
-                      bool is_stream) {
+void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num_fin, bool is_stream) {
     for (int i = 0; i < num_fin; i++) {
-        PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
-        //PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.id_addr);
+        PREFETCH_MBUF(buf_src[i]->header.id_addr, buf_src[i]->header.len_addr);
+        //PREFETCH_MBUF(buf_src[i]->header.id_addr, buf_src[i]->header.id_addr);
         //    PREFETCH_POOL(pool_guest_addr[i]);
     }
 
     for (int i = 0; i < num_fin; i++) {
-        wait_avail(vq_rx_to_guest, vq_rx_to_guest->last_used_idx + i);
+        wait_avail(vq_rx, vq_rx->last_used_idx + i);
     }
 
 #if MBUF_HEADER_SIZE > 0
     for (int i = 0; i < num_fin; i++) {
-        //if(*(int*)(pool_host_addr[i]->header.id_addr) == 999999) {
+        //if(*(int*)(buf_src[i]->header.id_addr) == 999999) {
         //    exit(1);
         //}
-        //memset(pool_host_addr[i]->header.id_addr, i, 4);
-        PROC_MBUF_HEADER(pool_host_addr[i]);
+        //memset(buf_src[i]->header.id_addr, i, 4);
+        PROC_MBUF_HEADER(buf_src[i]);
     }
 #endif
 
-    int last_used_idx_shadow = vq_rx_to_guest->last_used_idx;
+    int last_used_idx_shadow = vq_rx->last_used_idx;
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
 #ifndef ZERO_COPY_RX
-            int64_t copy_dest_index = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx].entry_index;
+            int64_t copy_dest_index = vq_rx->descs[vq_rx->last_used_idx].entry_index;
             auto *copy_dest_addr = get_packet_addr(&pool_guest->buffers[copy_dest_index]);
-            memcpy(copy_dest_addr, get_packet_addr(pool_host_addr[i]), SIZE_PACKET);
+            memcpy(copy_dest_addr, get_packet_addr(buf_src[i]), SIZE_PACKET);
             //cldemote(copy_dest_addr);
             //_mm_clflushopt(copy_dest_addr);
 #endif
         } else {
-//            int64_t copy_dest_index = vq_rx_to_guest->descs[vq_rx_to_guest->last_used_idx].entry_index;
+//            int64_t copy_dest_index = vq_rx->descs[vq_rx->last_used_idx].entry_index;
 //            void *xmm01 = get_packet_addr(&pool_guest_addr[copy_dest_index]);
-//            auto *xmm02 = get_packet_addr(pool_host_addr[i]);
+//            auto *xmm02 = get_packet_addr(buf_src[i]);
 
             for (int j = 0; j < NUM_LOOP; j++) {
                 if (!IS_PSMALL) {
@@ -109,9 +108,9 @@ void send_rx_to_guest(newvq *vq_rx_to_guest, buf **pool_host_addr, buffer_pool *
         }
 
         // index更新
-        vq_rx_to_guest->last_used_idx += 1;
-        if (VQ_ENYRY_NUM <= vq_rx_to_guest->last_used_idx) {
-            vq_rx_to_guest->last_used_idx = 0;
+        vq_rx->last_used_idx += 1;
+        if (VQ_ENYRY_NUM <= vq_rx->last_used_idx) {
+            vq_rx->last_used_idx = 0;
         }
     }
 
@@ -122,39 +121,38 @@ void send_rx_to_guest(newvq *vq_rx_to_guest, buf **pool_host_addr, buffer_pool *
     for (int i = 0; i < num_fin; i++) {
 #endif
         int desc_index = (last_used_idx_shadow + i) % VQ_ENYRY_NUM;
-        set_used_flag(&vq_rx_to_guest->descs[desc_index]);
+        set_used_flag(&vq_rx->descs[desc_index]);
     }
 
 #ifdef SKIP_INDEX_RX
     for (int i = 0; i < skipped_index; i++) {
         int desc_index = (last_used_idx_shadow + i) % VQ_ENYRY_NUM;
-        set_used_flag(&vq_rx_to_guest->descs[desc_index]);
+        set_used_flag(&vq_rx->descs[desc_index]);
     }
 #endif
 }
 
-void send_guest_to_tx(newvq *vq_guest_to_tx, buf **pool_host_addr, buffer_pool *pool_guest, int num_fin,
-                      bool is_stream) {
+void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int num_fin, bool is_stream) {
     for (int i = 0; i < num_fin; i++) {
-        wait_used(vq_guest_to_tx, vq_guest_to_tx->last_avail_idx + i);
+        wait_used(vq_tx, vq_tx->last_avail_idx + i);
     }
 
     for (int i = 0; i < num_fin; i++) {
-        PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.len_addr);
-        //PREFETCH_MBUF(pool_host_addr[i]->header.id_addr, pool_host_addr[i]->header.id_addr);
+        PREFETCH_MBUF(buf_dest[i]->header.id_addr, buf_dest[i]->header.len_addr);
+        //PREFETCH_MBUF(buf_dest[i]->header.id_addr, buf_dest[i]->header.id_addr);
         //PREFETCH_POOL(pool_guest_addr[i]);
     }
 
-    int last_avail_idx_shadow = vq_guest_to_tx->last_avail_idx;
+    int last_avail_idx_shadow = vq_tx->last_avail_idx;
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
 #ifndef ZERO_COPY_TX
-            memcpy(get_packet_addr(pool_host_addr[i]), get_packet_addr(&pool_guest->buffers[i]), SIZE_PACKET);
-            //cldemote(get_packet_addr(pool_host_addr[i]);
-            //_mm_clflushopt(get_packet_addr(pool_host_addr[i]);
+            memcpy(get_packet_addr(buf_dest[i]), get_packet_addr(&pool_guest->buffers[i]), SIZE_PACKET);
+            //cldemote(get_packet_addr(buf_dest[i]);
+            //_mm_clflushopt(get_packet_addr(buf_dest[i]);
 #endif
         } else {
-//            auto *xmm01 = get_packet_addr(pool_host_addr[i];
+//            auto *xmm01 = get_packet_addr(buf_dest[i];
 //            auto *xmm02 = get_packet_addr(&pool_guest_addr[i]);
             for (int j = 0; j < NUM_LOOP; j++) {
                 if (!IS_PSMALL) {
@@ -167,19 +165,19 @@ void send_guest_to_tx(newvq *vq_guest_to_tx, buf **pool_host_addr, buffer_pool *
         }
 
         // index更新
-        vq_guest_to_tx->last_avail_idx += 1;
-        if (VQ_ENYRY_NUM <= vq_guest_to_tx->last_avail_idx) {
-            vq_guest_to_tx->last_avail_idx = 0;
+        vq_tx->last_avail_idx += 1;
+        if (VQ_ENYRY_NUM <= vq_tx->last_avail_idx) {
+            vq_tx->last_avail_idx = 0;
         }
     }
 
 #if MBUF_HEADER_SIZE > 0
     for (int i = 0; i < num_fin; i++) {
-        //if(*(int*)(pool_host_addr[i]->header.id_addr) == 999999) {
+        //if(*(int*)(buf_dest[i]->header.id_addr) == 999999) {
         //    exit(1);
         //}
-        //memset(pool_host_addr[i]->header.id_addr, i, 4);
-        PROC_MBUF_HEADER(pool_host_addr[i])
+        //memset(buf_dest[i]->header.id_addr, i, 4);
+        PROC_MBUF_HEADER(buf_dest[i])
     }
 #endif
 
@@ -190,34 +188,34 @@ void send_guest_to_tx(newvq *vq_guest_to_tx, buf **pool_host_addr, buffer_pool *
     for (int i = 0; i < num_fin; i++) {
 #endif
         int desc_index = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
-        set_avail_flag(&vq_guest_to_tx->descs[desc_index]);
+        set_avail_flag(&vq_tx->descs[desc_index]);
     }
 
 #ifdef SKIP_INDEX_TX
     for (int i = 0; i < skipped_index; i++) {
         int desc_index = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
-        set_avail_flag(&vq_guest_to_tx->descs[desc_index]);
+        set_avail_flag(&vq_tx->descs[desc_index]);
     }
 #endif
 }
 
-void guest_recv_process(newvq *vq_rx_to_guest, newvq *vq_guest_to_tx, buffer_pool *pool, int num_fin) {
+void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
     for (int i = 0; i < num_fin; i++) {
-        wait_used(vq_rx_to_guest, vq_rx_to_guest->last_avail_idx + i);
+        wait_used(vq_rx, vq_rx->last_avail_idx + i);
     }
 
     for (int i = 0; i < num_fin; i++) {
-        int64_t index = vq_rx_to_guest->descs[vq_rx_to_guest->last_avail_idx + i].entry_index;
+        int64_t index = vq_rx->descs[vq_rx->last_avail_idx + i].entry_index;
         PREFETCH_MBUF(pool->buffers[index].header.id_addr, pool->buffers[index].header.len_addr)
         //PREFETCH_MBUF(pool_guest_addr[index].header.id_addr, pool_guest_addr[index].header.id_addr)
     }
 
     int64_t id[num_fin];
-    int last_avail_idx_shadow = vq_rx_to_guest->last_avail_idx;
-    int last_used_idx_shadow = vq_guest_to_tx->last_used_idx;
+    int last_avail_idx_shadow = vq_rx->last_avail_idx;
+    int last_used_idx_shadow = vq_tx->last_used_idx;
 
     for (int i = 0; i < num_fin; i++) {
-        id[i] = vq_rx_to_guest->descs[vq_rx_to_guest->last_avail_idx].entry_index;
+        id[i] = vq_rx->descs[vq_rx->last_avail_idx].entry_index;
         buf *packet_buffer = &pool->buffers[id[i]];
         //if(((packet*)(packet_buffer->addr))->packet_len == 999999) {
         //    exit(1);
@@ -233,16 +231,16 @@ void guest_recv_process(newvq *vq_rx_to_guest, newvq *vq_guest_to_tx, buffer_poo
         //memset(packet_buffer->header.id_addr, i, 4);
 #endif
 
-        vq_rx_to_guest->last_avail_idx += 1;
-        if (VQ_ENYRY_NUM <= vq_rx_to_guest->last_avail_idx) {
-            vq_rx_to_guest->last_avail_idx = 0;
+        vq_rx->last_avail_idx += 1;
+        if (VQ_ENYRY_NUM <= vq_rx->last_avail_idx) {
+            vq_rx->last_avail_idx = 0;
         }
 
-        wait_avail(vq_guest_to_tx, vq_guest_to_tx->last_used_idx);
-        set_len(&pool->buffers[vq_guest_to_tx->descs[vq_guest_to_tx->last_used_idx].entry_index], -1);
-        vq_guest_to_tx->last_used_idx += 1;
-        if (VQ_ENYRY_NUM <= vq_guest_to_tx->last_used_idx) {
-            vq_guest_to_tx->last_used_idx = 0;
+        wait_avail(vq_tx, vq_tx->last_used_idx);
+        set_len(&pool->buffers[vq_tx->descs[vq_tx->last_used_idx].entry_index], -1);
+        vq_tx->last_used_idx += 1;
+        if (VQ_ENYRY_NUM <= vq_tx->last_used_idx) {
+            vq_tx->last_used_idx = 0;
         }
     }
 
@@ -253,29 +251,29 @@ void guest_recv_process(newvq *vq_rx_to_guest, newvq *vq_guest_to_tx, buffer_poo
     for (int i = 0; i < num_fin; i++) {
 #endif
         int tx_desc_entry = (last_used_idx_shadow + i) % VQ_ENYRY_NUM;
-        add_to_cache(pool, &pool->buffers[vq_guest_to_tx->descs[tx_desc_entry].entry_index]);
-        vq_guest_to_tx->descs[tx_desc_entry].entry_index = id[i];
-        set_used_flag(&vq_guest_to_tx->descs[tx_desc_entry]);
+        add_to_cache(pool, &pool->buffers[vq_tx->descs[tx_desc_entry].entry_index]);
+        vq_tx->descs[tx_desc_entry].entry_index = id[i];
+        set_used_flag(&vq_tx->descs[tx_desc_entry]);
 
         int rx_desc_entry = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
 #ifdef RANDOM_NF
-        int next_buffer_index = ((vq_rx_to_guest->last_pool_idx + i) % POOL_ENTRY_NUM) / 32 * 32 + ids[i];
+        int next_buffer_index = ((vq_rx->last_pool_idx + i) % POOL_ENTRY_NUM) / 32 * 32 + ids[i];
 #else
         auto next_buffer_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
         assert(get_len(&pool->buffers[next_buffer_index]) == -1);
-        vq_rx_to_guest->descs[rx_desc_entry].entry_index = next_buffer_index;
-        set_avail_flag(&vq_rx_to_guest->descs[rx_desc_entry]);
+        vq_rx->descs[rx_desc_entry].entry_index = next_buffer_index;
+        set_avail_flag(&vq_rx->descs[rx_desc_entry]);
     }
 
 #ifdef SKIP_INDEX_NF
     for (int i = 0; i < skipped_index; i++) {
         int tx_desc_entry = (last_used_idx_shadow + i) % VQ_ENYRY_NUM;
-        set_used_flag(&vq_guest_to_tx->descs[tx_desc_entry]);
-        vq_guest_to_tx->descs[tx_desc_entry].entry_index = id[i];
+        set_used_flag(&vq_tx->descs[tx_desc_entry]);
+        vq_tx->descs[tx_desc_entry].entry_index = id[i];
 
         int rx_desc_entry = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
-        set_avail_flag(&vq_rx_to_guest->descs[rx_desc_entry]);
+        set_avail_flag(&vq_rx->descs[rx_desc_entry]);
     }
 #endif
 }

@@ -46,7 +46,7 @@ struct desc {
 #endif
 };
 
-struct newvq {
+struct vq {
     int16_t size;
     uint16_t last_avail_idx;
     uint16_t last_used_idx;

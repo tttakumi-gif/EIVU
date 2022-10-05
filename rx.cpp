@@ -2,7 +2,7 @@
 #include "shm.hpp"
 
 namespace {
-    void send_packet(newvq *vq_rx_to_guest, buffer_pool *pool_guest, info_opt opt) {
+    void send_packet(vq *vq_rx, buffer_pool *pool_guest, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(0);
 #endif
@@ -32,7 +32,7 @@ namespace {
                 ((packet *) (send_addrs[j]->addr))->packet_len = SIZE_PACKET;
             }
 
-            send_rx_to_guest(vq_rx_to_guest, send_addrs, pool_guest, num_fin, is_stream);
+            send_rx_to_guest(vq_rx, send_addrs, pool_guest, num_fin, is_stream);
             for (int j = 0; j < num_fin; j++) {
                 add_to_cache(pool, send_addrs[j]);
             }
@@ -69,8 +69,8 @@ int main(int argc, char **argv) {
     auto *descs_rx = (desc *)(pool + 1);
     auto *descs_tx = (desc*)(descs_rx + VQ_ENYRY_NUM);
 
-    newvq v{};
-    init_ring(&v, descs_rx);
+    vq vq_rx{};
+    init_ring(&vq_rx, descs_rx);
 
     info_opt opt = get_opt(argc, argv);
 
@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
     }
 
     // 送受信開始
-    send_packet(&v, pool, opt);
+    send_packet(&vq_rx, pool, opt);
 
     shm_unlink("shm_buf");
 

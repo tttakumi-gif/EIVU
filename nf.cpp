@@ -10,7 +10,7 @@ namespace {
         }
     }
 
-    void attach_buffer_to_vq(newvq *virtqueue, buffer_pool *pool) {
+    void attach_buffer_to_vq(vq *virtqueue, buffer_pool *pool) {
         assert(VQ_ENYRY_NUM <= POOL_ENTRY_NUM);
         for (int i = 0; i < VQ_ENYRY_NUM; i++) {
 #ifdef RANDOM_NF
@@ -22,11 +22,11 @@ namespace {
         }
     }
 
-    void rs_packet(newvq *vq_rx_to_guest, newvq *vq_guest_to_tx, buffer_pool *pool, info_opt opt) {
+    void rs_packet(vq *vq_rx, vq *vq_tx, buffer_pool *pool, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(1);
 #endif
-        attach_buffer_to_vq(vq_rx_to_guest, pool);
+        attach_buffer_to_vq(vq_rx, pool);
 
         if (opt.process == MOVE) {
             int num_fin = static_cast<int>(opt.size_batch);
@@ -36,7 +36,7 @@ namespace {
                     num_fin = i;
                 }
 
-                guest_recv_process(vq_rx_to_guest, vq_guest_to_tx, pool, num_fin);
+                guest_recv_process(vq_rx, vq_tx, pool, num_fin);
             }
         } else {
             exit(1);
@@ -53,13 +53,13 @@ int main(int argc, char *argv[]) {
 
     auto *descs_rx = (desc *) (pool + 1);
     init_descs(descs_rx);
-    newvq v1{};
-    init_ring(&v1, descs_rx);
+    vq vq_rx{};
+    init_ring(&vq_rx, descs_rx);
 
     auto *descs_tx = (desc *) (descs_rx + VQ_ENYRY_NUM);
     init_descs(descs_tx);
-    newvq v2{};
-    init_ring(&v2, descs_tx);
+    vq vq_tx{};
+    init_ring(&vq_tx, descs_tx);
 
     info_opt opt = get_opt(argc, argv);
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     }
 
     // 送受信開始
-    rs_packet(&v1, &v2, pool, opt);
+    rs_packet(&vq_rx, &vq_tx, pool, opt);
 
     shm_unlink("shm_buf");
 

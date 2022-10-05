@@ -2,7 +2,7 @@
 #include "shm.hpp"
 
 namespace {
-    void recv_packet(newvq *vq_guest_to_tx, buffer_pool *pool_guest, info_opt opt) {
+    void recv_packet(vq *vq_tx, buffer_pool *pool_guest, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(2);
 #endif
@@ -29,7 +29,7 @@ namespace {
 #endif
             }
 
-            send_guest_to_tx(vq_guest_to_tx, recv_addrs, pool_guest, num_fin, is_stream);
+            send_guest_to_tx(vq_tx, recv_addrs, pool_guest, num_fin, is_stream);
             for (int j = 0; j < num_fin; j++) {
                 add_to_cache(pool, recv_addrs[j]);
             }
@@ -54,8 +54,8 @@ int main(int argc, char **argv) {
     auto *descs_rx = (desc*)(pool + 1);
     auto *descs_tx = (desc*)(descs_rx + VQ_ENYRY_NUM);
 
-    newvq v{};
-    init_ring(&v, descs_tx);
+    vq vq_rx{};
+    init_ring(&vq_rx, descs_tx);
 
     info_opt opt = get_opt(argc, argv);
 
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
 
-    recv_packet(&v, pool, opt);
+    recv_packet(&vq_rx, pool, opt);
 
     // 計測終了
     end = std::chrono::system_clock::now();
