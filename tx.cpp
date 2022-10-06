@@ -15,8 +15,9 @@ namespace {
         buf **recv_addrs = new buf *[num_fin];
 
         int last_pring_idx = 0;
-        buf **dummy_physical_ring = new buf *[128];
-        for (int j = 0; j < 128; j++) {
+        int pring_size = 128;
+        buf **dummy_physical_ring = new buf *[pring_size];
+        for (int j = 0; j < pring_size; j++) {
             dummy_physical_ring[j] = get_buffer(pool);
         }
 
@@ -34,7 +35,7 @@ namespace {
                 add_to_cache(pool, dummy_physical_ring[last_pring_idx]);
                 dummy_physical_ring[last_pring_idx] = get_buffer(pool);
                 recv_addrs[j] = dummy_physical_ring[last_pring_idx];
-                last_pring_idx = (last_pring_idx + 1) % 128;
+                last_pring_idx = (last_pring_idx + 1) % pring_size;
 //                recv_addrs[j] = get_buffer(pool);
 #endif
             }
