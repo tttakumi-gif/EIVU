@@ -1,34 +1,28 @@
 bool is_empty(cache_stack *stack) {
-    if (stack->top == -1 || POOL_CACHE_NUM == 0) {
-        return true;
-    } else {
-        return false;
-    }
+    return stack->top == -1 || POOL_CACHE_NUM == 0;
 }
 
 bool is_full(cache_stack *stack) {
-    if (stack->top == POOL_CACHE_NUM || POOL_CACHE_NUM == 0) {
-        return true;
-    } else {
-        return false;
-    }
+    return stack->top == POOL_CACHE_NUM || POOL_CACHE_NUM == 0;
 }
 
 buf *pop(cache_stack *stack) {
-    if (!is_empty(stack)) {
-        buf *data = stack->cache[stack->top];
-        stack->top = stack->top - 1;
-        return data;
-    } else {
+    if (is_empty(stack)) {
         return nullptr;
     }
+
+    buf *data = stack->cache[stack->top];
+    stack->top = stack->top - 1;
+    return data;
 }
 
 void push(cache_stack *stack, buf *data) {
-    if (!is_full(stack)) {
-        stack->top = stack->top + 1;
-        stack->cache[stack->top] = data;
+    if (is_full(stack)) {
+        return;
     }
+
+    stack->top = stack->top + 1;
+    stack->cache[stack->top] = data;
 }
 
 void init(buffer_pool *pool) {
