@@ -16,8 +16,8 @@ struct cache_stack {
     int top = -1;
 };
 
-struct __attribute__((__aligned__(64))) buffer_pool {
-    buf buffers[POOL_ENTRY_NUM]{};
+struct buffer_pool {
+    buf __attribute__((__aligned__(64))) buffers[POOL_ENTRY_NUM]{};
     int last_pool_idx = 0;
     cache_stack cache;
 };
