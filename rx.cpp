@@ -16,6 +16,12 @@ namespace {
         init(pool);
         buf **send_addrs = new buf *[num_fin];
 
+        int last_pring_idx = 0;
+        buf **dummy_physical_ring = new buf *[128];
+        for (int j = 0; j < 128; j++) {
+            dummy_physical_ring[j] = get_buffer(pool);
+        }
+
         while (0 < i) {
             // 受信パケット数の決定
             if (i < num_fin) {
@@ -26,20 +32,25 @@ namespace {
 #ifdef RANDOM_RX
                 send_addrs[j] = &pool_rx_addr[local_pool_index + (int) ids[j]];
 #else
-                send_addrs[j] = get_buffer(pool);
+                add_to_cache(pool, dummy_physical_ring[last_pring_idx]);
+                dummy_physical_ring[last_pring_idx] = get_buffer(pool);
+                send_addrs[j] = dummy_physical_ring[last_pring_idx];
+                last_pring_idx = (last_pring_idx + 1) % 128;
+//                send_addrs[j] = get_buffer(pool);
 #endif
                 ((packet *) (send_addrs[j]->addr))->packet_id = i;
                 ((packet *) (send_addrs[j]->addr))->packet_len = SIZE_PACKET;
             }
 
             send_rx_to_guest(vq_rx, send_addrs, pool_guest, num_fin, is_stream);
-            for (int j = 0; j < num_fin; j++) {
-                add_to_cache(pool, send_addrs[j]);
-            }
+//            for (int j = 0; j < num_fin; j++) {
+//                add_to_cache(pool, send_addrs[j]);
+//            }
         }
 
         free(pool);
         delete[](send_addrs);
+        delete[](dummy_physical_ring);
     }
 
     void init_resource() {
@@ -66,8 +77,8 @@ int main(int argc, char **argv) {
     // 初期設定
     int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
     auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
-    auto *descs_rx = (desc *)(pool + 1);
-    auto *descs_tx = (desc*)(descs_rx + VQ_ENYRY_NUM);
+    auto *descs_rx = (desc *) (pool + 1);
+    auto *descs_tx = (desc *) (descs_rx + VQ_ENYRY_NUM);
 
     vq vq_rx{};
     init_ring(&vq_rx, descs_rx);

@@ -14,6 +14,12 @@ namespace {
         init(pool);
         buf **recv_addrs = new buf *[num_fin];
 
+        int last_pring_idx = 0;
+        buf **dummy_physical_ring = new buf *[128];
+        for (int j = 0; j < 128; j++) {
+            dummy_physical_ring[j] = get_buffer(pool);
+        }
+
         for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
             // 受信パケット数の決定
             if (i < num_fin) {
@@ -25,14 +31,18 @@ namespace {
 #ifdef RANDOM_TX
                 recv_addrs[j] = &pool_tx_addr[local_pool_index + (int) ids[j]];
 #else
-                recv_addrs[j] = get_buffer(pool);
+                add_to_cache(pool, dummy_physical_ring[last_pring_idx]);
+                dummy_physical_ring[last_pring_idx] = get_buffer(pool);
+                recv_addrs[j] = dummy_physical_ring[last_pring_idx];
+                last_pring_idx = (last_pring_idx + 1) % 128;
+//                recv_addrs[j] = get_buffer(pool);
 #endif
             }
 
             send_guest_to_tx(vq_tx, recv_addrs, pool_guest, num_fin, is_stream);
-            for (int j = 0; j < num_fin; j++) {
-                add_to_cache(pool, recv_addrs[j]);
-            }
+//            for (int j = 0; j < num_fin; j++) {
+//                add_to_cache(pool, recv_addrs[j]);
+//            }
 
 #ifdef PRINT
             if ((i & 8388607) == 0) {
@@ -43,6 +53,7 @@ namespace {
 
         free(pool);
         delete[](recv_addrs);
+        delete[](dummy_physical_ring);
     }
 }
 
