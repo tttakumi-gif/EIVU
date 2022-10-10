@@ -61,8 +61,8 @@ namespace {
 int main(int argc, char **argv) {
 
     // 初期設定
-    int bfd = open_shmfile("shm_buf", SIZE_SHM, false);
-    auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, bfd, 0);
+    int bfd = open_shmfile(SHM_FILE, SIZE_SHM, false);
+    auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
     auto *descs_rx = (desc*)(pool + 1);
     auto *descs_tx = (desc*)(descs_rx + VQ_ENYRY_NUM);
 
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
     double second = elapsed / 1000.0;
     std::printf("result: %.3fsec (%.3fMpps)\n", second, NUM_PACKET / second / 1000000);
 
-    shm_unlink("shm_buf");
+    close_shmfile(bfd);
 
     return 0;
 }
