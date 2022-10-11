@@ -97,7 +97,11 @@ int main(int argc, char **argv) {
     // 送受信開始
     send_packet(&vq_rx, pool, opt);
 
+#ifdef HUGE_PAGE
     close_shmfile(bfd);
+#else
+    shm_unlink(SHM_FILE);
+#endif
 
     return 0;
 }

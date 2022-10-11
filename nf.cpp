@@ -72,7 +72,11 @@ int main(int argc, char *argv[]) {
     // 送受信開始
     rs_packet(&vq_rx, &vq_tx, pool, opt);
 
+#ifdef HUGE_PAGE
     close_shmfile(bfd);
+#else
+    shm_unlink(SHM_FILE);
+#endif
 
     return 0;
 }

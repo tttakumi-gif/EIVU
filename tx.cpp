@@ -88,7 +88,11 @@ int main(int argc, char **argv) {
     double second = elapsed / 1000.0;
     std::printf("result: %.3fsec (%.3fMpps)\n", second, NUM_PACKET / second / 1000000);
 
+#ifdef HUGE_PAGE
     close_shmfile(bfd);
+#else
+    shm_unlink(SHM_FILE);
+#endif
 
     return 0;
 }

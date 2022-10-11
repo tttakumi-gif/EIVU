@@ -45,4 +45,6 @@
 //#define SKIP_INDEX_NF
 //#define SKIP_INDEX_TX
 
+//#define HUGE_PAGE
+
 #define PRINT
