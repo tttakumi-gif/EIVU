@@ -5,7 +5,7 @@ namespace {
     void init_descs(desc *descs) {
         memset(descs, 0, sizeof(desc) * VQ_ENTRY_NUM);
         for (int i = 0; i < VQ_ENTRY_NUM; i++) {
-            descs[i].id = static_cast<int16_t>(i);
+            descs[i].entry_index = static_cast<int16_t>(i);
             descs[i].flags = static_cast<int16_t>(descs[i].flags | USED_FLAG);
         }
     }
