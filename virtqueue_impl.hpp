@@ -196,9 +196,8 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
 }
 
 void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
-    for (int i = 0; i < num_fin; i++) {
-        wait_used(vq_rx, vq_rx->last_avail_idx + i);
-    }
+    wait_used(vq_rx, vq_rx->last_avail_idx + num_fin - 1);
+    wait_avail(vq_tx, vq_tx->last_used_idx + num_fin - 1);
 
     for (int i = 0; i < num_fin; i++) {
         int64_t index = vq_rx->descs[vq_rx->last_avail_idx + i].entry_index;
@@ -232,7 +231,6 @@ void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
             vq_rx->last_avail_idx = 0;
         }
 
-        wait_avail(vq_tx, vq_tx->last_used_idx);
         set_len(&pool->buffers[vq_tx->descs[vq_tx->last_used_idx].entry_index], -1);
         vq_tx->last_used_idx += 1;
         if (VQ_ENTRY_NUM <= vq_tx->last_used_idx) {
