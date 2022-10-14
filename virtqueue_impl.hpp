@@ -52,7 +52,7 @@ void wait_avail(vq *v, int desc_idx) {
 }
 
 void init_ring(vq *v, desc *d) {
-    v->size = VQ_ENYRY_NUM;
+    v->size = VQ_ENTRY_NUM;
     v->last_used_idx = 0;
     v->last_avail_idx = 0;
     v->descs = d;
@@ -107,7 +107,7 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num
 
         // index更新
         vq_rx->last_used_idx += 1;
-        if (VQ_ENYRY_NUM <= vq_rx->last_used_idx) {
+        if (VQ_ENTRY_NUM <= vq_rx->last_used_idx) {
             vq_rx->last_used_idx = 0;
         }
     }
@@ -118,13 +118,13 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num
 #else
     for (int i = 0; i < num_fin; i++) {
 #endif
-        int desc_index = (last_used_idx_shadow + i) % VQ_ENYRY_NUM;
+        int desc_index = (last_used_idx_shadow + i) % VQ_ENTRY_NUM;
         set_used_flag(&vq_rx->descs[desc_index]);
     }
 
 #ifdef SKIP_INDEX_RX
     for (int i = 0; i < skipped_index; i++) {
-        int desc_index = (last_used_idx_shadow + i) % VQ_ENYRY_NUM;
+        int desc_index = (last_used_idx_shadow + i) % VQ_ENTRY_NUM;
         set_used_flag(&vq_rx->descs[desc_index]);
     }
 #endif
@@ -162,7 +162,7 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
 
         // index更新
         vq_tx->last_avail_idx += 1;
-        if (VQ_ENYRY_NUM <= vq_tx->last_avail_idx) {
+        if (VQ_ENTRY_NUM <= vq_tx->last_avail_idx) {
             vq_tx->last_avail_idx = 0;
         }
     }
@@ -183,13 +183,13 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
 #else
     for (int i = 0; i < num_fin; i++) {
 #endif
-        int desc_index = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
+        int desc_index = (last_avail_idx_shadow + i) % VQ_ENTRY_NUM;
         set_avail_flag(&vq_tx->descs[desc_index]);
     }
 
 #ifdef SKIP_INDEX_TX
     for (int i = 0; i < skipped_index; i++) {
-        int desc_index = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
+        int desc_index = (last_avail_idx_shadow + i) % VQ_ENTRY_NUM;
         set_avail_flag(&vq_tx->descs[desc_index]);
     }
 #endif
@@ -228,14 +228,14 @@ void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
 #endif
 
         vq_rx->last_avail_idx += 1;
-        if (VQ_ENYRY_NUM <= vq_rx->last_avail_idx) {
+        if (VQ_ENTRY_NUM <= vq_rx->last_avail_idx) {
             vq_rx->last_avail_idx = 0;
         }
 
         wait_avail(vq_tx, vq_tx->last_used_idx);
         set_len(&pool->buffers[vq_tx->descs[vq_tx->last_used_idx].entry_index], -1);
         vq_tx->last_used_idx += 1;
-        if (VQ_ENYRY_NUM <= vq_tx->last_used_idx) {
+        if (VQ_ENTRY_NUM <= vq_tx->last_used_idx) {
             vq_tx->last_used_idx = 0;
         }
     }
@@ -246,12 +246,12 @@ void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
 #else
     for (int i = 0; i < num_fin; i++) {
 #endif
-        int tx_desc_entry = (last_used_idx_shadow + i) % VQ_ENYRY_NUM;
+        int tx_desc_entry = (last_used_idx_shadow + i) % VQ_ENTRY_NUM;
         add_to_cache(pool, &pool->buffers[vq_tx->descs[tx_desc_entry].entry_index]);
         vq_tx->descs[tx_desc_entry].entry_index = id[i];
         set_used_flag(&vq_tx->descs[tx_desc_entry]);
 
-        int rx_desc_entry = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
+        int rx_desc_entry = (last_avail_idx_shadow + i) % VQ_ENTRY_NUM;
 #ifdef RANDOM_NF
         int next_buffer_index = ((vq_rx->last_pool_idx + i) % POOL_ENTRY_NUM) / 32 * 32 + ids[i];
 #else
@@ -264,11 +264,11 @@ void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
 
 #ifdef SKIP_INDEX_NF
     for (int i = 0; i < skipped_index; i++) {
-        int tx_desc_entry = (last_used_idx_shadow + i) % VQ_ENYRY_NUM;
+        int tx_desc_entry = (last_used_idx_shadow + i) % VQ_ENTRY_NUM;
         set_used_flag(&vq_tx->descs[tx_desc_entry]);
         vq_tx->descs[tx_desc_entry].entry_index = id[i];
 
-        int rx_desc_entry = (last_avail_idx_shadow + i) % VQ_ENYRY_NUM;
+        int rx_desc_entry = (last_avail_idx_shadow + i) % VQ_ENTRY_NUM;
         set_avail_flag(&vq_rx->descs[rx_desc_entry]);
     }
 #endif

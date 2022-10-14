@@ -64,14 +64,14 @@ int main(int argc, char **argv) {
     int bfd = open_shmfile(SHM_FILE, SIZE_SHM, false);
     auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
     auto *descs_rx = (desc*)(pool + 1);
-    auto *descs_tx = (desc*)(descs_rx + VQ_ENYRY_NUM);
+    auto *descs_tx = (desc*)(descs_rx + VQ_ENTRY_NUM);
 
     vq vq_rx{};
     init_ring(&vq_rx, descs_tx);
 
     info_opt opt = get_opt(argc, argv);
 
-    bool *flag = (bool *) (descs_tx + VQ_ENYRY_NUM);
+    bool *flag = (bool *) (descs_tx + VQ_ENTRY_NUM);
 
     *flag = true;
 

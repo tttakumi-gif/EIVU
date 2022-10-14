@@ -18,9 +18,9 @@
 //#define likely(x) __builtin_expect(!!(x), 1)
 //#define unlikely(x) __builtin_expect(!!(x), 0)
 
-//constexpr int VQ_ENYRY_NUM = 64;
-constexpr int VQ_ENYRY_NUM = 256;
-//constexpr int VQ_ENYRY_NUM = 32768;
+//constexpr int VQ_ENTRY_NUM = 64;
+constexpr int VQ_ENTRY_NUM = 256;
+//constexpr int VQ_ENTRY_NUM = 32768;
 
 constexpr int16_t AVAIL_FLAG = static_cast<int16_t>(0b1 << 7);
 constexpr int16_t USED_FLAG = static_cast<int16_t>(0b1 << 15);

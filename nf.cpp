@@ -3,16 +3,16 @@
 
 namespace {
     void init_descs(desc *descs) {
-        memset(descs, 0, sizeof(desc) * VQ_ENYRY_NUM);
-        for (int i = 0; i < VQ_ENYRY_NUM; i++) {
+        memset(descs, 0, sizeof(desc) * VQ_ENTRY_NUM);
+        for (int i = 0; i < VQ_ENTRY_NUM; i++) {
             descs[i].id = static_cast<int16_t>(i);
             descs[i].flags = static_cast<int16_t>(descs[i].flags | USED_FLAG);
         }
     }
 
     void attach_buffer_to_vq(vq *virtqueue, buffer_pool *pool) {
-        assert(VQ_ENYRY_NUM <= POOL_ENTRY_NUM);
-        for (int i = 0; i < VQ_ENYRY_NUM; i++) {
+        assert(VQ_ENTRY_NUM <= POOL_ENTRY_NUM);
+        for (int i = 0; i < VQ_ENTRY_NUM; i++) {
 #ifdef RANDOM_NF
             int entry_index = i / 32 * 32 + ids[i % 32];
 #else
@@ -56,14 +56,14 @@ int main(int argc, char *argv[]) {
     vq vq_rx{};
     init_ring(&vq_rx, descs_rx);
 
-    auto *descs_tx = (desc *) (descs_rx + VQ_ENYRY_NUM);
+    auto *descs_tx = (desc *) (descs_rx + VQ_ENTRY_NUM);
     init_descs(descs_tx);
     vq vq_tx{};
     init_ring(&vq_tx, descs_tx);
 
     info_opt opt = get_opt(argc, argv);
 
-    volatile bool *flag = (volatile bool *) (descs_tx + VQ_ENYRY_NUM);
+    volatile bool *flag = (volatile bool *) (descs_tx + VQ_ENTRY_NUM);
     *flag = false;
 
     while (!*flag) {
