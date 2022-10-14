@@ -68,9 +68,7 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num
         //    PREFETCH_POOL(pool_guest_addr[i]);
     }
 
-    for (int i = 0; i < num_fin; i++) {
-        wait_avail(vq_rx, vq_rx->last_used_idx + i);
-    }
+    wait_avail(vq_rx, vq_rx->last_used_idx + num_fin - 1);
 
 #if MBUF_HEADER_SIZE > 0
     for (int i = 0; i < num_fin; i++) {
@@ -133,9 +131,7 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num
 }
 
 void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int num_fin, bool is_stream) {
-    for (int i = 0; i < num_fin; i++) {
-        wait_used(vq_tx, vq_tx->last_avail_idx + i);
-    }
+    wait_used(vq_tx, vq_tx->last_avail_idx + num_fin - 1);
 
     for (int i = 0; i < num_fin; i++) {
         PREFETCH_MBUF(buf_dest[i]->header.id_addr, buf_dest[i]->header.len_addr);
