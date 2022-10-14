@@ -33,9 +33,8 @@ namespace {
 #ifdef RANDOM_RX
                 send_addrs[j] = &pool_rx_addr[local_pool_index + (int) ids[j]];
 #else
-                add_to_cache(pool, dummy_physical_ring[last_pring_idx]);
-                dummy_physical_ring[last_pring_idx] = get_buffer(pool);
                 send_addrs[j] = dummy_physical_ring[last_pring_idx];
+                dummy_physical_ring[last_pring_idx] = get_buffer(pool);
                 last_pring_idx = (last_pring_idx + 1) % pring_size;
 //                send_addrs[j] = get_buffer(pool);
 #endif
@@ -44,9 +43,9 @@ namespace {
             }
 
             send_rx_to_guest(vq_rx, send_addrs, pool_guest, num_fin, is_stream);
-//            for (int j = 0; j < num_fin; j++) {
-//                add_to_cache(pool, send_addrs[j]);
-//            }
+            for (int j = 0; j < num_fin; j++) {
+                add_to_cache(pool, send_addrs[j]);
+            }
         }
 
         free(pool);
