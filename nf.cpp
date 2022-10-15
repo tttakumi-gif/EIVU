@@ -18,7 +18,7 @@ namespace {
 #else
             auto entry_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
-            virtqueue->descs->entry_index = entry_index;
+            virtqueue->descs[i].entry_index = entry_index;
         }
     }
 
