@@ -19,6 +19,7 @@ namespace {
             auto entry_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
             virtqueue->descs[i].entry_index = entry_index;
+            set_avail_flag(&virtqueue->descs[i]);
         }
     }
 
@@ -26,7 +27,6 @@ namespace {
 #ifdef CPU_BIND
         bind_core(1);
 #endif
-        attach_buffer_to_vq(vq_rx, pool);
 
         if (opt.process == MOVE) {
             int num_fin = static_cast<int>(opt.size_batch);
@@ -55,9 +55,14 @@ int main(int argc, char *argv[]) {
     init_descs(descs_rx);
     vq vq_rx{};
     init_ring(&vq_rx, descs_rx);
+    attach_buffer_to_vq(&vq_rx, pool);
 
     auto *descs_tx = (desc *) (descs_rx + VQ_ENTRY_NUM);
     init_descs(descs_tx);
+    for (int i = 0; i < VQ_ENTRY_NUM; i++) {
+        descs_tx[i].entry_index = -1;
+        set_avail_flag(&descs_tx[i]);
+    }
     vq vq_tx{};
     init_ring(&vq_tx, descs_tx);
 

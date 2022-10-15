@@ -143,7 +143,8 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
 #ifndef ZERO_COPY_TX
-            memcpy(get_packet_addr(buf_dest[i]), get_packet_addr(&pool_guest->buffers[i]), SIZE_PACKET);
+            int buffer_index = vq_tx->descs[vq_tx->last_avail_idx].entry_index;
+            memcpy(get_packet_addr(buf_dest[i]), get_packet_addr(&pool_guest->buffers[buffer_index]), SIZE_PACKET);
             //cldemote(get_packet_addr(buf_dest[i]);
             //_mm_clflushopt(get_packet_addr(buf_dest[i]);
 #endif
@@ -243,12 +244,6 @@ void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
 #else
     for (int i = 0; i < num_fin; i++) {
 #endif
-        int tx_desc_entry = (last_used_idx_shadow + i) % VQ_ENTRY_NUM;
-        set_len(&pool->buffers[vq_tx->descs[tx_desc_entry].entry_index], -1);
-        add_to_cache(pool, &pool->buffers[vq_tx->descs[tx_desc_entry].entry_index]);
-        vq_tx->descs[tx_desc_entry].entry_index = id[i];
-        set_used_flag(&vq_tx->descs[tx_desc_entry]);
-
         int rx_desc_entry = (last_avail_idx_shadow + i) % VQ_ENTRY_NUM;
 #ifdef RANDOM_NF
         int next_buffer_index = ((vq_rx->last_pool_idx + i) % POOL_ENTRY_NUM) / 32 * 32 + ids[i];
@@ -258,6 +253,16 @@ void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
         assert(get_len(&pool->buffers[next_buffer_index]) == -1);
         vq_rx->descs[rx_desc_entry].entry_index = next_buffer_index;
         set_avail_flag(&vq_rx->descs[rx_desc_entry]);
+    }
+
+    for (int i = 0; i < num_fin; i++) {
+        int tx_desc_entry = (last_used_idx_shadow + i) % VQ_ENTRY_NUM;
+        if (vq_tx->descs[tx_desc_entry].entry_index > -1) {
+            add_to_cache(pool, &pool->buffers[vq_tx->descs[tx_desc_entry].entry_index]);
+            set_len(&pool->buffers[vq_tx->descs[tx_desc_entry].entry_index], -1);
+        }
+        vq_tx->descs[tx_desc_entry].entry_index = id[i];
+        set_used_flag(&vq_tx->descs[tx_desc_entry]);
     }
 
 #ifdef SKIP_INDEX_NF

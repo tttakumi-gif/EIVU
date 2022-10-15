@@ -46,8 +46,10 @@ namespace {
 //            }
 
 #ifdef PRINT
-            if ((i & 8388607) == 0) {
-                print((packet *) &recv_addrs[0]->addr);
+            for(int j = 0; j < num_fin; j++) {
+                if (((i - j) & 8388607) == 0) {
+                    print((packet *) &recv_addrs[j]->addr);
+                }
             }
 #endif
         }
@@ -63,8 +65,8 @@ int main(int argc, char **argv) {
     // 初期設定
     int bfd = open_shmfile(SHM_FILE, SIZE_SHM, false);
     auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
-    auto *descs_rx = (desc*)(pool + 1);
-    auto *descs_tx = (desc*)(descs_rx + VQ_ENTRY_NUM);
+    auto *descs_rx = (desc *) (pool + 1);
+    auto *descs_tx = (desc *) (descs_rx + VQ_ENTRY_NUM);
 
     vq vq_rx{};
     init_ring(&vq_rx, descs_tx);
