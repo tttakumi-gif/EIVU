@@ -31,6 +31,9 @@ void init(buffer_pool *pool) {
     for (auto &buffer: pool->buffers) {
         set_len(&buffer, -1);
     }
+
+    memset(pool->cache.cache, 0, sizeof(buf *) * POOL_CACHE_NUM);
+    pool->cache.top = -1;
 }
 
 buf *get_buffer(buffer_pool *pool) {
