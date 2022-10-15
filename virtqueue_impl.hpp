@@ -231,7 +231,6 @@ void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
             vq_rx->last_avail_idx = 0;
         }
 
-        set_len(&pool->buffers[vq_tx->descs[vq_tx->last_used_idx].entry_index], -1);
         vq_tx->last_used_idx += 1;
         if (VQ_ENTRY_NUM <= vq_tx->last_used_idx) {
             vq_tx->last_used_idx = 0;
@@ -245,6 +244,7 @@ void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
     for (int i = 0; i < num_fin; i++) {
 #endif
         int tx_desc_entry = (last_used_idx_shadow + i) % VQ_ENTRY_NUM;
+        set_len(&pool->buffers[vq_tx->descs[tx_desc_entry].entry_index], -1);
         add_to_cache(pool, &pool->buffers[vq_tx->descs[tx_desc_entry].entry_index]);
         vq_tx->descs[tx_desc_entry].entry_index = id[i];
         set_used_flag(&vq_tx->descs[tx_desc_entry]);
