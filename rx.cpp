@@ -12,7 +12,7 @@ namespace {
         int32_t num_fin = opt.size_batch;
         bool is_stream = opt.stream == ON;
 
-        auto *pool = (struct buffer_pool *) malloc(sizeof(buffer_pool));
+        auto *pool = new buffer_pool(); 
         init(pool);
         buf **send_addrs = new buf *[num_fin];
 
@@ -23,34 +23,38 @@ namespace {
             dummy_physical_ring[j] = get_buffer(pool);
         }
 
-        while (0 < i) {
-            // 受信パケット数の決定
-            if (i < num_fin) {
-                num_fin = i;
-            }
+	try {
+            while (0 < i) {
+                // 受信パケット数の決定
+                if (i < num_fin) {
+                    num_fin = i;
+                }
 
-            for (int j = 0; j < num_fin; j++, i--) {
+                for (int j = 0; j < num_fin; j++, i--) {
 #ifdef RANDOM_RX
-                send_addrs[j] = &pool_rx_addr[local_pool_index + (int) ids[j]];
+                    send_addrs[j] = &pool_rx_addr[local_pool_index + (int) ids[j]];
 #else
-                send_addrs[j] = dummy_physical_ring[last_pring_idx];
-                dummy_physical_ring[last_pring_idx] = get_buffer(pool);
-                last_pring_idx = (last_pring_idx + 1) % pring_size;
-//                send_addrs[j] = get_buffer(pool);
+                    send_addrs[j] = dummy_physical_ring[last_pring_idx];
+                    dummy_physical_ring[last_pring_idx] = get_buffer(pool);
+                    last_pring_idx = (last_pring_idx + 1) % pring_size;
+//                  send_addrs[j] = get_buffer(pool);
 #endif
-                ((packet *) (send_addrs[j]->addr))->packet_id = i;
-                ((packet *) (send_addrs[j]->addr))->packet_len = SIZE_PACKET;
-            }
+                    ((packet *) (send_addrs[j]->addr))->packet_id = i;
+                    ((packet *) (send_addrs[j]->addr))->packet_len = SIZE_PACKET;
+                }
 
-            send_rx_to_guest(vq_rx, send_addrs, pool_guest, num_fin, is_stream);
-            for (int j = 0; j < num_fin; j++) {
-                add_to_cache(pool, send_addrs[j]);
+                send_rx_to_guest(vq_rx, send_addrs, pool_guest, num_fin, is_stream); 
+                for (int j = 0; j < num_fin; j++) {
+                    add_to_cache(pool, send_addrs[j]);
+                }
             }
-        }
+	} catch (std::exception& e) {
+            std::cerr << "[rx] ERROR: " << e.what() << " terminating..." << std::endl;
+	}
 
-        free(pool);
-        delete[](send_addrs);
-        delete[](dummy_physical_ring);
+        delete pool;
+        delete[] send_addrs;
+        delete[] dummy_physical_ring;
     }
 
     void init_resource() {

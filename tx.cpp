@@ -10,51 +10,76 @@ namespace {
         int32_t num_fin = opt.size_batch;
         bool is_stream = opt.stream == ON;
 
-        auto *pool = (struct buffer_pool *) malloc(sizeof(buffer_pool));
+        auto *pool = new buffer_pool();
         init(pool);
         buf **recv_addrs = new buf *[num_fin];
 
         int last_pring_idx = 0;
-        int pring_size = 128;
+        int last_pring_inflight_idx = 0;
+
+        constexpr int pring_size = 128;
+	constexpr uint16_t RING_SIZE_MASK = pring_size - 1;
+
         buf **dummy_physical_ring = new buf *[pring_size];
-        for (int j = 0; j < pring_size; j++) {
-            dummy_physical_ring[j] = get_buffer(pool);
-        }
+	memset(dummy_physical_ring, 0, sizeof(buf*) * pring_size);
 
-        for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
-            // 受信パケット数の決定
-            if (i < num_fin) {
-                num_fin = i;
-            }
+	try {
+            for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
+                // 受信パケット数の決定
+                if (i < num_fin) {
+                    num_fin = i;
+                }
 
-            // パケット受信
-            for (int j = 0; j < num_fin; j++) {
+                // パケット受信
+                for (int j = 0; j < num_fin; j++) {
 #ifdef RANDOM_TX
-                recv_addrs[j] = &pool_tx_addr[local_pool_index + (int) ids[j]];
+                    recv_addrs[j] = &pool_tx_addr[local_pool_index + (int) ids[j]];
 #else
-                add_to_cache(pool, dummy_physical_ring[last_pring_idx]);
-                dummy_physical_ring[last_pring_idx] = get_buffer(pool);
-                recv_addrs[j] = dummy_physical_ring[last_pring_idx];
-                last_pring_idx = (last_pring_idx + 1) % pring_size;
-//                recv_addrs[j] = get_buffer(pool);
+                    recv_addrs[j] = get_buffer(pool);
 #endif
-            }
+                }
 
-            send_guest_to_tx(vq_tx, recv_addrs, pool_guest, num_fin, is_stream);
-//            for (int j = 0; j < num_fin; j++) {
-//                add_to_cache(pool, recv_addrs[j]);
-//            }
+                send_guest_to_tx(vq_tx, recv_addrs, pool_guest, num_fin, is_stream);
+
+		/* Flushing the all inflight buffers in the pring */
+		{
+		    int n_free = last_pring_idx - last_pring_inflight_idx;
+		    if (n_free == 0) {
+
+		    } else if (n_free < 0) {
+                        n_free += pring_size;
+		    }
+
+		    for (int j = 0; j < n_free; j++) {
+			    assert(dummy_physical_ring[last_pring_inflight_idx]);
+                        add_to_cache(pool, dummy_physical_ring[last_pring_inflight_idx]);
+			dummy_physical_ring[last_pring_inflight_idx] = nullptr;
+
+		        last_pring_inflight_idx++;
+                        last_pring_inflight_idx &= RING_SIZE_MASK;
+		    }
+		}
+
+		/* Transmit the packets to the pring */
+                for (int j = 0; j < num_fin; j++) {
+		    dummy_physical_ring[last_pring_idx] = recv_addrs[j];
+		    last_pring_idx++;
+		    last_pring_idx &= RING_SIZE_MASK;
+                }
 
 #ifdef PRINT
-            for(int j = 0; j < num_fin; j++) {
-                if (((i - j) & 8388607) == 0) {
-                    print((packet *) &recv_addrs[j]->addr);
+                for(int j = 0; j < num_fin; j++) {
+                    if (((i - j) & 8388607) == 0) {
+                        print((packet *) &recv_addrs[j]->addr);
+                    }
                 }
-            }
 #endif
-        }
+            }
+	} catch (std::exception& e) {
+            std::cerr << "[tx] ERROR: " << e.what() << " terminating..." << std::endl;
+	}
 
-        free(pool);
+        delete pool;
         delete[](recv_addrs);
         delete[](dummy_physical_ring);
     }

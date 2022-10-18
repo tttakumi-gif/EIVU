@@ -28,33 +28,52 @@ static inline void cldemote(const volatile void *p) {
 }
 
 void set_used_flag(desc *d) {
-    d->flags = static_cast<int16_t>(d->flags | USED_FLAG);
-    d->flags = static_cast<int16_t>(d->flags & ~AVAIL_FLAG);
+    volatile int16_t* flags = &d->flags;
+    int16_t f;
+   __atomic_load(flags, &f, __ATOMIC_RELEASE);
+    f |= USED_FLAG;
+    f &= ~AVAIL_FLAG;
+    __atomic_store(flags, &f, __ATOMIC_RELEASE);
 }
 
 void set_avail_flag(desc *d) {
-    d->flags = static_cast<int16_t>(d->flags & ~USED_FLAG);
-    d->flags = static_cast<int16_t>(d->flags | AVAIL_FLAG);
+    volatile int16_t* flags = &d->flags;
+    int16_t f;
+    __atomic_load(flags, &f, __ATOMIC_RELEASE);
+    f &= ~USED_FLAG;
+    f |= AVAIL_FLAG;
+    __atomic_store(flags, &f, __ATOMIC_RELEASE);
 }
 
+static constexpr uint64_t WAIT_COUNT_THRESH = 1000000000;
+
 void wait_used(vq *v, int desc_idx) {
+    static uint64_t wait_counter = 0;
     // ディスクリプタが空くまでwait
-    while ((*(volatile int16_t *) &v->descs[desc_idx].flags & USED_FLAG) == 0) {
-        do_none();
+    while ((*((volatile int16_t*)&v->descs[desc_idx].flags) & USED_FLAG) == 0) {
+        if (wait_counter++ >= WAIT_COUNT_THRESH) {
+            throw std::runtime_error("wait_used");
+	}
     }
+    wait_counter = 0;
 }
 
 void wait_avail(vq *v, int desc_idx) {
+    static uint64_t wait_counter = 0;
     // ディスクリプタにバッファが割り当てられるまでwait
-    while ((*(volatile int16_t *) &v->descs[desc_idx].flags & AVAIL_FLAG) == 0) {
-        do_none();
+    while ((*((volatile int16_t*)&v->descs[desc_idx].flags) & AVAIL_FLAG) == 0) {
+        if (wait_counter++ >= WAIT_COUNT_THRESH) {
+            throw std::runtime_error("wait_avail");
+	}
     }
+    wait_counter = 0;
 }
 
 void init_ring(vq *v, desc *d) {
     v->size = VQ_ENTRY_NUM;
     v->last_used_idx = 0;
     v->last_avail_idx = 0;
+    v->last_inflight_idx = 0;
     v->descs = d;
 }
 
@@ -62,13 +81,15 @@ char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 
                 8, 18, 29, 9};
 
 void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num_fin, bool is_stream) {
+    const uint16_t RING_SIZE_MASK = vq_rx->size - 1;
+
     for (int i = 0; i < num_fin; i++) {
         PREFETCH_MBUF(buf_src[i]->header.id_addr, buf_src[i]->header.len_addr);
         //PREFETCH_MBUF(buf_src[i]->header.id_addr, buf_src[i]->header.id_addr);
         //    PREFETCH_POOL(pool_guest_addr[i]);
     }
 
-    wait_avail(vq_rx, vq_rx->last_used_idx + num_fin - 1);
+    wait_avail(vq_rx, (vq_rx->last_used_idx + num_fin - 1) & RING_SIZE_MASK);
 
 #if MBUF_HEADER_SIZE > 0
     for (int i = 0; i < num_fin; i++) {
@@ -106,10 +127,8 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num
         }
 
         // index更新
-        vq_rx->last_used_idx += 1;
-        if (VQ_ENTRY_NUM <= vq_rx->last_used_idx) {
-            vq_rx->last_used_idx = 0;
-        }
+        vq_rx->last_used_idx++;
+	vq_rx->last_used_idx &= RING_SIZE_MASK;
     }
 
 #ifdef SKIP_INDEX_RX
@@ -118,7 +137,7 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num
 #else
     for (int i = 0; i < num_fin; i++) {
 #endif
-        int desc_index = (last_used_idx_shadow + i) % VQ_ENTRY_NUM;
+        int desc_index = (last_used_idx_shadow + i) & RING_SIZE_MASK;
         set_used_flag(&vq_rx->descs[desc_index]);
     }
 
@@ -131,7 +150,9 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num
 }
 
 void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int num_fin, bool is_stream) {
-    wait_used(vq_tx, vq_tx->last_avail_idx + num_fin - 1);
+    const uint16_t RING_SIZE_MASK = vq_tx->size - 1;
+
+    wait_used(vq_tx, (vq_tx->last_avail_idx + num_fin - 1) & RING_SIZE_MASK);
 
     for (int i = 0; i < num_fin; i++) {
         PREFETCH_MBUF(buf_dest[i]->header.id_addr, buf_dest[i]->header.len_addr);
@@ -143,8 +164,8 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
 #ifndef ZERO_COPY_TX
-            int buffer_index = vq_tx->descs[vq_tx->last_avail_idx].entry_index;
-            memcpy(get_packet_addr(buf_dest[i]), get_packet_addr(&pool_guest->buffers[buffer_index]), SIZE_PACKET);
+            int entry_idx = vq_tx->descs[vq_tx->last_avail_idx].entry_index;
+            memcpy(get_packet_addr(buf_dest[i]), get_packet_addr(&pool_guest->buffers[entry_idx]), SIZE_PACKET);
             //cldemote(get_packet_addr(buf_dest[i]);
             //_mm_clflushopt(get_packet_addr(buf_dest[i]);
 #endif
@@ -162,10 +183,8 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
         }
 
         // index更新
-        vq_tx->last_avail_idx += 1;
-        if (VQ_ENTRY_NUM <= vq_tx->last_avail_idx) {
-            vq_tx->last_avail_idx = 0;
-        }
+        vq_tx->last_avail_idx++;
+        vq_tx->last_avail_idx &= RING_SIZE_MASK; 
     }
 
 #if MBUF_HEADER_SIZE > 0
@@ -184,7 +203,7 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
 #else
     for (int i = 0; i < num_fin; i++) {
 #endif
-        int desc_index = (last_avail_idx_shadow + i) % VQ_ENTRY_NUM;
+        int desc_index = (last_avail_idx_shadow + i) & RING_SIZE_MASK;
         set_avail_flag(&vq_tx->descs[desc_index]);
     }
 
@@ -196,46 +215,31 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
 #endif
 }
 
-void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
-    wait_used(vq_rx, vq_rx->last_avail_idx + num_fin - 1);
-    wait_avail(vq_tx, vq_tx->last_used_idx + num_fin - 1);
+void guest_recv_process(vq *vq_rx, buffer_pool *pool, buf** pkts, int num_fin) {
+    const uint16_t RING_SIZE_MASK = vq_rx->size - 1;
+
+    wait_used(vq_rx, (vq_rx->last_avail_idx + num_fin - 1) & RING_SIZE_MASK);
 
     for (int i = 0; i < num_fin; i++) {
-        int64_t index = vq_rx->descs[vq_rx->last_avail_idx + i].entry_index;
+        int64_t index = vq_rx->descs[(vq_rx->last_avail_idx + i) & RING_SIZE_MASK].entry_index;
         PREFETCH_MBUF(pool->buffers[index].header.id_addr, pool->buffers[index].header.len_addr)
         //PREFETCH_MBUF(pool_guest_addr[index].header.id_addr, pool_guest_addr[index].header.id_addr)
     }
 
     int64_t id[num_fin];
     int last_avail_idx_shadow = vq_rx->last_avail_idx;
-    int last_used_idx_shadow = vq_tx->last_used_idx;
 
     for (int i = 0; i < num_fin; i++) {
         id[i] = vq_rx->descs[vq_rx->last_avail_idx].entry_index;
-        buf *packet_buffer = &pool->buffers[id[i]];
-        //if(((packet*)(packet_buffer->addr))->packet_len == 999999) {
-        //    exit(1);
-        //}
-        //memset(&((packet*)(packet_buffer->addr))->packet_len, i, 4);
+        pkts[i] = &pool->buffers[id[i]];
 
 #if MBUF_HEADER_SIZE > 0
-        PROC_MBUF_HEADER(packet_buffer);
-        set_len(packet_buffer, SIZE_PACKET);
-        //if(*(int*)(packet_buffer->header.id_addr) == 999999) {
-        //    exit(1);
-        //}
-        //memset(packet_buffer->header.id_addr, i, 4);
+        PROC_MBUF_HEADER(pkts[i]);
+        set_len(pkts[i], SIZE_PACKET);
 #endif
 
-        vq_rx->last_avail_idx += 1;
-        if (VQ_ENTRY_NUM <= vq_rx->last_avail_idx) {
-            vq_rx->last_avail_idx = 0;
-        }
-
-        vq_tx->last_used_idx += 1;
-        if (VQ_ENTRY_NUM <= vq_tx->last_used_idx) {
-            vq_tx->last_used_idx = 0;
-        }
+        vq_rx->last_avail_idx++;
+	vq_rx->last_avail_idx &= RING_SIZE_MASK;
     }
 
 #ifdef SKIP_INDEX_NF
@@ -244,25 +248,59 @@ void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
 #else
     for (int i = 0; i < num_fin; i++) {
 #endif
-        int rx_desc_entry = (last_avail_idx_shadow + i) % VQ_ENTRY_NUM;
+        int desc_idx = (last_avail_idx_shadow + i) & RING_SIZE_MASK;
 #ifdef RANDOM_NF
         int next_buffer_index = ((vq_rx->last_pool_idx + i) % POOL_ENTRY_NUM) / 32 * 32 + ids[i];
 #else
         auto next_buffer_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
         assert(get_len(&pool->buffers[next_buffer_index]) == -1);
-        vq_rx->descs[rx_desc_entry].entry_index = next_buffer_index;
-        set_avail_flag(&vq_rx->descs[rx_desc_entry]);
+        vq_rx->descs[desc_idx].entry_index = next_buffer_index;
+        set_avail_flag(&vq_rx->descs[desc_idx]);
+    }
+}
+
+void guest_flush_inflight_buffers(vq* vq_tx, buffer_pool* pool) {
+    const uint16_t RING_SIZE_MASK = vq_tx->size - 1;
+
+    int n_free = vq_tx->last_used_idx - vq_tx->last_inflight_idx;
+    if (n_free == 0) {
+        return ;
+    } else if (n_free < 0) {
+        n_free += vq_tx->size;
     }
 
+    int desc_idx = vq_tx->last_used_idx - 1;
+    if (desc_idx < 0) {
+        desc_idx = vq_tx->size - 1;
+    }
+ 
+    wait_avail(vq_tx, desc_idx);
+
+    for (int i = 0; i < n_free; i++) {
+        int entry_idx = vq_tx->descs[vq_tx->last_inflight_idx].entry_index;
+        add_to_cache(pool, &pool->buffers[entry_idx]);
+        set_len(&pool->buffers[entry_idx], -1);
+
+        vq_tx->last_inflight_idx++;
+        vq_tx->last_inflight_idx &= RING_SIZE_MASK;
+    }
+}
+
+void guest_send_process(vq* vq_tx, buffer_pool* pool, buf** pkts, int num_fin) {
+    const uint16_t RING_SIZE_MASK = vq_tx->size - 1;
+
+    guest_flush_inflight_buffers(vq_tx, pool);
+
+    wait_avail(vq_tx, (vq_tx->last_used_idx + num_fin - 1) & RING_SIZE_MASK);
+    int last_used_idx_shadow = vq_tx->last_used_idx;
+
     for (int i = 0; i < num_fin; i++) {
-        int tx_desc_entry = (last_used_idx_shadow + i) % VQ_ENTRY_NUM;
-        if (vq_tx->descs[tx_desc_entry].entry_index > -1) {
-            add_to_cache(pool, &pool->buffers[vq_tx->descs[tx_desc_entry].entry_index]);
-            set_len(&pool->buffers[vq_tx->descs[tx_desc_entry].entry_index], -1);
-        }
-        vq_tx->descs[tx_desc_entry].entry_index = id[i];
-        set_used_flag(&vq_tx->descs[tx_desc_entry]);
+        vq_tx->descs[vq_tx->last_used_idx].entry_index = get_buffer_index(pool, pkts[i]);
+        set_used_flag(&vq_tx->descs[vq_tx->last_used_idx]);
+
+        vq_tx->last_used_idx++;
+        vq_tx->last_used_idx &= RING_SIZE_MASK;
     }
 
 #ifdef SKIP_INDEX_NF
@@ -276,4 +314,3 @@ void guest_recv_process(vq *vq_rx, vq *vq_tx, buffer_pool *pool, int num_fin) {
     }
 #endif
 }
-

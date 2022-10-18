@@ -24,7 +24,7 @@ void push(cache_stack *stack, buf *data) {
     stack->top = stack->top + 1;
     stack->cache[stack->top] = data;
 }
-
+buf* get_buffer(buffer_pool*);
 void init(buffer_pool *pool) {
     pool->last_pool_idx = 0;
     memset(&pool->buffers, 0, sizeof(buf) * POOL_ENTRY_NUM);
@@ -34,6 +34,11 @@ void init(buffer_pool *pool) {
 
     memset(pool->cache.cache, 0, sizeof(buf *) * POOL_CACHE_NUM);
     pool->cache.top = -1;
+
+    for (int i = 0; i < POOL_CACHE_NUM; i++) {
+        buf* buffer = get_buffer(pool);
+        push(&pool->cache, buffer);
+    }
 }
 
 buf *get_buffer(buffer_pool *pool) {

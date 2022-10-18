@@ -23,6 +23,10 @@ namespace {
         }
     }
 
+    void guest_process(buffer_pool* pool, buf** pkts, int num_fin) {
+
+    }
+
     void rs_packet(vq *vq_rx, vq *vq_tx, buffer_pool *pool, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(1);
@@ -30,14 +34,24 @@ namespace {
 
         if (opt.process == MOVE) {
             int num_fin = static_cast<int>(opt.size_batch);
+	    buf* pkts[num_fin];
+	    memset(pkts, 0, sizeof(buf*) * num_fin);
 
-            for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
-                if (i < num_fin) {
-                    num_fin = i;
+	    try {
+                for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
+                    if (i < num_fin) {
+                        num_fin = i;
+                    }	
+
+                    guest_recv_process(vq_rx, pool, pkts, num_fin);
+
+                    guest_process(pool, pkts, num_fin);
+
+                    guest_send_process(vq_tx, pool, pkts, num_fin);
                 }
-
-                guest_recv_process(vq_rx, vq_tx, pool, num_fin);
-            }
+	    } catch (std::exception& e) {
+                std::cerr << "[nf] ERROR: " << e.what() << " terminating..." << std::endl;
+	    }
         } else {
             exit(1);
         }
