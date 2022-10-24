@@ -254,7 +254,9 @@ void guest_recv_process(vq *vq_rx, buffer_pool *pool, buf** pkts, int num_fin) {
 #else
         auto next_buffer_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
+#if MBUF_HEADER_SIZE > 0
         assert(get_len(&pool->buffers[next_buffer_index]) == -1);
+#endif
         vq_rx->descs[desc_idx].entry_index = next_buffer_index;
         set_avail_flag(&vq_rx->descs[desc_idx]);
     }
@@ -280,7 +282,9 @@ void guest_flush_inflight_buffers(vq* vq_tx, buffer_pool* pool) {
     for (int i = 0; i < n_free; i++) {
         int entry_idx = vq_tx->descs[vq_tx->last_inflight_idx].entry_index;
         add_to_cache(pool, &pool->buffers[entry_idx]);
+#if MBUF_HEADER_SIZE > 0
         set_len(&pool->buffers[entry_idx], -1);
+#endif
 
         vq_tx->last_inflight_idx++;
         vq_tx->last_inflight_idx &= RING_SIZE_MASK;

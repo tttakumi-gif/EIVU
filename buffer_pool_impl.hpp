@@ -29,7 +29,9 @@ void init(buffer_pool *pool) {
     pool->last_pool_idx = 0;
     memset(&pool->buffers, 0, sizeof(buf) * POOL_ENTRY_NUM);
     for (auto &buffer: pool->buffers) {
+#if MBUF_HEADER_SIZE > 0
         set_len(&buffer, -1);
+#endif
     }
 
     memset(pool->cache.cache, 0, sizeof(buf *) * POOL_CACHE_NUM);
