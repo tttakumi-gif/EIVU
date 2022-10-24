@@ -3,7 +3,7 @@ bool is_empty(cache_stack *stack) {
 }
 
 bool is_full(cache_stack *stack) {
-    return stack->top == POOL_CACHE_NUM || POOL_CACHE_NUM == 0;
+    return stack->top == (POOL_CACHE_NUM - 1) || POOL_CACHE_NUM == 0;
 }
 
 buf *pop(cache_stack *stack) {
