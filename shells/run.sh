@@ -8,13 +8,16 @@ opt_perf="-e cache-references,cache-misses,mem_load_uops_retired.l1_hit,mem_load
 #i="-I 1000"
 i=""
 loop=1
-batch=32
 #perf="perf stat $opt_perf -r $loop $i"
 perf=""
 
-sudo ${perf} ./nf.out --stream=off --process=move --batch=32 &
+batch_rx=32
+batch_nf=32
+batch_tx=32
+
+sudo ${perf} ./nf.out --stream=off --process=move --batch=$batch_nf &
 sleep 0.5
-sudo ./rx.out --batch=$batch --process=copy --stream=$1 &
+sudo ./rx.out --batch=$batch_rx --process=copy --stream=$1 &
 sleep 0.5 
-sudo ./tx.out --stream=$2 --process=copy --batch=32
+sudo ./tx.out --stream=$2 --process=copy --batch=$batch_tx
 

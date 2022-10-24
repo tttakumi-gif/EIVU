@@ -7,17 +7,19 @@ opt_perf=""
 #i="-I 1000"
 i=""
 loop=1
-batch=32
 perf="perf stat $opt_perf -r $loop $i"
-#perf="perf c2c record -c 1"
 #perf=""
 
+batch_rx=32
+batch_nf=32
+batch_tx=32
+
 run() {
-  sudo $2 ./nf.out --stream=off --process=move --batch=$batch  &
+  sudo $2 ./nf.out --stream=off --process=move --batch=$batch_nf  &
   sleep 1
-  sudo $1 ./rx.out --stream=$4 --batch=$batch --process=copy  &
+  sudo $1 ./rx.out --stream=$4 --batch=$batch_rx --process=copy  &
   sleep 1 
-  sudo $3 ./tx.out --stream=$5 --process=copy --batch=$batch 
+  sudo $3 ./tx.out --stream=$5 --process=copy --batch=$batch_tx 
 }
 
 rm -rf results
