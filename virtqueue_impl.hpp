@@ -238,6 +238,10 @@ void guest_recv_process(vq *vq_rx, buffer_pool *pool, buf **pkts, int num_fin) {
         int64_t index = vq_rx->descs[(vq_rx->last_avail_idx + i) & RING_SIZE_MASK].entry_index;
         PREFETCH_MBUF(pool->buffers[index].header.id_addr, pool->buffers[index].header.len_addr)
         //PREFETCH_MBUF(pool_guest_addr[index].header.id_addr, pool_guest_addr[index].header.id_addr)
+	prefetch0(&vq_rx->descs[vq_rx->last_avail_idx + i]);
+#if VIRTIO_HEADER_SIZE > 0
+	prefetch0(&pool->buffers[index].padding + VIRTIO_HEADER_OFFSET);
+#endif
     }
 
     int64_t id[num_fin];
@@ -314,6 +318,11 @@ void guest_send_process(vq *vq_tx, buffer_pool *pool, buf **pkts, int num_fin) {
     guest_flush_inflight_buffers(vq_tx, pool);
 
     wait_avail(vq_tx, (vq_tx->last_used_idx + num_fin - 1) & RING_SIZE_MASK);
+
+    for (int i = 0; i < num_fin; i++) {
+	prefetch0(&vq_tx->descs[vq_tx->last_used_idx + i]);
+    }
+
     int last_used_idx_shadow = vq_tx->last_used_idx;
 
     for (int i = 0; i < num_fin; i++) {
