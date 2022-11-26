@@ -60,7 +60,14 @@ void init(guest_buffer_pool *pool) {
     }
 
     memset(pool->cache.cache, 0, sizeof(buf *) * GUEST_POOL_CACHE_NUM);
+
+#ifdef QUEUE_BUFFER_POOL_CACHE_GUEST
+    pool->cache.front = 0;
+    pool->cache.rear = -1;
+    pool->cache.itemCount = 0;
+#else
     pool->cache.top = -1;
+#endif
 
     for (int i = 0; i < GUEST_POOL_CACHE_NUM; i++) {
         buf* buffer = get_buffer(pool);
@@ -130,7 +137,14 @@ void init(host_buffer_pool *pool) {
     }
 
     memset(pool->cache.cache, 0, sizeof(buf *) * HOST_POOL_CACHE_NUM);
+
+#ifdef QUEUE_BUFFER_POOL_CACHE_HOST
+    pool->cache.front = 0;
+    pool->cache.rear = -1;
+    pool->cache.itemCount = 0;
+#else
     pool->cache.top = -1;
+#endif
 
     for (int i = 0; i < HOST_POOL_CACHE_NUM; i++) {
         buf* buffer = get_buffer(pool);
