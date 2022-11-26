@@ -28,16 +28,16 @@ static inline void cldemote(const volatile void *p) {
 }
 
 void set_used_flag(desc *d) {
-    volatile int16_t* flags = &d->flags;
+    volatile int16_t *flags = &d->flags;
     int16_t f;
-   __atomic_load(flags, &f, __ATOMIC_RELEASE);
+    __atomic_load(flags, &f, __ATOMIC_RELEASE);
     f |= USED_FLAG;
     f &= ~AVAIL_FLAG;
     __atomic_store(flags, &f, __ATOMIC_RELEASE);
 }
 
 void set_avail_flag(desc *d) {
-    volatile int16_t* flags = &d->flags;
+    volatile int16_t *flags = &d->flags;
     int16_t f;
     __atomic_load(flags, &f, __ATOMIC_RELEASE);
     f &= ~USED_FLAG;
@@ -50,10 +50,10 @@ static constexpr uint64_t WAIT_COUNT_THRESH = 1000000000;
 void wait_used(vq *v, int desc_idx) {
     static uint64_t wait_counter = 0;
     // ディスクリプタが空くまでwait
-    while ((*((volatile int16_t*)&v->descs[desc_idx].flags) & USED_FLAG) == 0) {
+    while ((*((volatile int16_t *) &v->descs[desc_idx].flags) & USED_FLAG) == 0) {
         if (wait_counter++ >= WAIT_COUNT_THRESH) {
             throw std::runtime_error("wait_used");
-	}
+        }
     }
     wait_counter = 0;
 }
@@ -61,10 +61,10 @@ void wait_used(vq *v, int desc_idx) {
 void wait_avail(vq *v, int desc_idx) {
     static uint64_t wait_counter = 0;
     // ディスクリプタにバッファが割り当てられるまでwait
-    while ((*((volatile int16_t*)&v->descs[desc_idx].flags) & AVAIL_FLAG) == 0) {
+    while ((*((volatile int16_t *) &v->descs[desc_idx].flags) & AVAIL_FLAG) == 0) {
         if (wait_counter++ >= WAIT_COUNT_THRESH) {
             throw std::runtime_error("wait_avail");
-	}
+        }
     }
     wait_counter = 0;
 }
@@ -106,6 +106,12 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num
         if (!is_stream) {
 #ifndef ZERO_COPY_RX
             int64_t copy_dest_index = vq_rx->descs[vq_rx->last_used_idx].entry_index;
+
+            int8_t virtio_header[VIRTIO_HEADER_SIZE];
+            load_virtio_header(&pool_guest->buffers[copy_dest_index], &virtio_header);
+            virtio_header[0] += 1;
+            store_virtio_header(&pool_guest->buffers[copy_dest_index], &virtio_header);
+
             auto *copy_dest_addr = get_packet_addr(&pool_guest->buffers[copy_dest_index]);
             memcpy(copy_dest_addr, get_packet_addr(buf_src[i]), SIZE_PACKET);
             //cldemote(copy_dest_addr);
@@ -128,7 +134,7 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num
 
         // index更新
         vq_rx->last_used_idx++;
-	vq_rx->last_used_idx &= RING_SIZE_MASK;
+        vq_rx->last_used_idx &= RING_SIZE_MASK;
     }
 
 #ifdef SKIP_INDEX_RX
@@ -165,6 +171,12 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
         if (!is_stream) {
 #ifndef ZERO_COPY_TX
             int entry_idx = vq_tx->descs[vq_tx->last_avail_idx].entry_index;
+
+            int8_t virtio_header[VIRTIO_HEADER_SIZE];
+            load_virtio_header(buf_dest[i], &virtio_header);
+            virtio_header[0] += 1;
+            store_virtio_header(buf_dest[i], &virtio_header);
+
             memcpy(get_packet_addr(buf_dest[i]), get_packet_addr(&pool_guest->buffers[entry_idx]), SIZE_PACKET);
             //cldemote(get_packet_addr(buf_dest[i]);
             //_mm_clflushopt(get_packet_addr(buf_dest[i]);
@@ -184,11 +196,13 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
 
         // index更新
         vq_tx->last_avail_idx++;
-        vq_tx->last_avail_idx &= RING_SIZE_MASK; 
+        vq_tx->last_avail_idx &= RING_SIZE_MASK;
     }
 
 #if MBUF_HEADER_SIZE > 0
     for (int i = 0; i < num_fin; i++) {
+        int8_t virtio_header[VIRTIO_HEADER_SIZE];
+        load_virtio_header(buf_dest[i], &virtio_header);
         //if(*(int*)(buf_dest[i]->header.id_addr) == 999999) {
         //    exit(1);
         //}
@@ -215,7 +229,7 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
 #endif
 }
 
-void guest_recv_process(vq *vq_rx, buffer_pool *pool, buf** pkts, int num_fin) {
+void guest_recv_process(vq *vq_rx, buffer_pool *pool, buf **pkts, int num_fin) {
     const uint16_t RING_SIZE_MASK = vq_rx->size - 1;
 
     wait_used(vq_rx, (vq_rx->last_avail_idx + num_fin - 1) & RING_SIZE_MASK);
@@ -233,13 +247,16 @@ void guest_recv_process(vq *vq_rx, buffer_pool *pool, buf** pkts, int num_fin) {
         id[i] = vq_rx->descs[vq_rx->last_avail_idx].entry_index;
         pkts[i] = &pool->buffers[id[i]];
 
+        int8_t virtio_header[VIRTIO_HEADER_SIZE];
+        load_virtio_header(pkts[i], &virtio_header);
 #if MBUF_HEADER_SIZE > 0
-        PROC_MBUF_HEADER(pkts[i]);
+//        PROC_MBUF_HEADER(pkts[i]);
+        set_id(pkts[i], virtio_header[0]);
         set_len(pkts[i], SIZE_PACKET);
 #endif
 
         vq_rx->last_avail_idx++;
-	vq_rx->last_avail_idx &= RING_SIZE_MASK;
+        vq_rx->last_avail_idx &= RING_SIZE_MASK;
     }
 
 #ifdef SKIP_INDEX_NF
@@ -262,12 +279,12 @@ void guest_recv_process(vq *vq_rx, buffer_pool *pool, buf** pkts, int num_fin) {
     }
 }
 
-void guest_flush_inflight_buffers(vq* vq_tx, buffer_pool* pool) {
+void guest_flush_inflight_buffers(vq *vq_tx, buffer_pool *pool) {
     const uint16_t RING_SIZE_MASK = vq_tx->size - 1;
 
     int n_free = vq_tx->last_used_idx - vq_tx->last_inflight_idx;
     if (n_free == 0) {
-        return ;
+        return;
     } else if (n_free < 0) {
         n_free += vq_tx->size;
     }
@@ -276,7 +293,7 @@ void guest_flush_inflight_buffers(vq* vq_tx, buffer_pool* pool) {
     if (desc_idx < 0) {
         desc_idx = vq_tx->size - 1;
     }
- 
+
     wait_avail(vq_tx, desc_idx);
 
     for (int i = 0; i < n_free; i++) {
@@ -291,7 +308,7 @@ void guest_flush_inflight_buffers(vq* vq_tx, buffer_pool* pool) {
     }
 }
 
-void guest_send_process(vq* vq_tx, buffer_pool* pool, buf** pkts, int num_fin) {
+void guest_send_process(vq *vq_tx, buffer_pool *pool, buf **pkts, int num_fin) {
     const uint16_t RING_SIZE_MASK = vq_tx->size - 1;
 
     guest_flush_inflight_buffers(vq_tx, pool);

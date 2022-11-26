@@ -81,3 +81,17 @@ void set_len(buf *buffer, int32_t len) {
 int32_t get_len(buf *buffer) {
     return *(int32_t *) buffer->header.len_addr;
 }
+
+constexpr int VIRTIO_HEADER_OFFSET = PACKET_BUFFER_PADDING - VIRTIO_HEADER_SIZE;
+
+void load_virtio_header(buf *buffer, void *dest) {
+#if VIRTIO_HEADER_SIZE > 0
+    memcpy(dest, (&buffer->padding) + VIRTIO_HEADER_OFFSET, VIRTIO_HEADER_SIZE);
+#endif
+}
+
+void store_virtio_header(buf *buffer, void *src) {
+#if VIRTIO_HEADER_SIZE > 0
+    memcpy((&buffer->padding) + VIRTIO_HEADER_OFFSET, src, VIRTIO_HEADER_SIZE);
+#endif
+}

@@ -59,6 +59,8 @@ namespace {
 }
 
 int main(int argc, char *argv[]) {
+    static_assert(VIRTIO_HEADER_SIZE <= PACKET_BUFFER_PADDING);
+
     // 初期設定
     int bfd = open_shmfile(SHM_FILE, SIZE_SHM, true);
 
