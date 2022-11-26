@@ -27,22 +27,31 @@ constexpr int16_t USED_FLAG = static_cast<int16_t>(0b1 << 15);
 
 //struct __attribute__((__aligned__(VQ_ENTRY_SIZE))) desc {
 struct desc {
-#if VQ_ENTRY_SIZE == 128
-    char padding[56];
-#endif
-#if VQ_ENTRY_SIZE == 8
+#if VQ_ENTRY_SIZE == 4
+    int16_t entry_index;
+    int16_t flags;
+#elif VQ_ENTRY_SIZE == 8
     int32_t entry_index;
-#else
-    int64_t entry_index;
-    int32_t len;
-#endif
     int16_t id;
     int16_t flags;
-#if VQ_ENTRY_SIZE == 64
+#elif VQ_ENTRY_SIZE == 16
+    int64_t entry_index;
+    int32_t len;
+    int16_t id;
+    int16_t flags;
+#elif VQ_ENTRY_SIZE == 64
+    int64_t entry_index;
+    int32_t len;
+    int16_t id;
+    int16_t flags;
     char padding[48];
-#endif
-#if VQ_ENTRY_SIZE == 128
-    char padding2[56];
+#elif VQ_ENTRY_SIZE == 128
+    char padding[56];
+    int64_t entry_index;
+    int32_t len;
+    int16_t id;
+    int16_t flags;
+    char padding[56];
 #endif
 };
 
