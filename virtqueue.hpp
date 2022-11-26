@@ -25,8 +25,7 @@ constexpr int VQ_ENTRY_NUM = 256;
 constexpr int16_t AVAIL_FLAG = static_cast<int16_t>(0b1 << 7);
 constexpr int16_t USED_FLAG = static_cast<int16_t>(0b1 << 15);
 
-//struct __attribute__((__aligned__(VQ_ENTRY_SIZE))) desc {
-struct desc {
+struct __attribute__((__aligned__(VQ_ENTRY_SIZE))) desc {
 #if VQ_ENTRY_SIZE == 4
     int16_t entry_index;
     int16_t flags;
