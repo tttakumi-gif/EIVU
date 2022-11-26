@@ -80,7 +80,7 @@ void init_ring(vq *v, desc *d) {
 char ids[32] = {21, 10, 24, 22, 15, 31, 0, 30, 14, 1, 11, 2, 13, 23, 12, 3, 25, 17, 4, 16, 26, 19, 5, 28, 20, 6, 27, 7,
                 8, 18, 29, 9};
 
-void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num_fin, bool is_stream) {
+void send_rx_to_guest(vq *vq_rx, buf **buf_src, guest_buffer_pool *pool_guest, int num_fin, bool is_stream) {
     const uint16_t RING_SIZE_MASK = vq_rx->size - 1;
 
     for (int i = 0; i < num_fin; i++) {
@@ -155,7 +155,7 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, buffer_pool *pool_guest, int num
 #endif
 }
 
-void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int num_fin, bool is_stream) {
+void send_guest_to_tx(vq *vq_tx, buf **buf_dest, guest_buffer_pool *pool_guest, int num_fin, bool is_stream) {
     const uint16_t RING_SIZE_MASK = vq_tx->size - 1;
 
     wait_used(vq_tx, (vq_tx->last_avail_idx + num_fin - 1) & RING_SIZE_MASK);
@@ -229,7 +229,7 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, buffer_pool *pool_guest, int nu
 #endif
 }
 
-void guest_recv_process(vq *vq_rx, buffer_pool *pool, buf **pkts, int num_fin) {
+void guest_recv_process(vq *vq_rx, guest_buffer_pool *pool, buf **pkts, int num_fin) {
     const uint16_t RING_SIZE_MASK = vq_rx->size - 1;
 
     wait_used(vq_rx, (vq_rx->last_avail_idx + num_fin - 1) & RING_SIZE_MASK);
@@ -271,7 +271,7 @@ void guest_recv_process(vq *vq_rx, buffer_pool *pool, buf **pkts, int num_fin) {
 #endif
         int desc_idx = (last_avail_idx_shadow + i) & RING_SIZE_MASK;
 #ifdef RANDOM_NF
-        int next_buffer_index = ((vq_rx->last_pool_idx + i) % POOL_ENTRY_NUM) / 32 * 32 + ids[i];
+        int next_buffer_index = ((vq_rx->last_pool_idx + i) % GUEST_POOL_ENTRY_NUM) / 32 * 32 + ids[i];
 #else
         auto next_buffer_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
@@ -283,7 +283,7 @@ void guest_recv_process(vq *vq_rx, buffer_pool *pool, buf **pkts, int num_fin) {
     }
 }
 
-void guest_flush_inflight_buffers(vq *vq_tx, buffer_pool *pool) {
+void guest_flush_inflight_buffers(vq *vq_tx, guest_buffer_pool *pool) {
     const uint16_t RING_SIZE_MASK = vq_tx->size - 1;
 
     int n_free = vq_tx->last_used_idx - vq_tx->last_inflight_idx;
@@ -312,7 +312,7 @@ void guest_flush_inflight_buffers(vq *vq_tx, buffer_pool *pool) {
     }
 }
 
-void guest_send_process(vq *vq_tx, buffer_pool *pool, buf **pkts, int num_fin) {
+void guest_send_process(vq *vq_tx, guest_buffer_pool *pool, buf **pkts, int num_fin) {
     const uint16_t RING_SIZE_MASK = vq_tx->size - 1;
 
     guest_flush_inflight_buffers(vq_tx, pool);

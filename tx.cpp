@@ -2,7 +2,7 @@
 #include "shm.hpp"
 
 namespace {
-    void recv_packet(vq *vq_tx, buffer_pool *pool_guest, info_opt opt) {
+    void recv_packet(vq *vq_tx, guest_buffer_pool *pool_guest, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(2);
 #endif
@@ -10,7 +10,7 @@ namespace {
         int32_t num_fin = opt.size_batch;
         bool is_stream = opt.stream == ON;
 
-        auto *pool = new buffer_pool();
+        auto *pool = new host_buffer_pool();
         init(pool);
         buf **recv_addrs = new buf *[num_fin];
 
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
 
     // 初期設定
     int bfd = open_shmfile(SHM_FILE, SIZE_SHM, false);
-    auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
+    auto *pool = (guest_buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
     auto *descs_rx = (desc *) (pool + 1);
     auto *descs_tx = (desc *) (descs_rx + VQ_ENTRY_NUM);
 

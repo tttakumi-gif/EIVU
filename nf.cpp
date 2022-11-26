@@ -10,8 +10,8 @@ namespace {
         }
     }
 
-    void attach_buffer_to_vq(vq *virtqueue, buffer_pool *pool) {
-        assert(VQ_ENTRY_NUM <= POOL_ENTRY_NUM);
+    void attach_buffer_to_vq(vq *virtqueue, guest_buffer_pool *pool) {
+        assert(VQ_ENTRY_NUM <= GUEST_POOL_ENTRY_NUM);
         for (int i = 0; i < VQ_ENTRY_NUM; i++) {
 #ifdef RANDOM_NF
             int entry_index = i / 32 * 32 + ids[i % 32];
@@ -23,11 +23,11 @@ namespace {
         }
     }
 
-    void guest_process(buffer_pool* pool, buf** pkts, int num_fin) {
+    void guest_process(guest_buffer_pool* pool, buf** pkts, int num_fin) {
 
     }
 
-    void rs_packet(vq *vq_rx, vq *vq_tx, buffer_pool *pool, info_opt opt) {
+    void rs_packet(vq *vq_rx, vq *vq_tx, guest_buffer_pool *pool, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(1);
 #endif
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     // 初期設定
     int bfd = open_shmfile(SHM_FILE, SIZE_SHM, true);
 
-    auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
+    auto *pool = (guest_buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
     init(pool);
 
     auto *descs_rx = (desc *) (pool + 1);

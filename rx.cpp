@@ -2,7 +2,7 @@
 #include "shm.hpp"
 
 namespace {
-    void send_packet(vq *vq_rx, buffer_pool *pool_guest, info_opt opt) {
+    void send_packet(vq *vq_rx, guest_buffer_pool *pool_guest, info_opt opt) {
 #ifdef CPU_BIND
         bind_core(0);
 #endif
@@ -12,7 +12,7 @@ namespace {
         int32_t num_fin = opt.size_batch;
         bool is_stream = opt.stream == ON;
 
-        auto *pool = new buffer_pool(); 
+        auto *pool = new host_buffer_pool();
         init(pool);
         buf **send_addrs = new buf *[num_fin];
 
@@ -68,7 +68,7 @@ namespace {
 
 int main(int argc, char **argv) {
     {
-        constexpr int size = sizeof(desc) * VQ_ENTRY_NUM * 2 + sizeof(buf) * POOL_ENTRY_NUM + sizeof(volatile bool);
+        constexpr int size = sizeof(desc) * VQ_ENTRY_NUM * 2 + sizeof(buf) * HOST_POOL_ENTRY_NUM + sizeof(volatile bool);
 #ifdef PRINT
         std::cout << "size: " << size << std::endl;
         std::cout << "packet size: " << sizeof(packet) << ", " << SIZE_PACKET << std::endl;
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
     // 初期設定
     int bfd = open_shmfile(SHM_FILE, SIZE_SHM, false);
-    auto *pool = (buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
+    auto *pool = (guest_buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
     auto *descs_rx = (desc *) (pool + 1);
     auto *descs_tx = (desc *) (descs_rx + VQ_ENTRY_NUM);
 
