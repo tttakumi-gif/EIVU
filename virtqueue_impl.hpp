@@ -120,23 +120,22 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, guest_buffer_pool *pool_guest, i
             store_virtio_header(&pool_guest->buffers[copy_dest_index], &virtio_header);
 
             auto *copy_dest_addr = get_packet_addr(&pool_guest->buffers[copy_dest_index]);
+#if defined(SIMD_COPY) || defined(NON_TEMPORAL_COPY)
+            void *xmm01 = copy_dest_addr;
+            auto *xmm02 = get_packet_addr(buf_src[i]);
+            for (int j = 0; j < NUM_LOOP; j++) {
+#ifdef SIMD_COPY
+                _mm256_store_si256((__m256i *) xmm01 + j, _mm256_load_si256((__m256i *) xmm02 + j));
+#else
+                _mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
+#endif
+            }
+#else
             memcpy(copy_dest_addr, get_packet_addr(buf_src[i]), SIZE_PACKET);
+#endif
             //cldemote(copy_dest_addr);
             //_mm_clflushopt(copy_dest_addr);
 #endif
-        } else {
-//            int64_t copy_dest_index = vq_rx->descs[vq_rx->last_used_idx].entry_index;
-//            void *xmm01 = get_packet_addr(&pool_guest_addr[copy_dest_index]);
-//            auto *xmm02 = get_packet_addr(buf_src[i]);
-
-            for (int j = 0; j < NUM_LOOP; j++) {
-                if (!IS_PSMALL) {
-//                    _mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
-//                    _mm256_store_si256((__m256i *) xmm01 + j, _mm256_load_si256((__m256i *) xmm02 + j));
-                } else {
-//                    _mm_stream_si128((__m128i *) xmm01 + j, _mm_stream_load_si128((__m128i *) xmm02 + j));
-                }
-            }
         }
 
         // index更新
@@ -187,21 +186,23 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, guest_buffer_pool *pool_guest, 
             virtio_header[0] += 1;
             store_virtio_header(buf_dest[i], &virtio_header);
 
-            memcpy(get_packet_addr(buf_dest[i]), get_packet_addr(&pool_guest->buffers[entry_idx]), SIZE_PACKET);
+            auto copy_src_addr = get_packet_addr(&pool_guest->buffers[entry_idx]);
+#if defined(SIMD_COPY) || defined(NON_TEMPORAL_COPY)
+            void *xmm01 = get_packet_addr(buf_dest[i]);
+            auto *xmm02 = copy_src_addr;
+            for (int j = 0; j < NUM_LOOP; j++) {
+#ifdef SIMD_COPY
+                _mm256_store_si256((__m256i *) xmm01 + j, _mm256_load_si256((__m256i *) xmm02 + j));
+#else
+                _mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
+#endif
+            }
+#else
+            memcpy(get_packet_addr(buf_dest[i]), copy_src_addr, SIZE_PACKET);
+#endif
             //cldemote(get_packet_addr(buf_dest[i]);
             //_mm_clflushopt(get_packet_addr(buf_dest[i]);
 #endif
-        } else {
-//            auto *xmm01 = get_packet_addr(buf_dest[i];
-//            auto *xmm02 = get_packet_addr(&pool_guest_addr[i]);
-            for (int j = 0; j < NUM_LOOP; j++) {
-                if (!IS_PSMALL) {
-//                    _mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
-//                    _mm256_store_si256((__m256i *) xmm01 + j, _mm256_load_si256((__m256i *) xmm02 + j));
-                } else {
-//                    _mm_store_si128((__m128i *) xmm01 + j, _mm_stream_load_si128((__m128i *) xmm02 + j));
-                }
-            }
         }
 
         // index更新

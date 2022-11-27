@@ -39,6 +39,9 @@
 //#define ZERO_COPY_RX
 //#define ZERO_COPY_TX
 
+//#define SIMD_COPY
+//#define NON_TEMPORAL_COPY
+
 //#define READ_HEADER4_RX
 //#define READ_HEADER4_NF
 //#define READ_BODY4_NF
