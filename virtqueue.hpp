@@ -38,6 +38,12 @@ struct __attribute__((__aligned__(VQ_ENTRY_SIZE))) desc {
     int32_t len;
     int16_t id;
     int16_t flags;
+#elif VQ_ENTRY_SIZE == 32
+    int64_t entry_index;
+    int32_t len;
+    int16_t id;
+    int16_t flags;
+    char padding[16];
 #elif VQ_ENTRY_SIZE == 64
     int64_t entry_index;
     int32_t len;
