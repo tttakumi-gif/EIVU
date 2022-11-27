@@ -17,13 +17,12 @@ namespace {
         int last_pring_idx = 0;
         int last_pring_inflight_idx = 0;
 
-        constexpr int pring_size = 128;
-	constexpr uint16_t RING_SIZE_MASK = pring_size - 1;
+        constexpr uint16_t RING_SIZE_MASK = PRING_SIZE_TX - 1;
 
-        buf **dummy_physical_ring = new buf *[pring_size];
-	memset(dummy_physical_ring, 0, sizeof(buf*) * pring_size);
+        buf **dummy_physical_ring = new buf *[PRING_SIZE_TX];
+        memset(dummy_physical_ring, 0, sizeof(buf *) * PRING_SIZE_TX);
 
-	try {
+        try {
             for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
                 // 受信パケット数の決定
                 if (i < num_fin) {
@@ -41,30 +40,30 @@ namespace {
 
                 send_guest_to_tx(vq_tx, recv_addrs, pool_guest, num_fin, is_stream);
 
-		/* Flushing the all inflight buffers in the pring */
-		{
-		    int n_free = last_pring_idx - last_pring_inflight_idx;
-		    if (n_free == 0) {
+                /* Flushing the all inflight buffers in the pring */
+                {
+                    int n_free = last_pring_idx - last_pring_inflight_idx;
+                    if (n_free == 0) {
 
-		    } else if (n_free < 0) {
-                        n_free += pring_size;
-		    }
+                    } else if (n_free < 0) {
+                        n_free += PRING_SIZE_TX;
+                    }
 
-		    for (int j = 0; j < n_free; j++) {
-			    assert(dummy_physical_ring[last_pring_inflight_idx]);
+                    for (int j = 0; j < n_free; j++) {
+                        assert(dummy_physical_ring[last_pring_inflight_idx]);
                         add_to_cache(pool, dummy_physical_ring[last_pring_inflight_idx]);
-			dummy_physical_ring[last_pring_inflight_idx] = nullptr;
+                        dummy_physical_ring[last_pring_inflight_idx] = nullptr;
 
-		        last_pring_inflight_idx++;
+                        last_pring_inflight_idx++;
                         last_pring_inflight_idx &= RING_SIZE_MASK;
-		    }
-		}
+                    }
+                }
 
-		/* Transmit the packets to the pring */
+                /* Transmit the packets to the pring */
                 for (int j = 0; j < num_fin; j++) {
-		    dummy_physical_ring[last_pring_idx] = recv_addrs[j];
-		    last_pring_idx++;
-		    last_pring_idx &= RING_SIZE_MASK;
+                    dummy_physical_ring[last_pring_idx] = recv_addrs[j];
+                    last_pring_idx++;
+                    last_pring_idx &= RING_SIZE_MASK;
                 }
 
 #ifdef PRINT
@@ -75,9 +74,9 @@ namespace {
                 }
 #endif
             }
-	} catch (std::exception& e) {
+        } catch (std::exception &e) {
             std::cerr << "[tx] ERROR: " << e.what() << " terminating..." << std::endl;
-	}
+        }
 
         delete pool;
         delete[](recv_addrs);

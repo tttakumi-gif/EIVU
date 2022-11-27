@@ -17,9 +17,8 @@ namespace {
         buf **send_addrs = new buf *[num_fin];
 
         int last_pring_idx = 0;
-        int pring_size = 128;
-        buf **dummy_physical_ring = new buf *[pring_size];
-        for (int j = 0; j < pring_size; j++) {
+        buf **dummy_physical_ring = new buf *[PRING_SIZE_RX];
+        for (int j = 0; j < PRING_SIZE_RX; j++) {
             dummy_physical_ring[j] = get_buffer(pool);
         }
 
@@ -36,7 +35,7 @@ namespace {
 #else
                     send_addrs[j] = dummy_physical_ring[last_pring_idx];
                     dummy_physical_ring[last_pring_idx] = get_buffer(pool);
-                    last_pring_idx = (last_pring_idx + 1) % pring_size;
+                    last_pring_idx = (last_pring_idx + 1) % PRING_SIZE_RX;
 //                  send_addrs[j] = get_buffer(pool);
 #endif
                     ((packet *) (send_addrs[j]->addr))->packet_id = i;

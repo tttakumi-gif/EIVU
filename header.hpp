@@ -60,6 +60,9 @@
 //#define SKIP_INDEX_NF
 //#define SKIP_INDEX_TX
 
+#define PRING_SIZE_RX 128
+#define PRING_SIZE_TX 128
+
 //#define HUGE_PAGE
 
 //#define PRINT
