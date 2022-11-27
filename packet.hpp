@@ -23,8 +23,8 @@ struct packet {
 constexpr int32_t SIZE_BUFFER = 2176;
 constexpr int32_t PACKET_BUFFER_PADDING = 128;
 #else
-constexpr int32_t SIZE_BUFFER = sizeof(packet);
-constexpr int32_t PACKET_BUFFER_PADDING = 0;
+constexpr int32_t PACKET_BUFFER_PADDING = VIRTIO_HEADER_SIZE == 0 ? 0 : 64;
+constexpr int32_t SIZE_BUFFER = sizeof(packet) + PACKET_BUFFER_PADDING;
 #endif
 
 struct mbuf_header {
