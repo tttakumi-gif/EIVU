@@ -205,7 +205,7 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, guest_buffer_pool *pool_guest, 
             memcpy(get_packet_addr(buf_dest[i]), copy_src_addr, SIZE_PACKET);
 #endif
             //cldemote(get_packet_addr(buf_dest[i]));
-            //_mm_clflushopt(get_packet_addr(buf_dest[i]);
+            //_mm_clflushopt(get_packet_addr(buf_dest[i]));
 #endif
         }
 
