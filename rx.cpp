@@ -9,7 +9,7 @@ namespace {
         assert((intptr_t(pool_guest) & 63) == 0);
 
         int32_t i = NUM_PACKET;
-        int32_t num_fin = opt.size_batch;
+        int32_t num_fin = BATCH_SIZE_RX;
         bool is_stream = opt.stream == ON;
 
         auto *pool = new host_buffer_pool();

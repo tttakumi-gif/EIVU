@@ -7,7 +7,7 @@ namespace {
         bind_core(2);
 #endif
 
-        int32_t num_fin = opt.size_batch;
+        int32_t num_fin = BATCH_SIZE_TX;
         bool is_stream = opt.stream == ON;
 
         auto *pool = new host_buffer_pool();

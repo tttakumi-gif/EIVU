@@ -23,7 +23,7 @@ namespace {
         }
     }
 
-    void guest_process(guest_buffer_pool* pool, buf** pkts, int num_fin) {
+    void guest_process(guest_buffer_pool *pool, buf **pkts, int num_fin) {
 
     }
 
@@ -33,15 +33,15 @@ namespace {
 #endif
 
         if (opt.process == MOVE) {
-            int num_fin = static_cast<int>(opt.size_batch);
-	    buf* pkts[num_fin];
-	    memset(pkts, 0, sizeof(buf*) * num_fin);
+            int num_fin = BATCH_SIZE_NF;
+            buf *pkts[num_fin];
+            memset(pkts, 0, sizeof(buf *) * num_fin);
 
-	    try {
+            try {
                 for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
                     if (i < num_fin) {
                         num_fin = i;
-                    }	
+                    }
 
                     guest_recv_process(vq_rx, pool, pkts, num_fin);
 
@@ -49,9 +49,9 @@ namespace {
 
                     guest_send_process(vq_tx, pool, pkts, num_fin);
                 }
-	    } catch (std::exception& e) {
+            } catch (std::exception &e) {
                 std::cerr << "[nf] ERROR: " << e.what() << " terminating..." << std::endl;
-	    }
+            }
         } else {
             exit(1);
         }
