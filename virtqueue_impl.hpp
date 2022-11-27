@@ -122,11 +122,11 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, guest_buffer_pool *pool_guest, i
 
 #ifndef ZERO_COPY_RX
             auto *copy_dest_addr = get_packet_addr(&pool_guest->buffers[copy_dest_index]);
-#if defined(SIMD_COPY) || defined(NON_TEMPORAL_COPY)
+#if defined(SIMD_COPY_RX) || defined(NON_TEMPORAL_COPY_RX)
             void *xmm01 = copy_dest_addr;
             auto *xmm02 = get_packet_addr(buf_src[i]);
             for (int j = 0; j < NUM_LOOP; j++) {
-#ifdef SIMD_COPY
+#ifdef SIMD_COPY_RX
                 _mm256_store_si256((__m256i *) xmm01 + j, _mm256_load_si256((__m256i *) xmm02 + j));
 #else
                 _mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
@@ -191,11 +191,11 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, guest_buffer_pool *pool_guest, 
 
 #ifndef ZERO_COPY_TX
             auto copy_src_addr = get_packet_addr(&pool_guest->buffers[entry_idx]);
-#if defined(SIMD_COPY) || defined(NON_TEMPORAL_COPY)
+#if defined(SIMD_COPY_TX) || defined(NON_TEMPORAL_COPY_TX)
             void *xmm01 = get_packet_addr(buf_dest[i]);
             auto *xmm02 = copy_src_addr;
             for (int j = 0; j < NUM_LOOP; j++) {
-#ifdef SIMD_COPY
+#ifdef SIMD_COPY_TX
                 _mm256_store_si256((__m256i *) xmm01 + j, _mm256_load_si256((__m256i *) xmm02 + j));
 #else
                 _mm256_stream_si256((__m256i *) xmm01 + j, _mm256_stream_load_si256((__m256i *) xmm02 + j));
