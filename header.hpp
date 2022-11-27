@@ -39,6 +39,16 @@
 //#define ZERO_COPY_RX
 //#define ZERO_COPY_TX
 
+//#define READ_HEADER4_RX
+//#define READ_HEADER4_NF
+//#define READ_BODY4_NF
+//#define READ_HEADER4_Tx
+
+//#define WRITE_HEADER4_RX
+//#define WRITE_HEADER4_NF
+//#define WRITE_BODY4_NF
+//#define WRITE_HEADER4_Tx
+
 //#define RANDOM_RX
 //#define RANDOM_NF
 //#define RANDOM_TX

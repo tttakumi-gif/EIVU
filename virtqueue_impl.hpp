@@ -84,8 +84,11 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, guest_buffer_pool *pool_guest, i
     const uint16_t RING_SIZE_MASK = vq_rx->size - 1;
 
     for (int i = 0; i < num_fin; i++) {
+#if defined(READ_HEADER4_RX) || defined(WRITE_HEADER4_RX)
+        PREFETCH_MBUF(buf_src[i]->header.id_addr, buf_src[i]->header.id_addr);
+#else
         PREFETCH_MBUF(buf_src[i]->header.id_addr, buf_src[i]->header.len_addr);
-        //PREFETCH_MBUF(buf_src[i]->header.id_addr, buf_src[i]->header.id_addr);
+#endif
         //    PREFETCH_POOL(pool_guest_addr[i]);
     }
 
@@ -93,11 +96,15 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, guest_buffer_pool *pool_guest, i
 
 #if MBUF_HEADER_SIZE > 0
     for (int i = 0; i < num_fin; i++) {
-        //if(*(int*)(buf_src[i]->header.id_addr) == 999999) {
-        //    exit(1);
-        //}
-        //memset(buf_src[i]->header.id_addr, i, 4);
+#ifdef READ_HEADER4_RX
+        if (*(int *) (buf_src[i]->header.id_addr) == 999999) {
+            exit(1);
+        }
+#elifdef WRITE_HEADER4_RX
+        memset(buf_src[i]->header.id_addr, i, 4);
+#else
         PROC_MBUF_HEADER(buf_src[i]);
+#endif
     }
 #endif
 
@@ -161,8 +168,11 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, guest_buffer_pool *pool_guest, 
     wait_used(vq_tx, (vq_tx->last_avail_idx + num_fin - 1) & RING_SIZE_MASK);
 
     for (int i = 0; i < num_fin; i++) {
+#if defined(READ_HEADER4_Tx) || defined(WRITE_HEADER4_Tx)
+        PREFETCH_MBUF(buf_dest[i]->header.id_addr, buf_dest[i]->header.id_addr);
+#else
         PREFETCH_MBUF(buf_dest[i]->header.id_addr, buf_dest[i]->header.len_addr);
-        //PREFETCH_MBUF(buf_dest[i]->header.id_addr, buf_dest[i]->header.id_addr);
+#endif
         //PREFETCH_POOL(pool_guest_addr[i]);
     }
 
@@ -203,11 +213,15 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, guest_buffer_pool *pool_guest, 
     for (int i = 0; i < num_fin; i++) {
         int8_t virtio_header[VIRTIO_HEADER_SIZE];
         load_virtio_header(buf_dest[i], &virtio_header);
-        //if(*(int*)(buf_dest[i]->header.id_addr) == 999999) {
-        //    exit(1);
-        //}
-        //memset(buf_dest[i]->header.id_addr, i, 4);
+#ifdef READ_HEADER4_Tx
+        if (*(int *) (buf_dest[i]->header.id_addr) == 999999) {
+            exit(1);
+        }
+#elifdef WRITE_HEADER4_Tx
+        memset(buf_dest[i]->header.id_addr, i, 4);
+#else
         PROC_MBUF_HEADER(buf_dest[i])
+#endif
     }
 #endif
 
@@ -236,11 +250,14 @@ void guest_recv_process(vq *vq_rx, guest_buffer_pool *pool, buf **pkts, int num_
 
     for (int i = 0; i < num_fin; i++) {
         int64_t index = vq_rx->descs[(vq_rx->last_avail_idx + i) & RING_SIZE_MASK].entry_index;
+#if defined(READ_HEADER4_NF) || defined(WRITE_HEADER4_NF)
+        PREFETCH_MBUF(pool->buffers[index].header.id_addr, pool->buffers[index].header.id_addr)
+#else
         PREFETCH_MBUF(pool->buffers[index].header.id_addr, pool->buffers[index].header.len_addr)
-        //PREFETCH_MBUF(pool_guest_addr[index].header.id_addr, pool_guest_addr[index].header.id_addr)
-	prefetch0(&vq_rx->descs[vq_rx->last_avail_idx + i]);
+#endif
+        prefetch0(&vq_rx->descs[vq_rx->last_avail_idx + i]);
 #if VIRTIO_HEADER_SIZE > 0
-	prefetch0(&pool->buffers[index].padding + VIRTIO_HEADER_OFFSET);
+        prefetch0(&pool->buffers[index].padding + VIRTIO_HEADER_OFFSET);
 #endif
     }
 
@@ -253,10 +270,26 @@ void guest_recv_process(vq *vq_rx, guest_buffer_pool *pool, buf **pkts, int num_
 
         int8_t virtio_header[VIRTIO_HEADER_SIZE];
         load_virtio_header(pkts[i], &virtio_header);
+
 #if MBUF_HEADER_SIZE > 0
-//        PROC_MBUF_HEADER(pkts[i]);
+#ifdef READ_HEADER4_NF
+        if (*(int *) (pkts[i]->header.id_addr) == 999999) {
+            exit(1);
+        }
+#elifdef WRITE_HEADER4_NF
+        memset(pkts[i]->header.id_addr, i, 4);
+#else
         set_id(pkts[i], virtio_header[0]);
         set_len(pkts[i], SIZE_PACKET);
+#endif
+#endif
+
+#ifdef READ_BODY4_NF
+        if(get_packet_addr(pkts[i])->packet_id < 0) {
+            exit(1);
+        }
+#elifdef WRITE_BODY4_NF
+        get_packet_addr(pkts[i])->packet_id += 1;
 #endif
 
         vq_rx->last_avail_idx++;
@@ -275,7 +308,7 @@ void guest_recv_process(vq *vq_rx, guest_buffer_pool *pool, buf **pkts, int num_
 #else
         auto next_buffer_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
-#if MBUF_HEADER_SIZE > 0
+#if MBUF_HEADER_SIZE > 0 || !defined(READ_HEADER4_NF) || !defined(WRITE_HEADER4_NF)
         assert(get_len(&pool->buffers[next_buffer_index]) == -1);
 #endif
         vq_rx->descs[desc_idx].entry_index = next_buffer_index;
@@ -303,7 +336,7 @@ void guest_flush_inflight_buffers(vq *vq_tx, guest_buffer_pool *pool) {
     for (int i = 0; i < n_free; i++) {
         int entry_idx = vq_tx->descs[vq_tx->last_inflight_idx].entry_index;
         add_to_cache(pool, &pool->buffers[entry_idx]);
-#if MBUF_HEADER_SIZE > 0
+#if MBUF_HEADER_SIZE > 0 || !defined(READ_HEADER4_NF) || !defined(WRITE_HEADER4_NF)
         set_len(&pool->buffers[entry_idx], -1);
 #endif
 
@@ -320,7 +353,7 @@ void guest_send_process(vq *vq_tx, guest_buffer_pool *pool, buf **pkts, int num_
     wait_avail(vq_tx, (vq_tx->last_used_idx + num_fin - 1) & RING_SIZE_MASK);
 
     for (int i = 0; i < num_fin; i++) {
-	prefetch0(&vq_tx->descs[vq_tx->last_used_idx + i]);
+        prefetch0(&vq_tx->descs[vq_tx->last_used_idx + i]);
     }
 
     int last_used_idx_shadow = vq_tx->last_used_idx;
