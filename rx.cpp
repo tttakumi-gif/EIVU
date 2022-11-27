@@ -31,7 +31,8 @@ namespace {
 
                 for (int j = 0; j < num_fin; j++, i--) {
 #ifdef RANDOM_RX
-                    send_addrs[j] = &pool_rx_addr[local_pool_index + (int) ids[j]];
+                    send_addrs[j] = &pool->buffers[pool->last_pool_idx / 32 * 32 + (int) ids[j]];
+                    pool->last_pool_idx = (pool->last_pool_idx + 1) % HOST_POOL_ENTRY_NUM;
 #else
                     send_addrs[j] = dummy_physical_ring[last_pring_idx];
                     dummy_physical_ring[last_pring_idx] = get_buffer(pool);

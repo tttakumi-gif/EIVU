@@ -15,6 +15,7 @@ namespace {
         for (int i = 0; i < VQ_ENTRY_NUM; i++) {
 #ifdef RANDOM_NF
             int entry_index = i / 32 * 32 + ids[i % 32];
+            pool->last_pool_idx = (pool->last_pool_idx + 1) % GUEST_POOL_ENTRY_NUM;
 #else
             auto entry_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif

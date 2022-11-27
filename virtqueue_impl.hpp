@@ -305,12 +305,17 @@ void guest_recv_process(vq *vq_rx, guest_buffer_pool *pool, buf **pkts, int num_
 #endif
         int desc_idx = (last_avail_idx_shadow + i) & RING_SIZE_MASK;
 #ifdef RANDOM_NF
-        int next_buffer_index = ((vq_rx->last_pool_idx + i) % GUEST_POOL_ENTRY_NUM) / 32 * 32 + ids[i];
+        int next_buffer_index = pool->last_pool_idx / 32 * 32 + ids[i];
+        pool->last_pool_idx = (pool->last_pool_idx + 1) % GUEST_POOL_ENTRY_NUM;
 #else
         auto next_buffer_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
 #if MBUF_HEADER_SIZE > 0 || !defined(READ_HEADER4_NF) || !defined(WRITE_HEADER4_NF)
-        assert(get_len(&pool->buffers[next_buffer_index]) == -1);
+//        if(get_len(&pool->buffers[next_buffer_index]) != -1) {
+//            printf("bad: %d\n", next_buffer_index);
+//            exit(1);
+//        }
+//        assert(get_len(&pool->buffers[next_buffer_index]) == -1);
 #endif
         vq_rx->descs[desc_idx].entry_index = next_buffer_index;
         set_avail_flag(&vq_rx->descs[desc_idx]);

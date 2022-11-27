@@ -32,7 +32,8 @@ namespace {
                 // パケット受信
                 for (int j = 0; j < num_fin; j++) {
 #ifdef RANDOM_TX
-                    recv_addrs[j] = &pool_tx_addr[local_pool_index + (int) ids[j]];
+                    recv_addrs[j] = &pool->buffers[pool->last_pool_idx / 32 * 32 + (int) ids[j]];
+                    pool->last_pool_idx = (pool->last_pool_idx + 1) % HOST_POOL_ENTRY_NUM;
 #else
                     recv_addrs[j] = get_buffer(pool);
 #endif
