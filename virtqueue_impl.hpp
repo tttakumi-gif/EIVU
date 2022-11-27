@@ -100,7 +100,7 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, guest_buffer_pool *pool_guest, i
         if (*(int *) (buf_src[i]->header.id_addr) == 999999) {
             exit(1);
         }
-#elifdef WRITE_HEADER4_RX
+#elif defined(WRITE_HEADER4_RX)
         memset(buf_src[i]->header.id_addr, i, 4);
 #else
         PROC_MBUF_HEADER(buf_src[i]);
@@ -218,7 +218,7 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, guest_buffer_pool *pool_guest, 
         if (*(int *) (buf_dest[i]->header.id_addr) == 999999) {
             exit(1);
         }
-#elifdef WRITE_HEADER4_Tx
+#elif defined(WRITE_HEADER4_Tx)
         memset(buf_dest[i]->header.id_addr, i, 4);
 #else
         PROC_MBUF_HEADER(buf_dest[i])
@@ -277,7 +277,7 @@ void guest_recv_process(vq *vq_rx, guest_buffer_pool *pool, buf **pkts, int num_
         if (*(int *) (pkts[i]->header.id_addr) == 999999) {
             exit(1);
         }
-#elifdef WRITE_HEADER4_NF
+#elif defined(WRITE_HEADER4_NF)
         memset(pkts[i]->header.id_addr, i, 4);
 #else
         set_id(pkts[i], virtio_header[0]);
@@ -289,7 +289,7 @@ void guest_recv_process(vq *vq_rx, guest_buffer_pool *pool, buf **pkts, int num_
         if(get_packet_addr(pkts[i])->packet_id < 0) {
             exit(1);
         }
-#elifdef WRITE_BODY4_NF
+#elif defined(WRITE_BODY4_NF)
         get_packet_addr(pkts[i])->packet_id += 1;
 #endif
 
