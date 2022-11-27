@@ -89,7 +89,9 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, guest_buffer_pool *pool_guest, i
 #else
         PREFETCH_MBUF(buf_src[i]->header.id_addr, buf_src[i]->header.len_addr);
 #endif
-        //    PREFETCH_POOL(pool_guest_addr[i]);
+//        int64_t copy_dest_index = vq_rx->descs[vq_rx->last_used_idx + i].entry_index;
+//        auto *copy_dest_addr = get_packet_addr(&pool_guest->buffers[copy_dest_index]);
+//        PREFETCH_POOL(copy_dest_addr);
     }
 
     wait_avail(vq_rx, (vq_rx->last_used_idx + num_fin - 1) & RING_SIZE_MASK);
@@ -111,7 +113,6 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, guest_buffer_pool *pool_guest, i
     int last_used_idx_shadow = vq_rx->last_used_idx;
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
-#ifndef ZERO_COPY_RX
             int64_t copy_dest_index = vq_rx->descs[vq_rx->last_used_idx].entry_index;
 
             int8_t virtio_header[VIRTIO_HEADER_SIZE];
@@ -119,6 +120,7 @@ void send_rx_to_guest(vq *vq_rx, buf **buf_src, guest_buffer_pool *pool_guest, i
             virtio_header[0] += 1;
             store_virtio_header(&pool_guest->buffers[copy_dest_index], &virtio_header);
 
+#ifndef ZERO_COPY_RX
             auto *copy_dest_addr = get_packet_addr(&pool_guest->buffers[copy_dest_index]);
 #if defined(SIMD_COPY) || defined(NON_TEMPORAL_COPY)
             void *xmm01 = copy_dest_addr;
@@ -172,13 +174,14 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, guest_buffer_pool *pool_guest, 
 #else
         PREFETCH_MBUF(buf_dest[i]->header.id_addr, buf_dest[i]->header.len_addr);
 #endif
-        //PREFETCH_POOL(pool_guest_addr[i]);
+//        int entry_idx = vq_tx->descs[vq_tx->last_avail_idx].entry_index;
+//        auto copy_src_addr = get_packet_addr(&pool_guest->buffers[entry_idx]);
+//        PREFETCH_POOL(copy_src_addr);
     }
 
     int last_avail_idx_shadow = vq_tx->last_avail_idx;
     for (int i = 0; i < num_fin; i++) {
         if (!is_stream) {
-#ifndef ZERO_COPY_TX
             int entry_idx = vq_tx->descs[vq_tx->last_avail_idx].entry_index;
 
             int8_t virtio_header[VIRTIO_HEADER_SIZE];
@@ -186,6 +189,7 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, guest_buffer_pool *pool_guest, 
             virtio_header[0] += 1;
             store_virtio_header(buf_dest[i], &virtio_header);
 
+#ifndef ZERO_COPY_TX
             auto copy_src_addr = get_packet_addr(&pool_guest->buffers[entry_idx]);
 #if defined(SIMD_COPY) || defined(NON_TEMPORAL_COPY)
             void *xmm01 = get_packet_addr(buf_dest[i]);
@@ -210,10 +214,11 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, guest_buffer_pool *pool_guest, 
         vq_tx->last_avail_idx &= RING_SIZE_MASK;
     }
 
-#if MBUF_HEADER_SIZE > 0
     for (int i = 0; i < num_fin; i++) {
         int8_t virtio_header[VIRTIO_HEADER_SIZE];
         load_virtio_header(buf_dest[i], &virtio_header);
+
+#if MBUF_HEADER_SIZE > 0
 #ifdef READ_HEADER4_Tx
         if (*(int *) (buf_dest[i]->header.id_addr) == 999999) {
             exit(1);
@@ -223,8 +228,8 @@ void send_guest_to_tx(vq *vq_tx, buf **buf_dest, guest_buffer_pool *pool_guest, 
 #else
         PROC_MBUF_HEADER(buf_dest[i])
 #endif
-    }
 #endif
+    }
 
 #ifdef SKIP_INDEX_TX
     int skipped_index = 64 / VQ_ENTRY_SIZE;
