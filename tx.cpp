@@ -86,6 +86,7 @@ namespace {
 }
 
 int main(int argc, char **argv) {
+    static_assert(BATCH_SIZE_TX <= VQ_ENTRY_NUM);
 
     // 初期設定
     int bfd = open_shmfile(SHM_FILE, SIZE_SHM, false);

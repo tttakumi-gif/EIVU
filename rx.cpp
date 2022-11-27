@@ -67,6 +67,8 @@ namespace {
 }
 
 int main(int argc, char **argv) {
+    static_assert(BATCH_SIZE_RX <= VQ_ENTRY_NUM);
+
     {
         constexpr int size = sizeof(desc) * VQ_ENTRY_NUM * 2 + sizeof(buf) * HOST_POOL_ENTRY_NUM + sizeof(volatile bool);
 #ifdef PRINT
