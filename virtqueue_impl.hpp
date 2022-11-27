@@ -315,7 +315,7 @@ void guest_recv_process(vq *vq_rx, guest_buffer_pool *pool, buf **pkts, int num_
 #else
         auto next_buffer_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
-#if MBUF_HEADER_SIZE > 0 && !defined(READ_HEADER4_NF) && !defined(WRITE_HEADER4_NF) && !defined(RANDOM_NF)
+#if MBUF_HEADER_SIZE > 0 && !defined(READ_HEADER4_NF) && !defined(WRITE_HEADER4_NF) && !defined(RANDOM_NF) && GUEST_POOL_CACHE_ENTRIES > 0
         assert(get_len(&pool->buffers[next_buffer_index]) == -1);
 #endif
         vq_rx->descs[desc_idx].entry_index = next_buffer_index;

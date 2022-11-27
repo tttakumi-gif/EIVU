@@ -13,7 +13,8 @@ constexpr int GUEST_POOL_ENTRY_NUM = 512;
 constexpr int GUEST_POOL_ENTRY_NUM = 163456;
 #endif
 
-constexpr int GUEST_POOL_CACHE_NUM = 512;
+#define GUEST_POOL_CACHE_ENTRIES 512
+constexpr int GUEST_POOL_CACHE_NUM = GUEST_POOL_CACHE_ENTRIES;
 
 struct guest_cache_stack {
     buf *cache[GUEST_POOL_CACHE_NUM]{};
@@ -48,19 +49,19 @@ constexpr int HOST_POOL_ENTRY_NUM = 163456;
 constexpr int HOST_POOL_CACHE_NUM = 512;
 
 struct host_cache_stack {
-    buf *cache[GUEST_POOL_CACHE_NUM]{};
+    buf *cache[HOST_POOL_CACHE_NUM]{};
     int top = -1;
 };
 
 struct host_cache_queue {
-    buf *cache[GUEST_POOL_CACHE_NUM]{};
+    buf *cache[HOST_POOL_CACHE_NUM]{};
     int front = 0;
     int rear = -1;
     int itemCount = 0;
 };
 
 struct host_buffer_pool {
-    buf __attribute__((__aligned__(64))) buffers[GUEST_POOL_ENTRY_NUM]{};
+    buf __attribute__((__aligned__(64))) buffers[HOST_POOL_ENTRY_NUM]{};
     int last_pool_idx = 0;
 #ifdef QUEUE_BUFFER_POOL_CACHE_HOST
     host_cache_queue cache;
