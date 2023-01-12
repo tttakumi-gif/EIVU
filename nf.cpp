@@ -24,7 +24,7 @@ namespace {
         }
     }
 
-    void guest_process(guest_buffer_pool *pool, buf **pkts, int num_fin) {
+    void guest_process(guest_buffer_pool *pool __attribute__((unused)), buf **pkts __attribute__((unused)), int num_fin __attribute__((unused))) {
 
     }
 

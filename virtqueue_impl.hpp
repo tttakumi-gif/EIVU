@@ -30,7 +30,7 @@ static inline void cldemote(const volatile void *p) {
 void set_used_flag(desc *d) {
     volatile int16_t *flags = &d->flags;
     int16_t f;
-    __atomic_load(flags, &f, __ATOMIC_RELEASE);
+    __atomic_load(flags, &f, __ATOMIC_ACQUIRE);
     f |= USED_FLAG;
     f &= ~AVAIL_FLAG;
     __atomic_store(flags, &f, __ATOMIC_RELEASE);
@@ -39,7 +39,7 @@ void set_used_flag(desc *d) {
 void set_avail_flag(desc *d) {
     volatile int16_t *flags = &d->flags;
     int16_t f;
-    __atomic_load(flags, &f, __ATOMIC_RELEASE);
+    __atomic_load(flags, &f, __ATOMIC_ACQUIRE);
     f &= ~USED_FLAG;
     f |= AVAIL_FLAG;
     __atomic_store(flags, &f, __ATOMIC_RELEASE);
@@ -362,8 +362,6 @@ void guest_send_process(vq *vq_tx, guest_buffer_pool *pool, buf **pkts, int num_
     for (int i = 0; i < num_fin; i++) {
         prefetch0(&vq_tx->descs[vq_tx->last_used_idx + i]);
     }
-
-    int last_used_idx_shadow = vq_tx->last_used_idx;
 
     for (int i = 0; i < num_fin; i++) {
         vq_tx->descs[vq_tx->last_used_idx].entry_index = get_buffer_index(pool, pkts[i]);
