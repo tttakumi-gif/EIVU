@@ -94,8 +94,8 @@ int main(int argc, char **argv) {
     auto *descs_rx = (desc *) (pool + 1);
     auto *descs_tx = (desc *) (descs_rx + VQ_ENTRY_NUM);
 
-    vq vq_rx{};
-    init_ring(&vq_rx, descs_tx);
+    vq vq_tx{};
+    init_ring(&vq_tx, descs_tx);
 
     info_opt opt = get_opt(argc, argv);
 
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
 
-    recv_packet(&vq_rx, pool, opt);
+    recv_packet(&vq_tx, pool, opt);
 
     // 計測終了
     end = std::chrono::system_clock::now();
