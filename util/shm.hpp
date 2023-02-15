@@ -6,10 +6,10 @@
 
 #ifdef HUGE_PAGE
 #define SHM_FLAG (MAP_SHARED | MAP_POPULATE | MAP_HUGETLB)
-#define SHM_FILE "/mnt/hugepages/mock-vhost-user"
+#define SHM_FILE "/mnt/hugepages/eivu"
 #else
 #define SHM_FLAG (MAP_SHARED)
-#define SHM_FILE "mock-vhost-user"
+#define SHM_FILE "eivu"
 #endif
 
 #define SIZE_SHM 5000000000

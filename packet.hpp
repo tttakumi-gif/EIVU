@@ -6,12 +6,7 @@ constexpr int32_t SIZE_PACKET = 64;
 constexpr bool IS_PSMALL = SIZE_PACKET < 32;
 constexpr int32_t NUM_LOOP = SIZE_PACKET / (IS_PSMALL ? 16 : 32) + (SIZE_PACKET % 32 == 0 ? 0 : 1);
 
-#if 1
-//constexpr int32_t NUM_PACKET = 409600;
 constexpr int32_t NUM_PACKET = 100000000;
-#else
-constexpr int32_t NUM_PACKET = 100000000000000000;
-#endif
 
 struct packet {
     int32_t packet_id;
@@ -23,19 +18,19 @@ struct packet {
 constexpr int32_t SIZE_BUFFER = 2176;
 constexpr int32_t PACKET_BUFFER_PADDING = 128;
 #else
-constexpr int32_t PACKET_BUFFER_PADDING = VIRTIO_HEADER_SIZE == 0 ? 0 : 64;
+constexpr int32_t PACKET_BUFFER_PADDING = VIO_HEADER_SIZE == 0 ? 0 : 64;
 constexpr int32_t SIZE_BUFFER = sizeof(packet) + PACKET_BUFFER_PADDING;
 #endif
 
-struct mbuf_header {
-    char id_addr[MBUF_HEADER_SIZE / 2];
-    char len_addr[MBUF_HEADER_SIZE / 2];
+struct buf_hdr {
+    char id_addr[BUF_HEADER_SIZE / 2];
+    char len_addr[BUF_HEADER_SIZE / 2];
 };
 
 struct buf {
-    mbuf_header header;
-#if MBUF_HEADER_SIZE > 0 && MBUF_HEADER_SIZE < 128
-    char padding_extra[128 - MBUF_HEADER_SIZE];
+    buf_hdr header;
+#if BUF_HEADER_SIZE > 0 && BUF_HEADER_SIZE < 128
+    char padding_extra[128 - BUF_HEADER_SIZE];
 #endif
     char padding[PACKET_BUFFER_PADDING];
     char addr[SIZE_BUFFER - PACKET_BUFFER_PADDING];
@@ -66,7 +61,7 @@ static inline void *__movsb(void *d, const void *s, size_t n) {
 
 void set_id(buf *buffer, int32_t id) {
     *(int32_t *) (buffer->header.id_addr) = id;
-    memset((char *) buffer->header.id_addr + 4, id, MBUF_HEADER_SIZE / 2 - 4);
+    memset((char *) buffer->header.id_addr + 4, id, BUF_HEADER_SIZE / 2 - 4);
 }
 
 int32_t get_id(buf *buffer) {
@@ -75,23 +70,23 @@ int32_t get_id(buf *buffer) {
 
 void set_len(buf *buffer, int32_t len) {
     *(int32_t *) (buffer->header.len_addr) = len;
-    memset((char *) buffer->header.len_addr + 4, len, MBUF_HEADER_SIZE / 2 - 4);
+    memset((char *) buffer->header.len_addr + 4, len, BUF_HEADER_SIZE / 2 - 4);
 }
 
 int32_t get_len(buf *buffer) {
     return *(int32_t *) buffer->header.len_addr;
 }
 
-constexpr int VIRTIO_HEADER_OFFSET = PACKET_BUFFER_PADDING - VIRTIO_HEADER_SIZE;
+constexpr int VIO_HEADER_OFFSET = PACKET_BUFFER_PADDING - VIO_HEADER_SIZE;
 
-void load_virtio_header(buf *buffer, void *dest) {
-#if VIRTIO_HEADER_SIZE > 0
-    memcpy(dest, (&buffer->padding) + VIRTIO_HEADER_OFFSET, VIRTIO_HEADER_SIZE);
+void load_vio_header(buf *buffer, void *dest) {
+#if VIO_HEADER_SIZE > 0
+    memcpy(dest, (&buffer->padding) + VIO_HEADER_OFFSET, VIO_HEADER_SIZE);
 #endif
 }
 
-void store_virtio_header(buf *buffer, void *src) {
-#if VIRTIO_HEADER_SIZE > 0
-    memcpy((&buffer->padding) + VIRTIO_HEADER_OFFSET, src, VIRTIO_HEADER_SIZE);
+void store_vio_header(buf *buffer, void *src) {
+#if VIO_HEADER_SIZE > 0
+    memcpy((&buffer->padding) + VIO_HEADER_OFFSET, src, VIO_HEADER_SIZE);
 #endif
 }

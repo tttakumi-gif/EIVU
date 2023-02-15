@@ -24,12 +24,10 @@ namespace {
 
         try {
             for (int i = NUM_PACKET; 0 < i; i -= num_fin) {
-                // 受信パケット数の決定
                 if (i < num_fin) {
                     num_fin = i;
                 }
 
-                // パケット受信
                 for (int j = 0; j < num_fin; j++) {
 #ifdef RANDOM_TX
                     recv_addrs[j] = &pool->buffers[pool->last_pool_idx / 32 * 32 + (int) ids[j]];
@@ -39,6 +37,7 @@ namespace {
 #endif
                 }
 
+                // Receive packets from the NF process
                 send_guest_to_tx(vq_tx, recv_addrs, pool_guest, num_fin, is_stream);
 
                 /* Flushing the all inflight buffers in the pring */
@@ -88,7 +87,7 @@ namespace {
 int main(int argc, char **argv) {
     static_assert(BATCH_SIZE_TX <= VQ_ENTRY_NUM);
 
-    // 初期設定
+    // Initialize
     int bfd = open_shmfile(SHM_FILE, SIZE_SHM, false);
     auto *pool = (guest_buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
     auto *descs_rx = (desc *) (pool + 1);
@@ -103,13 +102,13 @@ int main(int argc, char **argv) {
 
     *flag = true;
 
-    // 計測開始
+    // Start measuring throughput
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
 
     recv_packet(&vq_tx, pool, opt);
 
-    // 計測終了
+    // Stop the measuring
     end = std::chrono::system_clock::now();
 
     double elapsed = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());

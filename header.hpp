@@ -30,11 +30,11 @@
 //#define VQ_ENTRY_SIZE 64
 //#define VQ_ENTRY_SIZE 128
 
-//#define MBUF_HEADER_SIZE 0
-#define MBUF_HEADER_SIZE 128
-//#define MBUF_HEADER_SIZE 1024
+//#define BUF_HEADER_SIZE 0
+#define BUF_HEADER_SIZE 128
+//#define BUF_HEADER_SIZE 1024
 
-#define VIRTIO_HEADER_SIZE 16
+#define VIO_HEADER_SIZE 12
 
 //#define ZERO_COPY_RX
 //#define ZERO_COPY_TX

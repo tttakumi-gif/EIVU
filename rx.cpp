@@ -24,7 +24,6 @@ namespace {
 
 	try {
             while (0 < i) {
-                // 受信パケット数の決定
                 if (i < num_fin) {
                     num_fin = i;
                 }
@@ -80,7 +79,7 @@ int main(int argc, char **argv) {
         static_assert(size <= SIZE_SHM, "over packet size");
     }
 
-    // 初期設定
+    // Initialize
     int bfd = open_shmfile(SHM_FILE, SIZE_SHM, false);
     auto *pool = (guest_buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
     auto *descs_rx = (desc *) (pool + 1);
@@ -99,7 +98,7 @@ int main(int argc, char **argv) {
     while (!*flag) {
     }
 
-    // 送受信開始
+    // Start the main processing
     send_packet(&vq_rx, pool, opt);
 
 #ifdef HUGE_PAGE

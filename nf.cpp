@@ -25,7 +25,7 @@ namespace {
     }
 
     void guest_process(guest_buffer_pool *pool __attribute__((unused)), buf **pkts __attribute__((unused)), int num_fin __attribute__((unused))) {
-
+        // You can add arbitrary packet processing here
     }
 
     void rs_packet(vq *vq_rx, vq *vq_tx, guest_buffer_pool *pool, info_opt opt) {
@@ -60,10 +60,10 @@ namespace {
 }
 
 int main(int argc, char *argv[]) {
-    static_assert(VIRTIO_HEADER_SIZE <= PACKET_BUFFER_PADDING);
+    static_assert(VIO_HEADER_SIZE <= PACKET_BUFFER_PADDING);
     static_assert(BATCH_SIZE_NF <= VQ_ENTRY_NUM);
 
-    // 初期設定
+    // Initialize
     int bfd = open_shmfile(SHM_FILE, SIZE_SHM, true);
 
     auto *pool = (guest_buffer_pool *) mmap(nullptr, SIZE_SHM, PROT_READ | PROT_WRITE, SHM_FLAG, bfd, 0);
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     while (!*flag) {
     }
 
-    // 送受信開始
+    // Start the main processing
     rs_packet(&vq_rx, &vq_tx, pool, opt);
 
 #ifdef HUGE_PAGE
