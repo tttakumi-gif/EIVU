@@ -1,4 +1,4 @@
-#include "virtqueue.hpp"
+#include "vioqueue.hpp"
 #include "shm.hpp"
 
 namespace {
@@ -10,7 +10,7 @@ namespace {
         }
     }
 
-    void attach_buffer_to_vq(vq *virtqueue, guest_buffer_pool *pool) {
+    void attach_buffer_to_vq(vq *vioqueue, guest_buffer_pool *pool) {
         assert(VQ_ENTRY_NUM <= GUEST_POOL_ENTRY_NUM);
         for (int i = 0; i < VQ_ENTRY_NUM; i++) {
 #ifdef RANDOM_NF
@@ -19,8 +19,8 @@ namespace {
 #else
             auto entry_index = static_cast<int64_t>(get_buffer_index(pool, get_buffer(pool)));
 #endif
-            virtqueue->descs[i].entry_index = entry_index;
-            set_avail_flag(&virtqueue->descs[i]);
+            vioqueue->descs[i].entry_index = entry_index;
+            set_avail_flag(&vioqueue->descs[i]);
         }
     }
 
