@@ -1,0 +1,20 @@
+NF Thread
+result: 7.890sec (12.674Mpps)
+
+ Performance counter stats for './nf.out --stream=off --process=move --batch=32':
+
+        21,874,628      cpu_core/L1-dcache-load-misses/                                     (59.99%)
+    23,012,872,278      cpu_core/L1-dcache-loads/                                     (69.99%)
+     3,478,367,188      cpu_core/L1-dcache-stores/                                     (69.99%)
+            36,377      cpu_core/LLC-load-misses/                                     (69.99%)
+        17,222,230      cpu_core/LLC-loads/                                           (40.01%)
+         3,619,368      cpu_core/LLC-store-misses/                                     (20.01%)
+        29,915,483      cpu_core/LLC-stores/                                          (20.00%)
+         6,064,571      cpu_core/cache-misses/                                        (30.00%)
+       257,199,690      cpu_core/cache-references/                                     (40.00%)
+   126,897,260,751      cpu_core/instructions/                                        (49.99%)
+
+       9.898237432 seconds time elapsed
+
+       9.695167000 seconds user
+       0.163984000 seconds sys

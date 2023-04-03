@@ -1,0 +1,20 @@
+Rx Thread
+result: 4.583sec (21.820Mpps)
+
+ Performance counter stats for './rx.out --stream=off --batch=32 --process=copy':
+
+       202,827,041      cpu_core/L1-dcache-load-misses/                                     (59.99%)
+     4,109,268,435      cpu_core/L1-dcache-loads/                                     (69.99%)
+     1,407,885,873      cpu_core/L1-dcache-stores/                                     (69.99%)
+            87,880      cpu_core/LLC-load-misses/                                     (69.99%)
+        50,124,929      cpu_core/LLC-loads/                                           (40.01%)
+         7,670,091      cpu_core/LLC-store-misses/                                     (20.01%)
+       164,529,922      cpu_core/LLC-stores/                                          (20.00%)
+        16,669,460      cpu_core/cache-misses/                                        (30.00%)
+       431,717,263      cpu_core/cache-references/                                     (40.00%)
+    15,001,485,290      cpu_core/instructions/                                        (50.00%)
+
+       5.559115000 seconds time elapsed
+
+       5.502803000 seconds user
+       0.033787000 seconds sys

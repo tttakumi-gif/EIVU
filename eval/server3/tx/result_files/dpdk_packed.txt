@@ -1,0 +1,12 @@
+15.8Mpps
+
+   71,926,445      cpu_core/L1-dcache-load-misses/                                     (59.78%)
+2,610,149,965      cpu_core/L1-dcache-loads/                                     (69.84%)
+1,464,769,638      cpu_core/L1-dcache-stores/                                     (69.94%)
+           17      cpu_core/LLC-load-misses/                                     (70.04%)
+    5,241,143      cpu_core/LLC-loads/                                           (40.22%)
+            0      cpu_core/LLC-store-misses/                                     (20.00%)
+    5,235,284      cpu_core/LLC-stores/                                          (19.92%)
+          197      cpu_core/cache-misses/                                        (29.88%)
+   61,249,225      cpu_core/cache-references/                                     (39.83%)
+7,993,104,736      cpu_core/instructions/                                        (49.79%)

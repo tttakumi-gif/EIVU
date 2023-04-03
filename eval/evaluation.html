@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <table border="1">
+            <tr>
+                <th rowspan="2">No.</th>
+                <th rowspan="2">Type</th>
+                <th colspan="2">Classification</th>
+                <th rowspan="2">Summary</th>
+                <th rowspan="2">Notes</th>
+            </tr>
+            <tr>
+                <th>Major</th>
+                <th>Minor</th>
+            </tr>
+
+    <tr>
+      <td align="center">001</td>
+      <td align="center">Base</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td align="center">002</td>
+      <td rowspan="44" align="center">Programmatic Modification</td>
+      <td rowspan="24" align="center">Data Structure</td>
+      <td rowspan="9" align="center">Virtqueue</td>
+      <td align="left">Type of Virtqueue indexes (last_avail_idx/last_used_idx) was changed.</td>
+      <td align="left">uint16_t → uint64_t</td>
+    </tr>
+    <tr>
+      <td align="center">003</td>
+      <td align="left">Type of a variable indicating Virtqueue size was changed.</td>
+      <td align="left">uint16_t → uint64_t</td>
+    </tr>
+    <tr>
+      <td align="center">004</td>
+      <td align="left">Alignment of a Virtqueue index (last_avail_idx) was changed.</td>
+      <td align="left">to last</td>
+    </tr>
+    <tr>
+      <td align="center">005</td>
+      <td align="left">Alignment of a Virtqueue index (last_used_idx) was changed.</td>
+      <td align="left">to last</td>
+    </tr>
+    <tr>
+      <td align="center">006</td>
+      <td align="left">Starting address of Virtqueue descriptors was changed.</td>
+      <td align="left">to first</td>
+    </tr>
+    <tr>
+      <td align="center">007</td>
+      <td align="left">Size of a Virtqueue entry was changed.</td>
+      <td align="left">16B → 4B</td>
+    </tr>
+    <tr>
+      <td align="center">008</td>
+      <td align="left">Size of a Virtqueue entry was changed.</td>
+      <td align="left">16B → 8B</td>
+    </tr>
+    <tr>
+      <td align="center">009</td>
+      <td align="left">Size of a Virtqueue entry was changed.</td>
+      <td align="left">16B → 32B</td>
+    </tr>
+    <tr>
+      <td align="center">010</td>
+      <td align="left">Size of a Virtqueue entry was changed.</td>
+      <td align="left">16B → 64B</td>
+    </tr>
+    <tr>
+      <td align="center">011</td>
+      <td rowspan="15" align="center">Packet Buffer</td>
+      <td align="left">Alignment of a packet buffer index was changed.</td>
+      <td align="left">to last</td>
+    </tr>
+    <tr>
+      <td align="center">012</td>
+      <td align="left">Size of a packet buffer was changed.</td>
+      <td align="left">2176B → header+offset+packet</td>
+    </tr>
+    <tr>
+      <td align="center">013</td>
+      <td align="left">Size of a packet buffer was changed.</td>
+      <td align="left">2176B → 1024B</td>
+    </tr>
+    <tr>
+      <td align="center">014</td>
+      <td align="left">Size of a header of packet buffer was changed.</td>
+      <td align="left">128B → 0B</td>
+    </tr>
+    <tr>
+      <td align="center">015</td>
+      <td align="left">Size of a header of packet buffer was changed.</td>
+      <td align="left">128B → 32B</td>
+    </tr>
+    <tr>
+      <td align="center">016</td>
+      <td align="left">Size of a header of packet buffer was changed.</td>
+      <td align="left">128B → 64B</td>
+    </tr>
+    <tr>
+      <td align="center">017</td>
+      <td align="left">Size of a header of packet buffer was changed.</td>
+      <td align="left">128B → 256B</td>
+    </tr>
+    <tr>
+      <td align="center">018</td>
+      <td align="left">Size of a header of packet buffer was changed.</td>
+      <td align="left">128B → 512B</td>
+    </tr>
+    <tr>
+      <td align="center">019</td>
+      <td align="left">Size of a header of packet buffer was changed.</td>
+      <td align="left">128B → 1024B</td>
+    </tr>
+    <tr>
+      <td align="center">020</td>
+      <td align="left">Size of an offset of packet buffer was changed.</td>
+      <td align="left">128B → 0B</td>
+    </tr>
+    <tr>
+      <td align="center">021</td>
+      <td align="left">Size of an offset of packet buffer was changed.</td>
+      <td align="left">128B → 64B</td>
+    </tr>
+    <tr>
+      <td align="center">022</td>
+      <td align="left">Size of an offset of packet buffer was changed.</td>
+      <td align="left">128B → 256B</td>
+    </tr>
+    <tr>
+      <td align="center">023</td>
+      <td align="left">Size of a virtio header was changed.</td>
+      <td align="left">16B → 0B</td>
+    </tr>
+    <tr>
+      <td align="center">024</td>
+      <td align="left">Size of a virtio header was changed.</td>
+      <td align="left">16B → 32B</td>
+    </tr>
+    <tr>
+      <td align="center">025</td>
+      <td align="left">Size of a virtio header was changed.</td>
+      <td align="left">16B → 64B</td>
+    </tr>
+    <tr>
+      <td align="center">026</td>
+      <td rowspan="8" align="center">Data Access</td>
+      <td rowspan="4" align="center">Read</td>
+      <td align="left">Buffer access by Rx Thread was changed.</td>
+      <td align="left">read first 4 bytes of header</td>
+    </tr>
+    <tr>
+      <td align="center">027</td>
+      <td align="left">Buffer access by NF Thread was changed.</td>
+      <td align="left">read first 4 bytes of header</td>
+    </tr>
+    <tr>
+      <td align="center">028</td>
+      <td align="left">Buffer access by NF Thread was changed.</td>
+      <td align="left">read first 4 bytes of body</td>
+    </tr>
+    <tr>
+      <td align="center">029</td>
+      <td align="left">Buffer access by Tx Thread was changed.</td>
+      <td align="left">read first 4 bytes of header</td>
+    </tr>
+    <tr>
+      <td align="center">030</td>
+      <td rowspan="4" align="center">Write</td>
+      <td align="left">Buffer access by Rx Thread was changed.</td>
+      <td align="left">write first 4 bytes of header</td>
+    </tr>
+    <tr>
+      <td align="center">031</td>
+      <td align="left">Buffer access by NF Thread was changed.</td>
+      <td align="left">write first 4 bytes of header</td>
+    </tr>
+    <tr>
+      <td align="center">032</td>
+      <td align="left">Buffer access by NF Thread was changed.</td>
+      <td align="left">write first 4 bytes of body</td>
+    </tr>
+    <tr>
+      <td align="center">033</td>
+      <td align="left">Buffer access by Tx Thread was changed.</td>
+      <td align="left">write first 4 bytes of header</td>
+    </tr>
+    <tr>
+      <td align="center">034</td>
+      <td rowspan="10" align="center">API</td>
+      <td rowspan="4" align="center">Memory Copy</td>
+      <td align="left">Instruction of packet copy by Rx Thread was changed.</td>
+      <td align="left">SIMD</td>
+    </tr>
+    <tr>
+      <td align="center">035</td>
+      <td align="left">Instruction of packet copy by Tx Thread was changed.</td>
+      <td align="left">SIMD</td>
+    </tr>
+    <tr>
+      <td align="center">036</td>
+      <td align="left">Instruction of packet copy by Rx Thread was changed.</td>
+      <td align="left">Non-Temporal</td>
+    </tr>
+    <tr>
+      <td align="center">037</td>
+      <td align="left">Instruction of packet copy by Tx Thread was changed.</td>
+      <td align="left">Non-Temporal</td>
+    </tr>
+    <tr>
+      <td align="center">038</td>
+      <td rowspan="6" align="center">Cacheline</td>
+      <td align="left">Explicit cache control of packet address by Rx Thread was applied.</td>
+      <td align="left">prefetcht0</td>
+    </tr>
+    <tr>
+      <td align="center">039</td>
+      <td align="left">Explicit cache control of packet address by Tx Thread was applied.</td>
+      <td align="left">prefetcht0</td>
+    </tr>
+    <tr>
+      <td align="center">040</td>
+      <td align="left">Explicit cache control of packet address by Rx Thread was applied.</td>
+      <td align="left">cldemote</td>
+    </tr>
+    <tr>
+      <td align="center">041</td>
+      <td align="left">Explicit cache control of packet address by Tx Thread was applied.</td>
+      <td align="left">cldemote</td>
+    </tr>
+    <tr>
+      <td align="center">042</td>
+      <td align="left">Explicit cache control of packet address by Rx Thread was applied.</td>
+      <td align="left">clflushopt</td>
+    </tr>
+    <tr>
+      <td align="center">043</td>
+      <td align="left">Explicit cache control of packet address by Tx Thread was applied.</td>
+      <td align="left">clflushopt</td>
+    </tr>
+    <tr>
+      <td align="center">044</td>
+      <td rowspan="2" align="center">Others</td>
+      <td rowspan="2" align="center">Zero-copy</td>
+      <td align="left">Packet copy by Rx Thread was eliminated.</td>
+      <td align="left"></td>
+    </tr>
+    <tr>
+      <td align="center">045</td>
+      <td align="left">Packet copy by Tx Thread was eliminated.</td>
+      <td align="left"></td>
+    </tr>
+    <tr>
+      <td align="center">046</td>
+      <td rowspan="39" align="center">Configurational Modification</td>
+      <td rowspan="37" align="center">Runtime</td>
+      <td rowspan="2" align="center">Virtqueue</td>
+      <td align="left">The number of Virtqueue entries was changed.</td>
+      <td align="left">256 → 64</td>
+    </tr>
+    <tr>
+      <td align="center">047</td>
+      <td align="left">The number of Virtqueue entries was changed.</td>
+      <td align="left">256 → 2048</td>
+    </tr>
+    <tr>
+      <td align="center">048</td>
+      <td rowspan="10" align="center">Packet Pool</td>
+      <td align="left">The number of packet buffers was changed.</td>
+      <td align="left">163456 → 1024</td>
+    </tr>
+    <tr>
+      <td align="center">049</td>
+      <td align="left">The number of packet buffers was changed.</td>
+      <td align="left">163456 → 81728</td>
+    </tr>
+    <tr>
+      <td align="center">050</td>
+      <td align="left">The number of caches in host's packet buffer was changed.</td>
+      <td align="left">512 → 0</td>
+    </tr>
+    <tr>
+      <td align="center">051</td>
+      <td align="left">The number of caches in host's packet buffer was changed.</td>
+      <td align="left">512 → 256</td>
+    </tr>
+    <tr>
+      <td align="center">052</td>
+      <td align="left">The number of caches in host's packet buffer was changed.</td>
+      <td align="left">512 → 1024</td>
+    </tr>
+    <tr>
+      <td align="center">053</td>
+      <td align="left">The cache algorithm of host's packet buffer was changed.</td>
+      <td align="left">stack → queue</td>
+    </tr>
+    <tr>
+      <td align="center">054</td>
+      <td align="left">The number of caches in guest's packet buffer was changed.</td>
+      <td align="left">512 → 0</td>
+    </tr>
+    <tr>
+      <td align="center">055</td>
+      <td align="left">The number of caches in guest's packet buffer was changed.</td>
+      <td align="left">512 → 256</td>
+    </tr>
+    <tr>
+      <td align="center">056</td>
+      <td align="left">The number of caches in guest's packet buffer was changed.</td>
+      <td align="left">512 → 1024</td>
+    </tr>
+    <tr>
+      <td align="center">057</td>
+      <td align="left">The cache algorithm of guest's packet buffer was changed.</td>
+      <td align="left">stack → queue</td>
+    </tr>
+    <tr>
+      <td align="center">058</td>
+      <td rowspan="4" align="center">Physical Ring</td>
+      <td align="left">The number of physical rx rings was changed.</td>
+      <td align="left">256 → 32</td>
+    </tr>
+    <tr>
+      <td align="center">059</td>
+      <td align="left">The number of physical rx rings was changed.</td>
+      <td align="left">256 → 1024</td>
+    </tr>
+    <tr>
+      <td align="center">060</td>
+      <td align="left">The number of physical tx rings was changed.</td>
+      <td align="left">256 → 32</td>
+    </tr>
+    <tr>
+      <td align="center">061</td>
+      <td align="left">The number of physical tx rings was changed.</td>
+      <td align="left">256 → 1024</td>
+    </tr>
+    <tr>
+      <td align="center">062</td>
+      <td rowspan="18" align="center">Batch Size</td>
+      <td align="left">The batch size of Rx Thread was changed.</td>
+      <td align="left">32 → 1</td>
+    </tr>
+    <tr>
+      <td align="center">063</td>
+      <td align="left">The batch size of Rx Thread was changed.</td>
+      <td align="left">32 → 64</td>
+    </tr>
+    <tr>
+      <td align="center">064</td>
+      <td align="left">The batch size of Rx Thread was changed.</td>
+      <td align="left">32 → 128</td>
+    </tr>
+    <tr>
+      <td align="center">065</td>
+      <td align="left">The batch size of Rx Thread was changed.</td>
+      <td align="left">32 → 256</td>
+    </tr>
+    <tr>
+      <td align="center">066</td>
+      <td align="left">The batch size of Rx Thread was changed.</td>
+      <td align="left">32 → 512</td>
+    </tr>
+    <tr>
+      <td align="center">067</td>
+      <td align="left">The batch size of Rx Thread was changed.</td>
+      <td align="left">32 → 1024</td>
+    </tr>
+    <tr>
+      <td align="center">068</td>
+      <td align="left">The batch size of NF Thread was changed.</td>
+      <td align="left">32 → 1</td>
+    </tr>
+    <tr>
+      <td align="center">069</td>
+      <td align="left">The batch size of NF Thread was changed.</td>
+      <td align="left">32 → 64</td>
+    </tr>
+    <tr>
+      <td align="center">070</td>
+      <td align="left">The batch size of NF Thread was changed.</td>
+      <td align="left">32 → 128</td>
+    </tr>
+    <tr>
+      <td align="center">071</td>
+      <td align="left">The batch size of NF Thread was changed.</td>
+      <td align="left">32 → 256</td>
+    </tr>
+    <tr>
+      <td align="center">072</td>
+      <td align="left">The batch size of NF Thread was changed.</td>
+      <td align="left">32 → 512</td>
+    </tr>
+    <tr>
+      <td align="center">073</td>
+      <td align="left">The batch size of NF Thread was changed.</td>
+      <td align="left">32 → 1024</td>
+    </tr>
+    <tr>
+      <td align="center">074</td>
+      <td align="left">The batch size of Tx Thread was changed.</td>
+      <td align="left">32 → 1</td>
+    </tr>
+    <tr>
+      <td align="center">075</td>
+      <td align="left">The batch size of Tx Thread was changed.</td>
+      <td align="left">32 → 64</td>
+    </tr>
+    <tr>
+      <td align="center">076</td>
+      <td align="left">The batch size of Tx Thread was changed.</td>
+      <td align="left">32 → 128</td>
+    </tr>
+    <tr>
+      <td align="center">077</td>
+      <td align="left">The batch size of Tx Thread was changed.</td>
+      <td align="left">32 → 256</td>
+    </tr>
+    <tr>
+      <td align="center">078</td>
+      <td align="left">The batch size of Tx Thread was changed.</td>
+      <td align="left">32 → 512</td>
+    </tr>
+    <tr>
+      <td align="center">079</td>
+      <td align="left">The batch size of Tx Thread was changed.</td>
+      <td align="left">32 → 1024</td>
+    </tr>
+    <tr>
+      <td align="center">080</td>
+      <td align="center" rowspan="3">Randomness</td>
+      <td align="left">The order of buffer allocation by Rx Thread was changed.</td>
+      <td align="left">random order</td>
+    </tr>
+    <tr>
+      <td align="center">081</td>
+      <td align="left">The order of buffer allocation by NF Thread was changed.</td>
+      <td align="left">random order</td>
+    </tr>
+    <tr>
+      <td align="center">082</td>
+      <td align="left">The order of buffer allocation by Tx Thread was changed.</td>
+      <td align="left">random order</td>
+    </tr>
+    <tr>
+      <td align="center">083</td>
+      <td rowspan="2" align="center">BIOS</td>
+      <td align="center" rowspan="2">Prefetching</td>
+      <td align="left">Hardware Prefetcher was disabled.</td>
+      <td align="left"></td>
+    </tr>
+    <tr>
+      <td align="center">084</td>
+      <td align="left">Adjacent Cache Line Prefetch was disabled.</td>
+      <td align="left"></td>
+    </tr>
+    <tr>
+      <td align="center">085~141</td>
+      <td align="center">Combination</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+       </table>
+    </body>
+</html>

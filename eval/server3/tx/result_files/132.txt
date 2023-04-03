@@ -1,0 +1,20 @@
+Tx Thread
+result: 3.289sec (30.404Mpps)
+
+ Performance counter stats for './tx.out --stream=off --process=copy --batch=32':
+
+        49,760,896      cpu_core/L1-dcache-load-misses/                                     (59.99%)
+     5,600,912,514      cpu_core/L1-dcache-loads/                                     (70.00%)
+     3,032,924,081      cpu_core/L1-dcache-stores/                                     (69.99%)
+             8,625      cpu_core/LLC-load-misses/                                     (70.00%)
+        49,225,686      cpu_core/LLC-loads/                                           (40.01%)
+           721,673      cpu_core/LLC-store-misses/                                     (20.01%)
+         4,449,945      cpu_core/LLC-stores/                                          (20.00%)
+         1,696,794      cpu_core/cache-misses/                                        (30.00%)
+       135,769,398      cpu_core/cache-references/                                     (39.99%)
+    37,501,229,179      cpu_core/instructions/                                        (49.99%)
+
+       3.290414828 seconds time elapsed
+
+       3.274254000 seconds user
+       0.002978000 seconds sys

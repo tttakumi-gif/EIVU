@@ -1,0 +1,24 @@
+Rx Thread
+result: 2.224sec (44.964Mpps)
+
+ Performance counter stats for './rx.out --stream=off --batch=32 --process=copy':
+
+    10,016,339,078      all_data_cache_accesses                                       (41.67%)
+       595,362,865      l1_data_cache_fills_all                                       (41.69%)
+       761,873,568      l2_cache_accesses_from_dc_misses                                     (41.69%)
+       497,799,966      l2_cache_hits_from_dc_misses                                     (41.69%)
+        65,157,956      l2_cache_misses_from_dc_misses                                     (41.69%)
+       376,310,196      l2_cache_hits_from_l2_hwpf                                     (41.68%)
+   <not supported>      l3_cache_accesses                                           
+   <not supported>      l3_misses                                                   
+       308,188,295      cache-misses              #   28.035 % of all cache refs      (41.65%)
+     1,099,315,143      cache-references                                              (41.65%)
+    27,590,135,840      instructions                                                  (41.65%)
+       760,102,158      L1-dcache-load-misses     #    8.05% of all L1-dcache accesses  (41.65%)
+     9,445,169,803      L1-dcache-loads                                               (41.65%)
+       255,443,420      L1-dcache-prefetches                                          (41.65%)
+
+       3.217644161 seconds time elapsed
+
+       3.167971000 seconds user
+       0.029735000 seconds sys

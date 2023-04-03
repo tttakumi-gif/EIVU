@@ -1,0 +1,58 @@
+Rx Thread
+result: 3.688sec (27.115Mpps)
+
+ Performance counter stats for './rx.out --stream=off --batch=32 --process=copy':
+
+    33,871,719,388      INST_RETIRED.ANY          #     0.00 L3MPKI                   (7.13%)
+             4,347      MEM_LOAD_RETIRED.L3_MISS                                      (7.13%)
+     4,673,326,574 ns   duration_time                                               
+    33,900,946,853      INST_RETIRED.ANY          #     1.91 L2MPKI                   (9.53%)
+        64,685,585      MEM_LOAD_RETIRED.L2_MISS                                      (9.53%)
+     4,673,326,574 ns   duration_time                                               
+    34,038,621,191      INST_RETIRED.ANY          #     2.72 L1MPKI                   (9.55%)
+        92,674,769      MEM_LOAD_RETIRED.L1_MISS                                      (9.55%)
+     4,673,326,574 ns   duration_time                                               
+     9,139,328,295      mem_load_retired.l1_hit                                       (9.57%)
+        28,013,978      mem_load_retired.l2_hit                                       (9.59%)
+        57,838,472      mem_load_retired.l3_hit                                       (9.59%)
+        22,654,860      cache-misses              #    3.965 % of all cache refs      (11.98%)
+       571,375,667      cache-references                                              (14.38%)
+       613,046,516      l1d.replacement                                               (14.38%)
+        25,182,864      l2_lines_out.non_silent                                       (14.38%)
+       546,642,520      l2_lines_out.silent                                           (14.38%)
+            42,931      l2_lines_out.useless_hwpf                                     (14.38%)
+        65,521,826      LLC-loads                                                     (9.56%)
+       224,786,608      LLC-stores                                                    (9.54%)
+       346,055,045      l1d_pend_miss.fb_full                                         (9.52%)
+     3,068,300,958      l1d_pend_miss.pending_cycles                                     (9.50%)
+       326,141,720      l2_rqsts.all_rfo                                              (9.50%)
+       107,168,815      l2_rqsts.rfo_hit                                              (9.50%)
+       220,429,174      l2_rqsts.rfo_miss                                             (9.50%)
+       228,548,392      offcore_requests.demand_rfo                                     (9.50%)
+     8,996,650,040      offcore_requests_outstanding.cycles_with_demand_rfo                                     (9.50%)
+    25,709,701,419      offcore_requests_outstanding.demand_rfo                                     (9.50%)
+        22,045,373      ocr.demand_rfo.l3_miss                                        (9.50%)
+            69,602      ocr.hwpf_l2_rfo.l3_miss                                       (9.50%)
+       238,028,282      ocr.demand_rfo.any_response                                     (4.75%)
+        22,537,484      ocr.demand_rfo.dram                                           (4.75%)
+       215,724,032      ocr.demand_rfo.l3_hit.any                                     (4.75%)
+       210,236,597      ocr.demand_rfo.l3_hit.snoop_hit_no_fwd                                     (4.75%)
+             1,073      ocr.demand_rfo.l3_hit.snoop_hitm                                     (4.75%)
+         2,601,421      ocr.demand_rfo.l3_hit.snoop_miss                                     (4.75%)
+            82,642      ocr.demand_rfo.l3_hit.snoop_not_needed                                     (4.75%)
+       212,576,431      ocr.demand_rfo.l3_hit.snoop_sent                                     (4.75%)
+        23,019,878      ocr.demand_rfo.local_dram                                     (4.75%)
+       196,557,222      ocr.hwpf_l2_rfo.any_response                                     (4.75%)
+            65,593      ocr.hwpf_l2_rfo.dram                                          (4.75%)
+       196,554,938      ocr.hwpf_l2_rfo.l3_hit.any                                     (4.75%)
+       172,450,284      ocr.hwpf_l2_rfo.l3_hit.snoop_hit_no_fwd                                     (4.75%)
+        20,454,368      ocr.hwpf_l2_rfo.l3_hit.snoop_hitm                                     (4.75%)
+         2,776,873      ocr.hwpf_l2_rfo.l3_hit.snoop_miss                                     (4.75%)
+           690,038      ocr.hwpf_l2_rfo.l3_hit.snoop_not_needed                                     (4.75%)
+       195,189,134      ocr.hwpf_l2_rfo.l3_hit.snoop_sent                                     (4.75%)
+            67,024      ocr.hwpf_l2_rfo.local_dram                                     (4.75%)
+
+       4.673326574 seconds time elapsed
+
+       4.628895000 seconds user
+       0.026768000 seconds sys

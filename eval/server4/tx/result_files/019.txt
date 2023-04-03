@@ -1,0 +1,24 @@
+Tx Thread
+result: 9.654sec (10.358Mpps)
+
+ Performance counter stats for './tx.out --stream=off --process=copy --batch=32':
+
+    23,978,279,067      all_data_cache_accesses                                       (41.64%)
+     2,796,560,259      l1_data_cache_fills_all                                       (41.65%)
+     2,802,930,058      l2_cache_accesses_from_dc_misses                                     (41.66%)
+     2,713,086,328      l2_cache_hits_from_dc_misses                                     (41.67%)
+        42,229,752      l2_cache_misses_from_dc_misses                                     (41.68%)
+     1,967,436,464      l2_cache_hits_from_l2_hwpf                                     (41.69%)
+   <not supported>      l3_cache_accesses                                           
+   <not supported>      l3_misses                                                   
+       300,538,141      cache-misses              #    8.994 % of all cache refs      (41.69%)
+     3,341,509,374      cache-references                                              (41.68%)
+    57,381,869,933      instructions                                                  (41.67%)
+     2,797,319,827      L1-dcache-load-misses     #   12.11% of all L1-dcache accesses  (41.66%)
+    23,095,967,085      L1-dcache-loads                                               (41.65%)
+     1,578,109,052      L1-dcache-prefetches                                          (41.64%)
+
+       9.655865283 seconds time elapsed
+
+       9.550466000 seconds user
+       0.042545000 seconds sys

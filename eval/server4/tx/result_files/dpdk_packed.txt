@@ -1,0 +1,16 @@
+18.0Mpps
+
+ 5,734,173,223      all_data_cache_accesses                                       (41.44%)
+   118,505,014      l1_data_cache_fills_all                                       (41.54%)
+   122,392,915      l2_cache_accesses_from_dc_misses                                     (41.64%)
+    92,612,319      l2_cache_hits_from_dc_misses                                     (41.74%)
+    25,544,156      l2_cache_misses_from_dc_misses                                     (41.83%)
+    59,573,006      l2_cache_hits_from_l2_hwpf                                     (41.83%)
+   133,638,117      l3_cache_accesses
+   132,343,086      l3_misses
+    33,646,075      cache-misses              #   21.580 % of all cache refs      (41.83%)
+   155,911,342      cache-references                                              (41.82%)
+10,736,550,301      instructions                                                  (41.72%)
+   122,390,080      L1-dcache-load-misses     #    2.76% of all L1-dcache accesses  (41.62%)
+ 4,437,236,547      L1-dcache-loads                                               (41.52%)
+    35,764,076      L1-dcache-prefetches                                          (41.43%)
