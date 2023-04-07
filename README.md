@@ -56,3 +56,9 @@ Profiling items (perf items) can be specified to the "opt_perf" variable in the 
 ```
 $ ./statrun.sh
 ```
+
+### Evaluation
+
+- Design: https://sdnnitech.github.io/EIVU/eval/evaluation.html
+
+- Result: https://sdnnitech.github.io/EIVU/eval/results.html
