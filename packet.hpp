@@ -11,7 +11,10 @@ constexpr int32_t NUM_PACKET = 100000000;
 struct packet {
     int32_t packet_id;
     int32_t packet_len;
-    char dummy[SIZE_PACKET - sizeof(int32_t) * 2];
+    uint64_t rx_time; //rxプロセス用のタイムスタンプ
+    uint64_t nf_time; //nfプロセス用のタイムスタンプ、今は使っていない
+    uint64_t tx_time; //txプロセス用のタイムスタンプ、今は使っていない
+    char dummy[SIZE_PACKET - sizeof(int32_t) * 2 - sizeof(uint64_t) * 3];
 };
 
 #if 1

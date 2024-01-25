@@ -24,6 +24,7 @@
 #include <typeinfo>
 #include <iostream>
 #include <chrono>
+#include <fstream>
 
 //#define VQ_ENTRY_SIZE 8
 #define VQ_ENTRY_SIZE 16

@@ -40,6 +40,7 @@ namespace {
 #endif
                     ((packet *) (send_addrs[j]->addr))->packet_id = i;
                     ((packet *) (send_addrs[j]->addr))->packet_len = SIZE_PACKET;
+                    ((packet *) (send_addrs[j]->addr))->rx_time = __rdtsc(); //パケット生成のタイミングでクロック数取得
                 }
 
                 send_rx_to_guest(vq_rx, send_addrs, pool_guest, num_fin, is_stream); 

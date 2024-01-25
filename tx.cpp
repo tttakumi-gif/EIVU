@@ -17,6 +17,13 @@ namespace {
         int last_pring_idx = 0;
         int last_pring_inflight_idx = 0;
 
+        uint64_t first; //パケット生成時のクロック数
+        uint64_t end; //パケットをPRINGに転送したときのクロック数
+        uint64_t *result = new uint64_t[NUM_PACKET]; //上2つのクロックの差分をパケットの数だけ保存しておく配列
+        int32_t result_idx = 0; //上の配列のインデックス
+        uint64_t currentfreq; //現在のCPUクロック周波数（コア2）
+        double latency; //クロック数の差分と周波数から計算したレイテンシー
+
         constexpr uint16_t RING_SIZE_MASK = PRING_SIZE_TX - 1;
 
         buf **dummy_physical_ring = new buf *[PRING_SIZE_TX];
@@ -64,6 +71,11 @@ namespace {
                     dummy_physical_ring[last_pring_idx] = recv_addrs[j];
                     last_pring_idx++;
                     last_pring_idx &= RING_SIZE_MASK;
+                    //PRINGにパケットを転送するタイミングでクロック数取得、差分を配列に記録
+                    first = ((packet *) (recv_addrs[j]->addr))->rx_time;
+                    end = __rdtsc();
+                    result[result_idx] = (end - first);
+                    result_idx++;
                 }
 
 #ifdef PRINT
@@ -77,6 +89,43 @@ namespace {
         } catch (std::exception &e) {
             std::cerr << "[tx] ERROR: " << e.what() << " terminating..." << std::endl;
         }
+
+        // ＊前回の計測で各コアの周波数を記録したところ、各コアの周波数はほとんど変化していなかった
+        // ＊したがって周波数の取得は一度のみで良いと判断した（各パケットの転送のタイミングで毎回ファイルを読みに行くとその部分の処理が重くなりすぎてしまうと考えたから）
+        // ＊また、前回の計測でコア間の周波数にも差がほとんど見られなかった（最大周波数を制限していないコア同士の話,最大周波数を制限したコア同士も差がほとんどない）
+        // ＊コア間の周波数にもほとんど差がないことから、コア0コア1コア2の周波数は同一という前提で計算
+        // ＊もちろんrdtsc命令で取得できるサイクル数はコア間で異なるので、今回の計測でレイテンシーは正確には取れないが、ジッタの悪化を観測する分には問題ないという前提
+        // 現在のcpu周波数取得（コア2）
+        std::ifstream curFreqFile("/sys/devices/system/cpu/cpu2/cpufreq/scaling_cur_freq");
+        if (curFreqFile.is_open()) {
+            std::string curFreq;
+            curFreqFile >> curFreq;
+            currentfreq = std::stoi(curFreq);
+        } else {
+        }
+
+        //記録用ファイルへの書き出し
+        const char* filename = "output.log";
+        
+        // ファイルを開く
+        std::ofstream outputFile(filename);
+
+        // ファイルが正しく開けたか確認
+        if (!outputFile.is_open()) {
+            std::cerr << "Failed to open the file." << std::endl;
+        }
+
+        // 配列の内容をファイルに書き込む（レイテンシーの計算）
+        for (int i = 0; i < NUM_PACKET; ++i) {
+            latency = static_cast<double>(result[i]) / static_cast<double>(currentfreq) * (10^6);
+            outputFile << result[i] << std::endl;
+        }
+
+        // ファイルを閉じる
+        outputFile.close();
+
+        //　記録用配列を削除
+        delete result;
 
         delete pool;
         delete[](recv_addrs);
